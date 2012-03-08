@@ -1,3 +1,22 @@
+// Copyright (c) 2012 Aalto University
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
 
 package fi.aalto.seqpig;
 
@@ -15,12 +34,10 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordReader; 
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-//import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.io.Text;
 
 import fi.tkk.ics.hadoop.bam.BAMInputFormat;
 import fi.tkk.ics.hadoop.bam.BAMRecordReader;
-//import fi.tkk.ics.hadoop.bam.SplittingBAMIndex;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
@@ -35,16 +52,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-//import net.sf.samtools.util.StringLineReader;
 import java.io.StringWriter;
 
 public class BamUDFLoader extends LoadFunc {
     protected RecordReader in = null;
-    //private byte fieldDel = '\t';
     private ArrayList<Object> mProtoTuple = null;
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
-	private boolean loadAttributes;
-    //private static final int BUFFER_SIZE = 1024;
+    private boolean loadAttributes;
 
     public BamUDFLoader() {
 		loadAttributes = false;
@@ -74,14 +88,6 @@ public class BamUDFLoader extends LoadFunc {
             }
             SAMRecord samrec = ((SAMRecordWritable)in.getCurrentValue()).get();
 	    
-	    //String value = samrec.toString();
-            //byte[] buf = (new Text(value)).getBytes();
-            //int len = value.getLength();
-            //int start = 0;
-	    //if(value.length() == 0)
-	    //mProtoTuple.add(null);
-	    //else
-	    //mProtoTuple.add(new DataByteArray(buf, 0, value.length()));
 	    mProtoTuple.add(new String(samrec.getReadName()));
 	    mProtoTuple.add(new Integer(samrec.getAlignmentStart()));
 	    mProtoTuple.add(new Integer(samrec.getAlignmentEnd()));
@@ -96,10 +102,6 @@ public class BamUDFLoader extends LoadFunc {
 	    mProtoTuple.add(new Integer(samrec.getMateReferenceIndex()));
 	    mProtoTuple.add(new Integer(samrec.getReferenceIndex()));
 	    
-	    //mProtoTuple.add(new String((String)samrec.getAttribute("PG")));
-	    //mProtoTuple.add(new String((String)samrec.getAttribute("RG")));
-	    //mProtoTuple.add(new String((String)samrec.getAttribute("SM")));
-			
 			if(loadAttributes) {
 				Map attributes = new HashMap<String, Object>();
 				
