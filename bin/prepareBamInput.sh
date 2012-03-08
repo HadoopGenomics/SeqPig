@@ -8,7 +8,7 @@ if [ -e "$1" ]
 then
 	hadoop fs -put $1 $filename
 
-	java -classpath ${mybasename}/build/jar/BamUDF.jar:${mybasename}/lib/sam-1.56.jar:${mybasename}/lib/hadoop-bam-3.4-pre.jar bamudf.SAMFileHeaderReader $1
+	java -classpath ${mybasename}/build/jar/BamUDF.jar:${mybasename}/lib/sam-1.56.jar:${mybasename}/lib/hadoop-bam-3.4-pre.jar fi.aalto.seqpig.SAMFileHeaderReader $1
 
 	hadoop fs -put ${1}.asciiheader ${filename}.asciiheader
 else
