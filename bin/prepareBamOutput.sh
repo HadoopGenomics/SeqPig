@@ -17,9 +17,9 @@ then
 	then
 		cat $bamoutputfilename >> ${bamheaderfilename}
 	
-		if [ -e "${mybasename}/bgzf-terminator.bin" ]
+		if [ -e "${mybasename}/../data/bgzf-terminator.bin" ]
         	then
-			cat ${mybasename}/bgzf-terminator.bin >> ${bamheaderfilename}
+			cat ${mybasename}/../data/bgzf-terminator.bin >> ${bamheaderfilename}
 			mv ${bamheaderfilename} ${bamoutputfilename}
 		else
 			echo "error: cannot find bgzf-terminator.bin"
