@@ -56,9 +56,9 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.io.StringWriter;
 
-import it.crs4.seal.common.FastqInputFormat;
-import it.crs4.seal.common.FastqInputFormat.FastqRecordReader;
-import it.crs4.seal.common.SequencedFragment;
+import fi.tkk.ics.hadoop.bam.FastqInputFormat;
+import fi.tkk.ics.hadoop.bam.FastqInputFormat.FastqRecordReader;
+import fi.tkk.ics.hadoop.bam.SequencedFragment;
 
 public class FastqUDFLoader extends LoadFunc {
     protected RecordReader in = null;
