@@ -29,8 +29,6 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.PigException;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.impl.util.UDFContext;
-//import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
-//import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigTextInputFormat;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
@@ -40,17 +38,13 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordWriter; 
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-//import org.apache.hadoop.mapred.TextInputFormat;
-//import org.apache.hadoop.io.Text;
 
 import fi.tkk.ics.hadoop.bam.BAMOutputFormat;
 import fi.tkk.ics.hadoop.bam.BAMRecordWriter;
-//import fi.tkk.ics.hadoop.bam.SplittingBAMIndex;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringBAMRecordWriter;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringBAMOutputFormat;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
-//import fi.tkk.ics.hadoop.bam.FileVirtualSplit;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileHeader;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTagUtil;
@@ -66,7 +60,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Properties;
-//import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
@@ -99,11 +92,7 @@ public class BamUDFStorer extends StoreFunc {
 	String str = "";
 	this.samfileheader = "";
 
-	// WARNING: samfileheaderfilename has to be local file!
-
 	try {
-	    //BufferedReader in = new BufferedReader(new FileReader(samfileheaderfilename));
-
 	    Configuration conf = UDFContext.getUDFContext().getJobConf();
 	    
 	    if(conf == null) {
@@ -112,57 +101,39 @@ public class BamUDFStorer extends StoreFunc {
 	    }
 
             FileSystem fs;
-
-	   try {
-	    if(FileSystem.getDefaultUri(conf) == null
-		|| FileSystem.getDefaultUri(conf).toString() == "")
-		fs = FileSystem.get(new URI("hdfs://"), conf);
-	    else 
-	    	fs = FileSystem.get(conf);
+	    
+	    try {
+		if(FileSystem.getDefaultUri(conf) == null
+		   || FileSystem.getDefaultUri(conf).toString() == "")
+		    fs = FileSystem.get(new URI("hdfs://"), conf);
+		else 
+		    fs = FileSystem.get(conf);
 	    } catch (Exception e) {
 		fs = FileSystem.get(new URI("hdfs://"), conf);
             	System.out.println("WARNING: problems with filesystem config?");
             	System.out.println("exception was: "+e.toString());
-            }
-
+	    }
+	    
 	    BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(samfileheaderfilename)))));
-
+	    
 	    while(true) {
 		str = in.readLine();
-
+		
 		if(str == null) break;
 		else
 		    this.samfileheader += str + "\n";
 	    }
-
+	    
 	    in.close();
 	} catch (Exception e) {
 	    System.out.println("ERROR: could not read BAM header from file "+samfileheaderfilename);
 	    System.out.println("exception was: "+e.toString());
 	}
 
-	//this.samfileheader = _samfileheader;
-	/*String[] header = str.split("\\t");
-	this.samfileheader = "";
-
-	for(int i=0;i<header.length;i++) {
-	    this.samfileheader += header[i] + "\n";
-	}
-
-	header = this.samfileheader.split("_XTABX_");
-	this.samfileheader = "";
-
-	//System.out.println("Loaded SAMFileHeader:");
-
-	for(int i=0;i<header.length;i++) {
-	    this.samfileheader += header[i] + "\t";
-	    //System.out.println(header[i]);
-	    }*/
-
 	try {
 	    BASE64Encoder encode = new BASE64Encoder();
 	    Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-
+	    
 	    ByteArrayOutputStream bstream = new ByteArrayOutputStream();
 	    ObjectOutputStream ostream = new ObjectOutputStream(bstream);
 	    ostream.writeObject(this.samfileheader);
@@ -175,8 +146,6 @@ public class BamUDFStorer extends StoreFunc {
 	}
 
 	this.samfileheader_decoded = getSAMFileHeader();
-	
-	//System.err.println("samfileheader: "+this.samfileheader);
     }
 
     protected void decodeSAMFileHeader(){
@@ -192,8 +161,6 @@ public class BamUDFStorer extends StoreFunc {
 
             this.samfileheader = (String)ostream.readObject();
         } catch (Exception e) {
-            //throw new IOException(e);
-            //System.out.println("ERROR: No SAMFileHeader found in BamUDFStorer!");
         }
 
         this.samfileheader_decoded = getSAMFileHeader();
@@ -202,16 +169,12 @@ public class BamUDFStorer extends StoreFunc {
     @Override
     public void putNext(Tuple f) throws IOException {
 
-	//HashMap<String,Integer> selectedBAMAttributes;
-	//HashMap<String,Integer> allBAMFieldNames;
-
 	if(selectedBAMAttributes == null || allBAMFieldNames == null) {
 	    try {
 		BASE64Decoder decode = new BASE64Decoder();
 		Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 		String datastr;
-		//byte[] buffer = ((String)p.getProperty("tuplefields")).getBytes("UTF8");
-		
+	
 		datastr = p.getProperty("selectedBAMAttributes");
 		byte[] buffer = decode.decodeBuffer(datastr);
 		ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
@@ -224,21 +187,16 @@ public class BamUDFStorer extends StoreFunc {
 		buffer = decode.decodeBuffer(datastr);
 		bstream = new ByteArrayInputStream(buffer);
 		ostream = new ObjectInputStream(bstream);
-
+		
 		allBAMFieldNames =
 		    (HashMap<String,Integer>)ostream.readObject();
 	    } catch (ClassNotFoundException e) {
 		throw new IOException(e);
 	    }
-
-	    //ostream.close();
-	    //bstream.close();
 	}
 
 	SAMRecordWritable samrecwrite = new SAMRecordWritable();
 	SAMRecord samrec = new SAMRecord(samfileheader_decoded);
-
-	//System.out.println("tuple size: "+f.size());
 
 	/*if(f.size() > 0 && DataType.findType(f.get(0)) == DataType.CHARARRAY) {
 	    samrec.setReadName((String)f.get(0));
@@ -323,97 +281,65 @@ public class BamUDFStorer extends StoreFunc {
 	    }*/
 
 	int index = getFieldIndex("name", allBAMFieldNames);
+
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    samrec.setReadName((String)f.get(index));
-	    //System.out.println("name: "+(String)f.get(index));
 	}
 
 	index = getFieldIndex("start", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setAlignmentStart(((Integer)f.get(index)).intValue());
-	    //System.out.println("start: "+((Integer)f.get(index)).intValue());
 	}
-
-	//index = getFieldIndex("end", allBAMFieldNames);
-	//System.out.println("end: "+((Integer)f.get(index)).intValue());
-	// TODO: check why setAlignmentEnd not supported
 
 	index = getFieldIndex("read", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    samrec.setReadString((String)f.get(index));
-	    //System.out.println("read: "+(String)f.get(index));
-	    
 	}
 
 	index = getFieldIndex("cigar", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    samrec.setCigarString((String)f.get(index));
-	    //System.out.println("cigar: "+(String)f.get(index));
 	}
 
 	index = getFieldIndex("basequal", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    samrec.setBaseQualityString((String)f.get(index));
-	    //System.out.println("basequal: "+(String)f.get(index));
 	}
 
 	index = getFieldIndex("flags", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setFlags(((Integer)f.get(index)).intValue());
-	    //System.out.println("flags: "+((Integer)f.get(index)).intValue());
 	}
 	
 	index = getFieldIndex("insertsize", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setInferredInsertSize(((Integer)f.get(index)).intValue());
-	    //System.out.println("inferredInsertSize: "+((Integer)f.get(index)).intValue());
 	}
 	
 	index = getFieldIndex("mapqual", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setMappingQuality(((Integer)f.get(index)).intValue());
-	    //System.out.println("mappingQuality: "+((Integer)f.get(index)).intValue());
 	}
 
 	index = getFieldIndex("matestart", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setMateAlignmentStart(((Integer)f.get(index)).intValue());
-	    //System.out.println("mateAlignmentStart: "+((Integer)f.get(index)).intValue());
 	}
 
 	index = getFieldIndex("indexbin", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setIndexingBin((Integer)f.get(index));
-	    //System.out.println("indexingBin: "+((Integer)f.get(index)).intValue());
 	}
 
 	index = getFieldIndex("materefindex", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setMateReferenceIndex(((Integer)f.get(index)).intValue());
-	    //System.out.println("mateReferenceIndex: "+((Integer)f.get(index)).intValue());
 	}
 
 	index = getFieldIndex("refindex", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setReferenceIndex(((Integer)f.get(index)).intValue());
-	    //System.out.println("referenceIndex: "+((Integer)f.get(index)).intValue());
 	}
-
-	//Iterator<Map.Entry<String,Integer> > it = selectedBAMAttributes.entrySet().iterator();
-	/*Set<Map.Entry<String, Integer>> set = selectedBAMAttributes.entrySet();
-
-	for (Map.Entry<String, Integer> pairs : set) {
-	
-	//while (it.hasNext()) {
-	    //Map.Entry<String,Integer> pairs =
-	    //	(Map.Entry<String,Integer>)it.next();
-	    //System.out.println(pairs.getKey() + " = " + pairs.getValue());
-	    index = pairs.getValue().intValue();
-	    String attribute = pairs.getKey();
-
-	    samrec.setAttribute(attribute.toUpperCase(), f.get(index));
-	    //System.out.println(attribute+": "+((String)f.get(index)));
-	    }*/
 
 	index = getFieldIndex("attributes", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.MAP) {
@@ -423,11 +349,7 @@ public class BamUDFStorer extends StoreFunc {
 		String attributeName = pairs.getKey();
 
 		samrec.setAttribute(attributeName.toUpperCase(), pairs.getValue());
-		//System.out.println("set attribute: "+attributeName+" ("+pairs.getValue().getClass().getName()+")");
 	    }
-
-	    //samrec.setReferenceIndex(((Integer)f.get(index)).intValue());
-	    //System.out.println("referenceIndex: "+((Integer)f.get(index)).intValue());
 	}
 	
 	samrec.hashCode(); // causes eagerDecode()

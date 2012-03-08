@@ -29,18 +29,10 @@ public class MATCHBC extends EvalFunc<Integer>
 {
     String[] barcodes = {"GCCAAT", "CAGATC", "ACAGTG"};
 
-    //private ArrayList<Object> mProtoTuple = null;
-    //private TupleFactory mTupleFactory = TupleFactory.getInstance();
-
     public Integer exec(Tuple input) throws IOException {
         if (input == null || input.size() == 0)
             return null;
         try{
-
-	    /*if (mProtoTuple == null) {
-                mProtoTuple = new ArrayList<Object>();
-            }*/
-
             String name = (String)input.get(0);
 	    String sequence = (String)input.get(1);
 	    String barcode = sequence.substring(sequence.length()-7,sequence.length()-1);
@@ -55,11 +47,6 @@ public class MATCHBC extends EvalFunc<Integer>
 		}
 	    }
 
-	    //mProtoTuple.add(new String());
-
-	    /*Tuple t =  mTupleFactory.newTupleNoCopy(mProtoTuple);
-            mProtoTuple = null;
-            return t;*/
             return new Integer(minindex);
 
         }catch(Exception e){

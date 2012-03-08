@@ -35,12 +35,10 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordReader; 
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-//import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.io.Text;
 
 import fi.tkk.ics.hadoop.bam.BAMInputFormat;
 import fi.tkk.ics.hadoop.bam.BAMRecordReader;
-//import fi.tkk.ics.hadoop.bam.SplittingBAMIndex;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
@@ -56,7 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
-//import net.sf.samtools.util.StringLineReader;
 import java.io.StringWriter;
 
 import it.crs4.seal.common.FastqInputFormat;
@@ -65,17 +62,12 @@ import it.crs4.seal.common.SequencedFragment;
 
 public class FastqUDFLoader extends LoadFunc {
     protected RecordReader in = null;
-    //private byte fieldDel = '\t';
     private ArrayList<Object> mProtoTuple = null;
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
-//	private boolean loadAttributes;
-    //private static final int BUFFER_SIZE = 1024;
 
     public FastqUDFLoader() {
-	//	loadAttributes = false;
-	//	System.out.println("BamUDFLoader: ignoring attributes");
-        Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-        p.setProperty("seal.fastq-input.base-quality-encoding", "illumina");
+        //Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
+        //p.setProperty("seal.fastq-input.base-quality-encoding", "illumina");
     }
 	
     @Override
@@ -93,14 +85,6 @@ public class FastqUDFLoader extends LoadFunc {
 	    Text fastqrec_name = ((FastqRecordReader)in).getCurrentKey();
             SequencedFragment fastqrec = ((FastqRecordReader)in).getCurrentValue();
 	    
-	    //String value = samrec.toString();
-            //byte[] buf = (new Text(value)).getBytes();
-            //int len = value.getLength();
-            //int start = 0;
-	    //if(value.length() == 0)
-	    //mProtoTuple.add(null);
-	    //else
-	    //mProtoTuple.add(new DataByteArray(buf, 0, value.length()));
 	    mProtoTuple.add(new String(fastqrec_name.toString()));
 	    mProtoTuple.add(new String(fastqrec.getSequence().toString()));
   	    mProtoTuple.add(new String(fastqrec.getQuality().toString()));

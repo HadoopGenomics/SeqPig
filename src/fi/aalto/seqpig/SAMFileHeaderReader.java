@@ -41,25 +41,21 @@ public final class SAMFileHeaderReader {
 	try {
 	    final SAMTextHeaderCodec codec = new SAMTextHeaderCodec();
 	    codec.setValidationStringency(ValidationStringency.SILENT);
-	    //SAMFileHeader header = codec.decode(new StringLineReader(samfileheader), "SAMFileHeader.clone");
 
 	    SAMFileHeader header = (new SAMFileReader(new FileInputStream(new File(args[0])))).getFileHeader();
-	    //final SAMTextHeaderCodec codec = new SAMTextHeaderCodec();
-	    //codec.setValidationStringency(ValidationStringency.SILENT);
 
 	    final StringWriter stringWriter = new StringWriter();
 	    codec.encode(stringWriter, header);
 
 	    BufferedWriter out = new BufferedWriter(new FileWriter(args[0]+".asciiheader"));
 	    String datastr = stringWriter.toString();
+
 	    out.write(datastr, 0, datastr.length());
 	    out.flush();
 	    out.close();
-
-	    //System.out.println(stringWriter.toString());
 	} catch(IOException e) {
 	    System.err.println(e.toString());
 	    throw e;
-	}
+        }
     }
 }

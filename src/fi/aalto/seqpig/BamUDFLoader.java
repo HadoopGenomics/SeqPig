@@ -61,27 +61,27 @@ public class BamUDFLoader extends LoadFunc {
     private boolean loadAttributes;
 
     public BamUDFLoader() {
+	loadAttributes = false;
+	System.out.println("BamUDFLoader: ignoring attributes");
+    }
+    
+	public BamUDFLoader(String loadAttributesStr) {
+	    if(loadAttributesStr.equals("yes"))
+		loadAttributes = true;
+	    else {
 		loadAttributes = false;
 		System.out.println("BamUDFLoader: ignoring attributes");
-    }
-	
-	public BamUDFLoader(String loadAttributesStr) {
-		if(loadAttributesStr.equals("yes"))
-			loadAttributes = true;
-		else {
-			loadAttributes = false;
-			System.out.println("BamUDFLoader: ignoring attributes");
-		}
-    }
-
+	    }
+	}
+    
     @Override
-    public Tuple getNext() throws IOException {
+	public Tuple getNext() throws IOException {
         try {
-
+	    
 	    if (mProtoTuple == null) {
 		mProtoTuple = new ArrayList<Object>();
 	    }
-
+	    
             boolean notDone = in.nextKeyValue();
             if (!notDone) {
                 return null;
@@ -102,62 +102,27 @@ public class BamUDFLoader extends LoadFunc {
 	    mProtoTuple.add(new Integer(samrec.getMateReferenceIndex()));
 	    mProtoTuple.add(new Integer(samrec.getReferenceIndex()));
 	    
-			if(loadAttributes) {
-				Map attributes = new HashMap<String, Object>();
-				
-				final List<SAMRecord.SAMTagAndValue> mySAMAttributes = samrec.getAttributes();
-				
-				for (final SAMRecord.SAMTagAndValue tagAndValue : mySAMAttributes) {
-					//if(skipAttributeTag((String)tagAndValue.tag))
-					//  continue;
-					
-					//System.out.println("attribute: "+tagAndValue.tag+" ("+tagAndValue.value.getClass().getName()+")");
-					
-					if(tagAndValue.value != null) {
-
-						//System.out.println("found tag name: "+tagAndValue.tag);
-
-						if(tagAndValue.value.getClass().getName().equals("java.lang.Character"))
-							attributes.put(tagAndValue.tag, tagAndValue.value.toString());
-						else
-							attributes.put(tagAndValue.tag, tagAndValue.value);
-					}
-					
-					/*if(tagAndValue.value.getClass().getName().equals("java.lang.String"))
-					 //System.out.println("WARNING: TAG: "+((String)tagAndValue.tag)+" has non-String value!");
-					 //else
-					 //mProtoTuple.add(new String((String)tagAndValue.value));
-					 attributes.put(tagAndValue.tag, (String)tagAndValue.value);
-					 else {
-					 if(tagAndValue.value.getClass().getName().equals("java.lang.Integer"))
-					 //mProtoTuple.add(new Integer((Integer)tagAndValue.value));
-					 attributes.put(tagAndValue.tag, (Integer)tagAndValue.value);
-					 //else System.out.println("WARNING: TAG: "+((String)tagAndValue.tag)+" has non-String/Integer value!");
-					 else
-					 attributes.put(tagAndValue.tag, tagAndValue.value);
-					 }*/
-				}
-				
-				mProtoTuple.add(attributes);
-			}
-				
-	    //final SAMReadGroupRecord rg = samrec.getReadGroup();
-	    //mProtoTuple.add(new String(rg.getId()));
-
-	    //System.out.println("TTT cig: "+samrec.getCigarString());	    
-	    //System.out.println("TTT qual: "+samrec.getBaseQualityString());
-
-	    // adapted from SAMFileHeader.clone()
-	    /*final SAMTextHeaderCodec codec = new SAMTextHeaderCodec();
-	    codec.setValidationStringency(ValidationStringency.SILENT);
-	    final StringWriter stringWriter = new StringWriter();
-	    codec.encode(stringWriter, samrec.getHeader());
-
-	    mProtoTuple.add(new Integer(stringWriter.toString().length()));
-	    mProtoTuple.add(new String(stringWriter.toString()));*/
-
-	    //return codec.decode(new StringLineReader(stringWriter.toString()), "SAMFileHeader.clone");
-
+	    if(loadAttributes) {
+		Map attributes = new HashMap<String, Object>();
+		
+		final List<SAMRecord.SAMTagAndValue> mySAMAttributes = samrec.getAttributes();
+		
+		for (final SAMRecord.SAMTagAndValue tagAndValue : mySAMAttributes) {
+		    
+		    if(tagAndValue.value != null) {
+			
+			//System.out.println("found tag name: "+tagAndValue.tag);
+			
+			if(tagAndValue.value.getClass().getName().equals("java.lang.Character"))
+			    attributes.put(tagAndValue.tag, tagAndValue.value.toString());
+			else
+			    attributes.put(tagAndValue.tag, tagAndValue.value);
+		    }
+		}
+		
+		mProtoTuple.add(attributes);
+	    }
+	    
             Tuple t =  mTupleFactory.newTupleNoCopy(mProtoTuple);
             mProtoTuple = null;
             return t;
@@ -165,11 +130,11 @@ public class BamUDFLoader extends LoadFunc {
             int errCode = 6018;
             String errMsg = "Error while reading input";
             throw new ExecException(errMsg, errCode,
-                    PigException.REMOTE_ENVIRONMENT, e);
+				    PigException.REMOTE_ENVIRONMENT, e);
         }
-
+	
     }
-
+    
     private boolean skipAttributeTag(String tag) {
 	return (tag.equalsIgnoreCase("AM")
 		|| tag.equalsIgnoreCase("NM")
