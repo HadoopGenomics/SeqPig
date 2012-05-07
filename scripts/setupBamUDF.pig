@@ -1,3 +1,4 @@
-REGISTER /home/hadoop/pig-0.9.2/bamudf/build/jar/BamUDF.jar ;
-REGISTER /home/hadoop/pig-0.9.2/bamudf/lib3.3/sam-1.56.jar ;
-REGISTER /home/hadoop/pig-0.9.2/bamudf/lib3.3/hadoop-bam-3.3.jar ;
+REGISTER lib/hadoop-bam-4.0.jar ;
+REGISTER lib/picard-1.56.jar ;
+REGISTER lib/sam-1.56.jar ;
+REGISTER build/jar/SeqPig.jar ;
