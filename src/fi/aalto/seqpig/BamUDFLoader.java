@@ -101,6 +101,7 @@ public class BamUDFLoader extends LoadFunc {
 	    mProtoTuple.add(new Integer(samrec.getIndexingBin()));
 	    mProtoTuple.add(new Integer(samrec.getMateReferenceIndex()));
 	    mProtoTuple.add(new Integer(samrec.getReferenceIndex()));
+	    mProtoTuple.add(new String(samrec.getReferenceName()));
 	    
 	    if(loadAttributes) {
 		Map attributes = new HashMap<String, Object>();
