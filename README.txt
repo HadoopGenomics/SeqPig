@@ -1,6 +1,12 @@
 SeqPig is a library of import and export functions for file formats commonly
 used in bioinformatics for Apache Pig.
 
+For more examples see also the wiki of two past COST hackathons:
+
+http://seqahead.cs.tu-dortmund.de/meetings:fastqpigscripting
+http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:pileuptask
+http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:seqpig_life_savers_page
+
 To run the example do the following:
 
 A1. Set HADOOP_HOME and PIG_HOME to the installation directories of
