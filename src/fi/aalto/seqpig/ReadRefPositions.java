@@ -1,4 +1,4 @@
-package udf_refcoord;
+package fi.aalto.seqpig;
 
 import java.io.IOException;
 import org.apache.pig.data.BagFactory;
@@ -16,7 +16,7 @@ import it.crs4.seal.common.WritableMapping;
 import java.util.ArrayList;
 
 
-public class RefPositions extends EvalFunc<DataBag>
+public class ReadRefPositions extends EvalFunc<DataBag>
 {
 	private WritableMapping mapping = new WritableMapping();
 	private ArrayList<Integer> refPositions = new ArrayList(150);
