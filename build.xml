@@ -1,6 +1,10 @@
 
 <project name="SeqPig" basedir="." default="main">
-  
+ 
+  <assertions>
+  	<enable package="fi.aalto.seqpig"/>
+  </assertions>
+ 
   <property environment="env"/> 
 
   <property name="src.dir"     value="src"/>

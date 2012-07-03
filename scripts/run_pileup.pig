@@ -1,5 +1,6 @@
 A = load 'input.bam' using fi.aalto.seqpig.BamUDFLoader('no') AS (name:chararray, start:int, end:int, read:chararray, cigar:chararray, basequal:chararray, flags:int, insertsize:int, mapqual:int, matestart:int, indexbin:int, materefindex:int, refindex:int, refname:chararray);
-A = FILTER A BY (flags/1024)%2==0;
+A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
+A = FILTER A BY (flags/4)%2==0;
 RefPos = FOREACH A GENERATE fi.aalto.seqpig.ReadRefPositions(read, flags, refname, start, cigar), mapqual;
 flatset = FOREACH RefPos GENERATE flatten($0), mapqual;
 grouped = GROUP flatset BY ($0, $1, $2) PARALLEL 1;
