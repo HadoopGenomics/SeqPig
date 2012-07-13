@@ -1,14 +1,27 @@
-
 #!/bin/bash
+
+if [ "$HADOOP" = "" ]; then
+	HADOOP="$HADOOP_HOME/bin/hadoop"
+fi
+
+if [ "$SEQPIG_HOME" = "" ]; then
+	SEQPIG_HOME=`dirname $0`
+	SEQPIG_HOME="${SEQPIG_HOME}/../"
+fi
+
+if [ "$CLASSPATH" = "" ]; then
+	CLASSPATH="${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/s
+am-1.56.jar:${SEQPIG_HOME}/lib/hadoop-bam-4.0.jar"
+fi
 
 if [ -e "$1" ]
 then
 	bamfilename=`basename $1`
-	hadoop fs -put $1 ${bamfilename}
+	${HADOOP} fs -put $1 ${bamfilename}
 
-	java -classpath build/jar/SeqPig.jar:lib/sam-1.56.jar:lib/hadoop-bam-4.0.jar fi.aalto.seqpig.SAMFileHeaderReader $1
+	$JAVA_HOME/bin/java -classpath $CLASSPATH fi.aalto.seqpig.SAMFileHeaderReader $1
 
-	hadoop fs -put ${1}.asciiheader ${bamfilename}.asciiheader
+	${HADOOP} fs -put ${1}.asciiheader ${bamfilename}.asciiheader
 else
 	echo "error: input file $1 does not exist"
 fi
