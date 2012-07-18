@@ -37,17 +37,6 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.io.Text;
 
-import fi.tkk.ics.hadoop.bam.BAMInputFormat;
-import fi.tkk.ics.hadoop.bam.BAMRecordReader;
-import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
-import fi.tkk.ics.hadoop.bam.FileVirtualSplit;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMReadGroupRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMProgramRecord;
-
-import net.sf.samtools.SAMFileReader.ValidationStringency;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,32 +49,62 @@ import fi.tkk.ics.hadoop.bam.FastqInputFormat;
 import fi.tkk.ics.hadoop.bam.FastqInputFormat.FastqRecordReader;
 import fi.tkk.ics.hadoop.bam.SequencedFragment;
 
-public class FastqUDFLoader extends LoadFunc {
+public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
     protected RecordReader in = null;
     private ArrayList<Object> mProtoTuple = null;
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
 
-    public FastqUDFLoader() {
-        //Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-        //p.setProperty("seal.fastq-input.base-quality-encoding", "illumina");
-    }
-	
+    // tuple format:
+    //
+    //   instrument:string
+    //   run_number:int
+    //   flow_cell_id: string
+    //   lane: int
+    //   tile: int
+    //   xpos: int
+    //   ypos: int
+    //   read: int
+    //   filter: string
+    //   control_number: int
+    //   index_sequence: string
+    //   sequence: string
+    //   quality: string (note: we assume that encoding chosen on command line!!!)
+    
+    public FastqUDFLoader() {}
+
     @Override
     public Tuple getNext() throws IOException {
         try {
-
+	    
 	    if (mProtoTuple == null) {
 		mProtoTuple = new ArrayList<Object>();
 	    }
-
+	    
             boolean notDone = in.nextKeyValue();
             if (!notDone) {
                 return null;
             }
-	    Text fastqrec_name = ((FastqRecordReader)in).getCurrentKey();
+
+	    //Text fastqrec_name = ((FastqRecordReader)in).getCurrentKey();
             SequencedFragment fastqrec = ((FastqRecordReader)in).getCurrentValue();
 	    
-	    mProtoTuple.add(new String(fastqrec_name.toString()));
+	    //mProtoTuple.add(new String(fastqrec_name.toString()));
+	    mProtoTuple.add(new String(fastqrec.getInstrument()));
+	    mProtoTuple.add(new Integer(fastqrec.getRunNumber()));
+	    mProtoTuple.add(new String(fastqrec.getFlowcellId()));
+	    mProtoTuple.add(new Integer(fastqrec.getLane()));
+	    mProtoTuple.add(new Integer(fastqrec.getTile()));
+	    mProtoTuple.add(new Integer(fastqrec.getXpos()));
+	    mProtoTuple.add(new Integer(fastqrec.getYpos()));
+	    mProtoTuple.add(new Integer(fastqrec.getRead()));
+	    
+	    if(fastqrec.getFilterPassed().booleanValue())
+		mProtoTuple.add(new String("N"));
+	    else
+		mProtoTuple.add(new String("?"));
+
+	    mProtoTuple.add(new Integer(fastqrec.getControlNumber()));
+	    mProtoTuple.add(new String(fastqrec.getIndexSequence()));
 	    mProtoTuple.add(new String(fastqrec.getSequence().toString()));
   	    mProtoTuple.add(new String(fastqrec.getQuality().toString()));
 
@@ -96,7 +115,7 @@ public class FastqUDFLoader extends LoadFunc {
             int errCode = 6018;
             String errMsg = "Error while reading input";
             throw new ExecException(errMsg, errCode,
-                    PigException.REMOTE_ENVIRONMENT, e);
+				    PigException.REMOTE_ENVIRONMENT, e);
         }
 
     }
@@ -113,7 +132,27 @@ public class FastqUDFLoader extends LoadFunc {
 
     @Override
     public void setLocation(String location, Job job)
-            throws IOException {
+	throws IOException {
         FileInputFormat.setInputPaths(job, location);
     }
+
+    @Override
+    public ResourceSchema getSchema(String location, Job job) throws IOException {
+       
+	ResourceSchema s = new ResourceSchema();
+	s.add(new ResourceSchema.ResourceFieldSchema("instrument", DataType.STRING));
+    //   run_number:int
+    //   flow_cell_id: string
+    //   lane: int
+    //   tile: int
+    //   xpos: int
+    //   ypos: int
+    //   read: int
+    //   filter: string
+    //   control_number: int
+    //   index_sequence: string
+    //   sequence: string
+    //   quality: string
+
+    return s;
 }
