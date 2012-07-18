@@ -3,7 +3,7 @@ REGISTER lib/picard-1.56.jar ;
 REGISTER lib/sam-1.56.jar ;
 REGISTER lib/seal.jar ;
 REGISTER build/jar/SeqPig.jar ;
-A = load 'input.bam' using fi.aalto.seqpig.BamUDFLoader('no') AS (name:chararray, start:int, end:int, read:chararray, cigar:chararray, basequal:chararray, flags:int, insertsize:int, mapqual:int, matestart:int, indexbin:int, materefindex:int, refindex:int, refname:chararray);
+A = load 'example.bam' using fi.aalto.seqpig.BamUDFLoader('yes') AS (name:chararray, start:int, end:int, read:chararray, cigar:chararray, basequal:chararray, flags:int, insertsize:int, mapqual:int, matestart:int, indexbin:int, materefindex:int, refindex:int, refname:chararray);
 A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
 A = FILTER A BY (flags/4)%2==0;
 A = SAMPLE A $samplevar;

@@ -28,6 +28,7 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigTextInputFormat;
+//import org.apache.pig.builtin.TOMAP;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -105,6 +106,7 @@ public class BamUDFLoader extends LoadFunc {
 	    
 	    if(loadAttributes) {
 		Map attributes = new HashMap<String, Object>();
+		//ArrayList<String> mapProtoTuple = new ArrayList<String>();
 		
 		final List<SAMRecord.SAMTagAndValue> mySAMAttributes = samrec.getAttributes();
 		
@@ -114,14 +116,22 @@ public class BamUDFLoader extends LoadFunc {
 			
 			//System.out.println("found tag name: "+tagAndValue.tag);
 			
+			//mapProtoTuple.add((String)tagAndValue.tag);
+
 			if(tagAndValue.value.getClass().getName().equals("java.lang.Character"))
-			    attributes.put(tagAndValue.tag, tagAndValue.value.toString());
+			  //mapProtoTuple.add(tagAndValue.value.toString());
+			  attributes.put(tagAndValue.tag, tagAndValue.value.toString());
 			else
-			    attributes.put(tagAndValue.tag, tagAndValue.value);
+			   //if(tagAndValue.value.getClass().getName().equals("java.lang.String"))
+			   	//mapProtoTuple.add((String)tagAndValue.value);
+			   attributes.put(tagAndValue.tag, tagAndValue.value);
+			   //attributes.put(tagAndValue.tag, tagAndValue.value.toString().getBytes());
 		    }
 		}
 		
 		mProtoTuple.add(attributes);
+		//TOMAP tomap = new TOMAP();
+		//mProtoTuple.add(tomap.exec(mTupleFactory.newTupleNoCopy(mapProtoTuple)));
 	    }
 	    
             Tuple t =  mTupleFactory.newTupleNoCopy(mProtoTuple);

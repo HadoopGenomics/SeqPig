@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$1" ]
+then
+        echo "error: usage $0 <bam_inputfile>"
+	exit 0
+fi
+
 if [ "$HADOOP" = "" ]; then
 	HADOOP="$HADOOP_HOME/bin/hadoop"
 fi
@@ -10,8 +16,7 @@ if [ "$SEQPIG_HOME" = "" ]; then
 fi
 
 if [ "$CLASSPATH" = "" ]; then
-	CLASSPATH="${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/s
-am-1.56.jar:${SEQPIG_HOME}/lib/hadoop-bam-4.0.jar"
+	CLASSPATH="${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/sam-1.56.jar:${SEQPIG_HOME}/lib/hadoop-bam-4.0.jar"
 fi
 
 if [ -e "$1" ]

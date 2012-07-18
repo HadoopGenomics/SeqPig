@@ -29,6 +29,7 @@ public class ReadRefPositions extends EvalFunc<DataBag>
 	//   chr
 	//   position
 	//   cigar
+	//   base qualities
 	private void loadTuple(Tuple tpl) throws org.apache.pig.backend.executionengine.ExecException
 	{
 		mapping.clear();
@@ -55,15 +56,18 @@ public class ReadRefPositions extends EvalFunc<DataBag>
 			loadTuple(input);
 			mapping.calculateReferenceCoordinates(refPositions);
 			String seq = mapping.getSequenceString();
+			String basequal = (String)input.get(5);
+
 			for (int i = 0; i < seq.length(); ++i)
 			{
 				int pos = refPositions.get(i);
 				if (pos >= 0)
 				{
-					Tuple tpl = TupleFactory.getInstance().newTuple(3);
+					Tuple tpl = TupleFactory.getInstance().newTuple(4);
 					tpl.set(0, mapping.getContig());
 					tpl.set(1, pos);
 					tpl.set(2, seq.substring(i, i+1));
+					tpl.set(3, basequal.substring(i, i+1));
 					output.add(tpl);
 				}
 			}
@@ -81,6 +85,7 @@ public class ReadRefPositions extends EvalFunc<DataBag>
 			bagSchema.add(new Schema.FieldSchema("chr", DataType.CHARARRAY));
 			bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
 			bagSchema.add(new Schema.FieldSchema("base", DataType.CHARARRAY));
+			bagSchema.add(new Schema.FieldSchema("basequal", DataType.CHARARRAY));
 
 			return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
 		}catch (Exception e){
