@@ -29,6 +29,13 @@ import org.apache.pig.PigException;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigTextInputFormat;
 import org.apache.pig.impl.util.UDFContext;
+import org.apache.pig.ResourceSchema;
+import org.apache.pig.ResourceSchema.ResourceFieldSchema;
+import org.apache.pig.ResourceStatistics;
+import org.apache.pig.LoadMetadata;
+import org.apache.pig.data.DataType;
+import org.apache.pig.Expression;
+import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -38,11 +45,12 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.ArrayList;
 import java.io.StringWriter;
 
 import fi.tkk.ics.hadoop.bam.FastqInputFormat;
@@ -85,10 +93,27 @@ public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
                 return null;
             }
 
-	    //Text fastqrec_name = ((FastqRecordReader)in).getCurrentKey();
+	    Text fastqrec_name = ((FastqRecordReader)in).getCurrentKey();
             SequencedFragment fastqrec = ((FastqRecordReader)in).getCurrentValue();
-	    
+	   
+	    //System.out.println("got: " + fastqrec.toString() + "\n"+"key: "+fastqrec_name.toString());
+ 
 	    //mProtoTuple.add(new String(fastqrec_name.toString()));
+	    
+	    if(fastqrec.getInstrument() == null || fastqrec.getRunNumber() == null || fastqrec.getFlowcellId() == null ||
+		fastqrec.getLane() == null || fastqrec.getTile() == null || fastqrec.getXpos() == null ||
+		fastqrec.getYpos() == null || fastqrec.getRead() == null || fastqrec.getFilterPassed() == null ||
+		fastqrec.getControlNumber() == null || fastqrec.getIndexSequence() == null || fastqrec.getSequence() == null ||
+		fastqrec.getQuality() == null) {
+
+		InterruptedException e = new InterruptedException();
+		int errCode = 6018;
+                String errMsg = "Error while reading Fastq input: check data format! (Casava 1.8?)";
+                throw new ExecException(errMsg, errCode,
+                                    PigException.REMOTE_ENVIRONMENT, e);
+
+	    }
+
 	    mProtoTuple.add(new String(fastqrec.getInstrument()));
 	    mProtoTuple.add(new Integer(fastqrec.getRunNumber()));
 	    mProtoTuple.add(new String(fastqrec.getFlowcellId()));
@@ -113,7 +138,7 @@ public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
             return t;
         } catch (InterruptedException e) {
             int errCode = 6018;
-            String errMsg = "Error while reading input";
+            String errMsg = "Error while reading Fastq input: check data format! (Casava 1.8?)";
             throw new ExecException(errMsg, errCode,
 				    PigException.REMOTE_ENVIRONMENT, e);
         }
@@ -139,20 +164,30 @@ public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
     @Override
     public ResourceSchema getSchema(String location, Job job) throws IOException {
        
-	ResourceSchema s = new ResourceSchema();
-	s.add(new ResourceSchema.ResourceFieldSchema("instrument", DataType.STRING));
-    //   run_number:int
-    //   flow_cell_id: string
-    //   lane: int
-    //   tile: int
-    //   xpos: int
-    //   ypos: int
-    //   read: int
-    //   filter: string
-    //   control_number: int
-    //   index_sequence: string
-    //   sequence: string
-    //   quality: string
+	Schema s = new Schema();
+	s.add(new Schema.FieldSchema("instrument", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("run_number", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("flow_cell_id", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("lane", DataType.INTEGER));	
+	s.add(new Schema.FieldSchema("tile", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("xpos", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("ypos", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("read", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("filter", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("control_number", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("index_sequence", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("sequence", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("quality", DataType.CHARARRAY));
 
-    return s;
+        return new ResourceSchema(s);
+    }
+
+    @Override
+    public String[] getPartitionKeys(String location, Job job) throws IOException { return null; }
+
+    @Override
+    public void setPartitionFilter(Expression partitionFilter) throws IOException { }
+
+    @Override
+    public ResourceStatistics getStatistics(String location, Job job) throws IOException { return null; }
 }

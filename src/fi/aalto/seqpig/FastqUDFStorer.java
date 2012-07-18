@@ -38,6 +38,7 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordWriter; 
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,6 +59,9 @@ import java.net.URI;
 import fi.tkk.ics.hadoop.bam.FastqOutputFormat;
 import fi.tkk.ics.hadoop.bam.FastqOutputFormat.FastqRecordWriter;
 import fi.tkk.ics.hadoop.bam.SequencedFragment;
+
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
 public class FastqUDFStorer extends StoreFunc {
     protected RecordWriter writer = null;
@@ -88,7 +92,7 @@ public class FastqUDFStorer extends StoreFunc {
 	    try {
 		BASE64Decoder decode = new BASE64Decoder();
 		Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-		String datastr = p.getProperty("allBAMFieldNames");
+		String datastr = p.getProperty("allFastqFieldNames");
 		byte[] buffer = decode.decodeBuffer(datastr);
 		ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
 		ObjectInputStream ostream = new ObjectInputStream(bstream);
@@ -160,12 +164,12 @@ public class FastqUDFStorer extends StoreFunc {
 
 	index = getFieldIndex("sequence", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
-	    fastqrec.setSequence((String)f.get(index));
+	    fastqrec.setSequence(new Text((String)f.get(index)));
 	}
 
 	index = getFieldIndex("quality", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
-	    fastqrec.setQuality((String)f.get(index));
+	    fastqrec.setQuality(new Text((String)f.get(index)));
 	}
 
 	try {
