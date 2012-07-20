@@ -70,8 +70,7 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.URI;
 
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
+import org.apache.commons.codec.binary.Base64;
 
 public class BamUDFStorer extends StoreFunc {
     protected RecordWriter writer = null;
@@ -131,14 +130,16 @@ public class BamUDFStorer extends StoreFunc {
 	}
 
 	try {
-	    BASE64Encoder encode = new BASE64Encoder();
+	    //BASE64Encoder encode = new BASE64Encoder();
+	    Base64 codec = new Base64();
 	    Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 	    
 	    ByteArrayOutputStream bstream = new ByteArrayOutputStream();
 	    ObjectOutputStream ostream = new ObjectOutputStream(bstream);
 	    ostream.writeObject(this.samfileheader);
 	    ostream.close();
-	    String datastr = encode.encode(bstream.toByteArray());
+	    //String datastr = encode.encode(bstream.toByteArray());
+	    String datastr = codec.encodeBase64String(bstream.toByteArray());
 	    p.setProperty("samfileheader", datastr);
 	} catch (Exception e) {
 	    //throw new IOException(e);
@@ -150,12 +151,14 @@ public class BamUDFStorer extends StoreFunc {
 
     protected void decodeSAMFileHeader(){
 	try {
-            BASE64Decoder decode = new BASE64Decoder();
+            //BASE64Decoder decode = new BASE64Decoder();
+            Base64 codec = new Base64();
             Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
             String datastr;
 
             datastr = p.getProperty("samfileheader");
-            byte[] buffer = decode.decodeBuffer(datastr);
+            //byte[] buffer = decode.decodeBuffer(datastr);
+            byte[] buffer = codec.decodeBase64(datastr);
             ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
             ObjectInputStream ostream = new ObjectInputStream(bstream);
 
@@ -171,12 +174,14 @@ public class BamUDFStorer extends StoreFunc {
 
 	if(selectedBAMAttributes == null || allBAMFieldNames == null) {
 	    try {
-		BASE64Decoder decode = new BASE64Decoder();
+		//BASE64Decoder decode = new BASE64Decoder();
+		Base64 codec = new Base64();
 		Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 		String datastr;
 	
 		datastr = p.getProperty("selectedBAMAttributes");
-		byte[] buffer = decode.decodeBuffer(datastr);
+		//byte[] buffer = decode.decodeBuffer(datastr);
+		byte[] buffer = codec.decodeBase64(datastr);
 		ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
 		ObjectInputStream ostream = new ObjectInputStream(bstream);
 		
@@ -184,7 +189,8 @@ public class BamUDFStorer extends StoreFunc {
 		    (HashMap<String,Integer>)ostream.readObject();
 
 		datastr = p.getProperty("allBAMFieldNames");
-		buffer = decode.decodeBuffer(datastr);
+		//buffer = decode.decodeBuffer(datastr);
+		buffer = codec.decodeBase64(datastr);
 		bstream = new ByteArrayInputStream(buffer);
 		ostream = new ObjectInputStream(bstream);
 		
@@ -434,7 +440,8 @@ public class BamUDFStorer extends StoreFunc {
 	      && allBAMFieldNames.containsKey("refindex")))
 	    throw new IOException("Error: Incorrect BAM tuple-field name or compulsory field missing");
 
-	BASE64Encoder encode = new BASE64Encoder();
+	//BASE64Encoder encode = new BASE64Encoder();
+	Base64 codec = new Base64();
 	Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 	String datastr;
 	//p.setProperty("someproperty", "value");
@@ -443,14 +450,16 @@ public class BamUDFStorer extends StoreFunc {
 	ObjectOutputStream ostream = new ObjectOutputStream(bstream);
 	ostream.writeObject(selectedBAMAttributes);
 	ostream.close();
-	datastr = encode.encode(bstream.toByteArray());
+	//datastr = encode.encode(bstream.toByteArray());
+	datastr = codec.encodeBase64String(bstream.toByteArray());
 	p.setProperty("selectedBAMAttributes", datastr); //new String(bstream.toByteArray(), "UTF8"));
 
 	bstream = new ByteArrayOutputStream();
 	ostream = new ObjectOutputStream(bstream);
 	ostream.writeObject(allBAMFieldNames);
 	ostream.close();
-	datastr = encode.encode(bstream.toByteArray());
+	//datastr = encode.encode(bstream.toByteArray());
+	datastr = codec.encodeBase64String(bstream.toByteArray());
 	p.setProperty("allBAMFieldNames", datastr); //new String(bstream.toByteArray(), "UTF8"));
     }
 

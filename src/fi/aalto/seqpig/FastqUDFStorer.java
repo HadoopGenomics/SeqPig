@@ -60,8 +60,7 @@ import fi.tkk.ics.hadoop.bam.FastqOutputFormat;
 import fi.tkk.ics.hadoop.bam.FastqOutputFormat.FastqRecordWriter;
 import fi.tkk.ics.hadoop.bam.SequencedFragment;
 
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
+import org.apache.commons.codec.binary.Base64;
 
 public class FastqUDFStorer extends StoreFunc {
     protected RecordWriter writer = null;
@@ -90,10 +89,12 @@ public class FastqUDFStorer extends StoreFunc {
 
 	if(allFastqFieldNames == null) {
 	    try {
-		BASE64Decoder decode = new BASE64Decoder();
+		//BASE64Decoder decode = new BASE64Decoder();
+		Base64 codec = new Base64();
 		Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 		String datastr = p.getProperty("allFastqFieldNames");
-		byte[] buffer = decode.decodeBuffer(datastr);
+		//byte[] buffer = decode.decodeBuffer(datastr);
+		byte[] buffer = codec.decodeBase64(datastr);
 		ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
 		ObjectInputStream ostream = new ObjectInputStream(bstream);
 		
@@ -214,7 +215,8 @@ public class FastqUDFStorer extends StoreFunc {
 	      && allFastqFieldNames.containsKey("quality")))
 	    throw new IOException("Error: Incorrect Fastq tuple-field name or compulsory field missing");
 
-	BASE64Encoder encode = new BASE64Encoder();
+	//BASE64Encoder encode = new BASE64Encoder();
+	Base64 codec = new Base64();
 	Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 	String datastr;
 	//p.setProperty("someproperty", "value");
@@ -223,7 +225,8 @@ public class FastqUDFStorer extends StoreFunc {
 	ObjectOutputStream ostream = new ObjectOutputStream(bstream);
 	ostream.writeObject(allFastqFieldNames);
 	ostream.close();
-	datastr = encode.encode(bstream.toByteArray());
+	//datastr = encode.encode(bstream.toByteArray());
+	datastr = codec.encodeBase64String(bstream.toByteArray());
 	p.setProperty("allFastqFieldNames", datastr); //new String(bstream.toByteArray(), "UTF8"));
     }
 
