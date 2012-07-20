@@ -200,7 +200,7 @@ public class FastqUDFStorer extends StoreFunc {
 	    allFastqFieldNames.put(fieldNames[i], new Integer(i));
 	}
 
-	if(!( allFastqFieldNames.containsKey("instrument")
+	if(!( /*allFastqFieldNames.containsKey("instrument")
 	      && allFastqFieldNames.containsKey("run_number")
 	      && allFastqFieldNames.containsKey("flow_cell_id")
 	      && allFastqFieldNames.containsKey("lane")
@@ -210,8 +210,8 @@ public class FastqUDFStorer extends StoreFunc {
 	      && allFastqFieldNames.containsKey("read")
 	      && allFastqFieldNames.containsKey("filter")
 	      && allFastqFieldNames.containsKey("control_number")
-	      && allFastqFieldNames.containsKey("index_sequence")
-	      && allFastqFieldNames.containsKey("sequence")
+	      && allFastqFieldNames.containsKey("index_sequence")*/
+	      allFastqFieldNames.containsKey("sequence")
 	      && allFastqFieldNames.containsKey("quality")))
 	    throw new IOException("Error: Incorrect Fastq tuple-field name or compulsory field missing");
 
