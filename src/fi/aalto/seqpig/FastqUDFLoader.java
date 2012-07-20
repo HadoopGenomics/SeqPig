@@ -96,42 +96,26 @@ public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
 	    Text fastqrec_name = ((FastqRecordReader)in).getCurrentKey();
             SequencedFragment fastqrec = ((FastqRecordReader)in).getCurrentValue();
 	   
-	    //System.out.println("got: " + fastqrec.toString() + "\n"+"key: "+fastqrec_name.toString());
- 
 	    //mProtoTuple.add(new String(fastqrec_name.toString()));
 	    
-	    if(fastqrec.getInstrument() == null || fastqrec.getRunNumber() == null || fastqrec.getFlowcellId() == null ||
-		fastqrec.getLane() == null || fastqrec.getTile() == null || fastqrec.getXpos() == null ||
-		fastqrec.getYpos() == null || fastqrec.getRead() == null || fastqrec.getFilterPassed() == null ||
-		fastqrec.getControlNumber() == null || fastqrec.getIndexSequence() == null || fastqrec.getSequence() == null ||
-		fastqrec.getQuality() == null) {
-
-		InterruptedException e = new InterruptedException();
-		int errCode = 6018;
-                String errMsg = "Error while reading Fastq input: check data format! (Casava 1.8?)";
-                throw new ExecException(errMsg, errCode,
-                                    PigException.REMOTE_ENVIRONMENT, e);
-
-	    }
-
-	    mProtoTuple.add(new String(fastqrec.getInstrument()));
-	    mProtoTuple.add(new Integer(fastqrec.getRunNumber()));
-	    mProtoTuple.add(new String(fastqrec.getFlowcellId()));
-	    mProtoTuple.add(new Integer(fastqrec.getLane()));
-	    mProtoTuple.add(new Integer(fastqrec.getTile()));
-	    mProtoTuple.add(new Integer(fastqrec.getXpos()));
-	    mProtoTuple.add(new Integer(fastqrec.getYpos()));
-	    mProtoTuple.add(new Integer(fastqrec.getRead()));
+	    mProtoTuple.add(fastqrec.getInstrument());
+	    mProtoTuple.add(fastqrec.getRunNumber());
+	    mProtoTuple.add(fastqrec.getFlowcellId());
+	    mProtoTuple.add(fastqrec.getLane());
+	    mProtoTuple.add(fastqrec.getTile());
+	    mProtoTuple.add(fastqrec.getXpos());
+	    mProtoTuple.add(fastqrec.getYpos());
+	    mProtoTuple.add(fastqrec.getRead());
 	    
-	    if(fastqrec.getFilterPassed().booleanValue())
+	    if(fastqrec.getFilterPassed() != null && fastqrec.getFilterPassed().booleanValue())
 		mProtoTuple.add(new String("N"));
 	    else
 		mProtoTuple.add(new String("?"));
 
-	    mProtoTuple.add(new Integer(fastqrec.getControlNumber()));
-	    mProtoTuple.add(new String(fastqrec.getIndexSequence()));
-	    mProtoTuple.add(new String(fastqrec.getSequence().toString()));
-  	    mProtoTuple.add(new String(fastqrec.getQuality().toString()));
+	    mProtoTuple.add(fastqrec.getControlNumber());
+	    mProtoTuple.add(fastqrec.getIndexSequence());
+	    mProtoTuple.add(fastqrec.getSequence().toString());
+  	    mProtoTuple.add(fastqrec.getQuality().toString());
 
             Tuple t =  mTupleFactory.newTupleNoCopy(mProtoTuple);
             mProtoTuple = null;
