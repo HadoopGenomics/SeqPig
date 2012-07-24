@@ -76,7 +76,7 @@ public class FastqUDFStorer extends StoreFunc {
     //   xpos: int
     //   ypos: int
     //   read: int
-    //   filter: string
+    //   qc_passed (a.k.a. filter): boolean
     //   control_number: int
     //   index_sequence: string
     //   sequence: string
@@ -148,9 +148,9 @@ public class FastqUDFStorer extends StoreFunc {
 	    fastqrec.setRead(((Integer)f.get(index)).intValue());
 	}
 
-	index = getFieldIndex("filter", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
-	    fastqrec.setFilterPassed(((String)f.get(index)).equals("N"));
+	index = getFieldIndex("qc_passed", allFastqFieldNames);
+ 	if(index > -1 && DataType.findType(f.get(index)) == DataType.BOOLEAN) {
+ 	    fastqrec.setFilterPassed(((Boolean)f.get(index)));
 	}
 
 	index = getFieldIndex("control_number", allFastqFieldNames);
