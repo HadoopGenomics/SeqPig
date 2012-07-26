@@ -21,6 +21,7 @@
 package fi.aalto.seqpig;
 
 import org.apache.pig.LoadFunc;
+import org.apache.pig.LoadMetadata;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.data.Tuple; 
 import org.apache.pig.data.DataByteArray;
@@ -28,6 +29,12 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.PigException;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigTextInputFormat;
+import org.apache.pig.ResourceSchema;
+import org.apache.pig.ResourceSchema.ResourceFieldSchema;
+import org.apache.pig.ResourceStatistics;
+import org.apache.pig.data.DataType;
+import org.apache.pig.Expression;
+import org.apache.pig.impl.logicalLayer.schema.Schema;
 //import org.apache.pig.builtin.TOMAP;
 
 import org.apache.hadoop.fs.Path;
@@ -55,7 +62,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.io.StringWriter;
 
-public class BamUDFLoader extends LoadFunc {
+public class BamUDFLoader extends LoadFunc implements LoadMetadata {
     protected RecordReader in = null;
     private ArrayList<Object> mProtoTuple = null;
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
@@ -174,4 +181,35 @@ public class BamUDFLoader extends LoadFunc {
             throws IOException {
         FileInputFormat.setInputPaths(job, location);
     }
+
+    @Override
+    public ResourceSchema getSchema(String location, Job job) throws IOException {
+
+        Schema s = new Schema();
+	s.add(new Schema.FieldSchema("name", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("start", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("end", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("read", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("cigar", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("basequal", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("flags", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("insertsize", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("mapqual", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("matestart", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("indexbin", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("materefindex", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("refindex", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("refname", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("attributes", DataType.MAP));
+        return new ResourceSchema(s);
+    }
+
+    @Override
+    public String[] getPartitionKeys(String location, Job job) throws IOException { return null; }
+
+    @Override
+    public void setPartitionFilter(Expression partitionFilter) throws IOException { }
+
+    @Override
+    public ResourceStatistics getStatistics(String location, Job job) throws IOException { return null; }
 }
