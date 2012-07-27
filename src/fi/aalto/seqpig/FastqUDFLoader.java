@@ -72,7 +72,7 @@ public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
     //   xpos: int
     //   ypos: int
     //   read: int
-    //   filter: string
+    //   qc_passed: string
     //   control_number: int
     //   index_sequence: string
     //   sequence: string
@@ -106,12 +106,7 @@ public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
 	    mProtoTuple.add(fastqrec.getXpos());
 	    mProtoTuple.add(fastqrec.getYpos());
 	    mProtoTuple.add(fastqrec.getRead());
-	    
-	    if(fastqrec.getFilterPassed() != null && fastqrec.getFilterPassed().booleanValue())
-		mProtoTuple.add(new String("N"));
-	    else
-		mProtoTuple.add(new String("?"));
-
+	    mProtoTuple.add(fastqrec.getFilterPassed());
 	    mProtoTuple.add(fastqrec.getControlNumber());
 	    mProtoTuple.add(fastqrec.getIndexSequence());
 	    mProtoTuple.add(fastqrec.getSequence().toString());
@@ -157,7 +152,7 @@ public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
 	s.add(new Schema.FieldSchema("xpos", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("ypos", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("read", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("filter", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("qc_passed", DataType.BOOLEAN));
 	s.add(new Schema.FieldSchema("control_number", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("index_sequence", DataType.CHARARRAY));
 	s.add(new Schema.FieldSchema("sequence", DataType.CHARARRAY));
