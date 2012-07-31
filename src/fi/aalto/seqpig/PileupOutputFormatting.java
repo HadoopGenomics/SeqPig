@@ -44,22 +44,12 @@ import org.apache.pig.impl.util.WrappedIOException;
 public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulator<Tuple>
 {
 	// tuple format:
-	//   refbase
 	//   pileup string
 	//   base qualities
-	// for debugging additionally
-	//   read
-	//   start
-	//   cigar
-	//   MD tag
-	//   pos  
 	//
-
-   private String refbase = null;	
+	
    private String bases = null;
    private String basequals = null;
-   private int counter = 0;
-   private int last_pos = -1;
 
    @Override
    public Tuple exec(Tuple input) throws IOException {
@@ -68,50 +58,25 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
       String mbasequals = "";
       DataBag bag = (DataBag)input.get(0);
       Iterator it = bag.iterator();
-      int pos = 0;
-      boolean new_pos = false;
-      if(input.size() > 1) {
-	pos = ((Integer)input.get(1)).intValue();
-	if (last_pos == -1 || pos != last_pos) {
-		new_pos = true;
-		counter = 0;
-	}
-      }
 
       while (it.hasNext()){
            Tuple t = (Tuple)it.next();
-           if (t != null && t.size() > 2 && t.get(1) != null) {
-           	mbases = mbases +(String)t.get(1);
-
-		// note: if we are just getting a deletion it will have
-		// a null quality since it actually refers to the previous position!
-		if(t.get(2) != null)
-                	mbasequals = mbasequals + (String)t.get(2);
-
-		counter++;
-	   
-                if(t.get(0) != null) {
-		    if(refbase == null || new_pos)
-			refbase = (String)t.get(0);
-		   else if(!refbase.equals((String)t.get(0)))
-			throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" read: "+(String)t.get(3)+" start: "+((Integer)t.get(4)).intValue()+" cigar: "+(String)t.get(5)+" MD: "+(String)t.get(6)+" pos: "+pos+" counter: "+counter+" mbases: "+mbases+" mbasequals: "+mbasequals);
-	         }
-	   }
+           if (t != null && t.size() > 1 && t.get(0) != null && t.get(1) != null) {
+           	mbases = mbases +(String)t.get(0);
+                mbasequals = mbasequals + (String)t.get(1);
+           }
       }
 
-      Tuple tpl = TupleFactory.getInstance().newTuple(4);
+      Tuple tpl = TupleFactory.getInstance().newTuple(2);
 
-      tpl.set(0, refbase);
-      tpl.set(1, counter);
-      tpl.set(2, mbases);
-      tpl.set(3, mbasequals);
-
-      last_pos = pos;
+      tpl.set(0, mbases);
+      tpl.set(1, mbasequals);
 
       return tpl;
       } catch (Exception e) {
             int errCode = 2106;
-            String msg = "Error while computing pairwise string concatenation in " + this.getClass().getSimpleName() + ":" + e.toString();
+            String msg = "Error while computing pairwise string concatenation in " + this.getClass().getSimpleName();
+            System.err.println(e.toString());
             throw new ExecException(msg, errCode, PigException.BUG, e);
       } 
    }
@@ -122,75 +87,41 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
       try {
       DataBag bag = (DataBag)input.get(0);
       Iterator it = bag.iterator();
-      int pos = 0;
-      boolean new_pos = false;
-
-      if(input.size() > 1) {
-        pos = ((Integer)input.get(1)).intValue();
-        if (last_pos == -1 || pos != last_pos) {
-                new_pos = true;
-		bases = null;
-		basequals = null;
-		counter = 0;
-        }
-      }
 
       while (it.hasNext()){
            Tuple t = (Tuple)it.next();
-           if (t != null && t.size() > 2 && t.get(1) != null) {
-		    if(bases != null && basequals != null) { // note: it should
-		    // not be the case that we see the match first, then the deletion
-		    // that starts there!!!
-          		bases = bases +(String)t.get(1);
-
-			if(t.get(2) != null)
-          			basequals = basequals + (String)t.get(2);
-			counter++;
+           if (t != null && t.size() > 1 && t.get(0) != null && t.get(1) != null) {
+		    if(bases != null && basequals != null) {
+          		bases = bases +(String)t.get(0);
+          		basequals = basequals + (String)t.get(1);
           	    } else {
-          		bases = (String)t.get(1);
-          		basequals = (String)t.get(2);
-			counter = 1;
+          		bases = (String)t.get(0);
+          		basequals = (String)t.get(1);
           	    }
            }
-	   if(t != null && t.size() > 0 && t.get(0) != null) {
-                if(refbase == null || new_pos)
-                        refbase = (String)t.get(0);
-                else if(!refbase.equals((String)t.get(0)))
-			throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" read: "+(String)t.get(3)+" start: "+((Integer)t.get(4)).intValue()+" cigar: "+(String)t.get(5)+" MD: "+(String)t.get(6)+" pos: "+pos+" counter: "+counter+" bases: "+bases+" basequals: "+basequals);
-           }
       }
-
-      last_pos = pos;
       } catch (Exception e) {
             int errCode = 2106;
-            String msg = "Error while computing pairwise string concatenation in " + this.getClass().getSimpleName() + ":" + e.toString();
+            String msg = "Error while computing pairwise string concatenation in " + this.getClass().getSimpleName();
+	    System.err.println(e.toString());
             throw new ExecException(msg, errCode, PigException.BUG, e);           
       }
     }
 
     @Override
     public void cleanup() {
-	refbase = null;
         bases = null;
 	basequals = null;
-	counter = 0;
     }
 
     @Override
     public Tuple getValue() {
         System.out.println("getValue!");
 	try {
-		Tuple tpl = TupleFactory.getInstance().newTuple(4);
+		Tuple tpl = TupleFactory.getInstance().newTuple(2);
 
-		tpl.set(0, refbase);
-		tpl.set(1, counter);
-		tpl.set(2, bases);
-        	tpl.set(3, basequals);
-
-		/*refbase = null;
-        	bases = null;
-        	basequals = null;
-		counter = 0;*/
+		tpl.set(0, bases);
+        	tpl.set(1, basequals);
 
         	return tpl;
 	} catch (Exception e) {
@@ -201,8 +132,6 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
     public Schema outputSchema(Schema input) {
 	try{
             Schema tupleSchema = new Schema();
-	    tupleSchema.add(new Schema.FieldSchema("refbase", DataType.CHARARRAY));
-	    tupleSchema.add(new Schema.FieldSchema("count", DataType.INTEGER));
             tupleSchema.add(new Schema.FieldSchema("pileup", DataType.CHARARRAY));
             tupleSchema.add(new Schema.FieldSchema("basequals", DataType.CHARARRAY));
             return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input),tupleSchema, DataType.TUPLE));
