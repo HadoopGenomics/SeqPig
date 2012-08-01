@@ -72,7 +72,7 @@ public class QseqUDFLoader extends LoadFunc implements LoadMetadata {
     //   xpos: int
     //   ypos: int
     //   read: int
-    //   filter: string
+    //   qc_passed (a.k.a. filter): boolean
     //   control_number: int
     //   index_sequence: string
     //   sequence: string
