@@ -82,7 +82,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		mapping.set5Position(((Integer)tpl.get(3)).intValue());
 		mapping.setAlignment(AlignOp.scanCigar((String)tpl.get(4)));
 
-		mapping_quality = Character.toString((char)(((Integer)tpl.get(7)).intValue()+33));
+		mapping_quality = new String(new byte[]{(byte)(((Integer)tpl.get(7)).intValue()+33)}, "US-ASCII");
 		alignment = mapping.getAlignment();
 	    }
 

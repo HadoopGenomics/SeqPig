@@ -63,7 +63,7 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 
    @Override
    public Tuple exec(Tuple input) throws IOException {
-      try {
+      //try {
       String mbases = "";
       String mbasequals = "";
       DataBag bag = (DataBag)input.get(0);
@@ -102,18 +102,18 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
       Tuple tpl = TupleFactory.getInstance().newTuple(4);
 
       tpl.set(0, refbase);
-      tpl.set(1, counter);
+      tpl.set(1, new Integer(counter));
       tpl.set(2, mbases);
       tpl.set(3, mbasequals);
 
       last_pos = pos;
 
       return tpl;
-      } catch (Exception e) {
+      /*} catch (Exception e) {
             int errCode = 2106;
             String msg = "Error while computing pairwise string concatenation in " + this.getClass().getSimpleName() + ":" + e.toString();
             throw new ExecException(msg, errCode, PigException.BUG, e);
-      } 
+      }*/
    }
 
    @Override
@@ -183,7 +183,7 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 		Tuple tpl = TupleFactory.getInstance().newTuple(4);
 
 		tpl.set(0, refbase);
-		tpl.set(1, counter);
+		tpl.set(1, new Integer(counter));
 		tpl.set(2, bases);
         	tpl.set(3, basequals);
 
