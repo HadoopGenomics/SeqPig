@@ -31,6 +31,7 @@ import org.apache.pig.data.TupleFactory;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.Accumulator;
 import org.apache.pig.PigException;
+import org.apache.pig.PigWarning;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.WrappedIOException;
@@ -66,16 +67,22 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
       //try {
       String mbases = "";
       String mbasequals = "";
+
+      if(input.size() < 2 || input.get(0) == null || input.get(1) == null) {
+	warn("Pileup output formatter received incomplete tuple!", PigWarning.UDF_WARNING_2);
+	return null;
+      }
+
       DataBag bag = (DataBag)input.get(0);
       Iterator it = bag.iterator();
       int pos = 0;
       boolean new_pos = false;
-      if(input.size() > 1) {
-	pos = ((Integer)input.get(1)).intValue();
-	if (last_pos == -1 || pos != last_pos) {
-		new_pos = true;
-		counter = 0;
-	}
+
+      pos = ((Integer)input.get(1)).intValue();
+
+      if (last_pos == -1 || pos != last_pos) {
+	new_pos = true;
+	counter = 0;
       }
 
       while (it.hasNext()){
@@ -85,10 +92,10 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 
 		// note: if we are just getting a deletion it will have
 		// a null quality since it actually refers to the previous position!
-		if(t.get(2) != null)
+		if(t.get(2) != null) {
                 	mbasequals = mbasequals + (String)t.get(2);
-
-		counter++;
+			counter++;
+		}
 	   
                 if(t.get(0) != null) {
 		    if(refbase == null || new_pos)
@@ -120,19 +127,24 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
    public void accumulate(Tuple input) throws IOException {
 
       try {
+
+      if(input.size() < 2 || input.get(0) == null || input.get(1) == null) {
+        warn("Pileup output formatter received incomplete tuple!", PigWarning.UDF_WARNING_2);
+        return;
+      }
+
       DataBag bag = (DataBag)input.get(0);
       Iterator it = bag.iterator();
       int pos = 0;
       boolean new_pos = false;
 
-      if(input.size() > 1) {
-        pos = ((Integer)input.get(1)).intValue();
-        if (last_pos == -1 || pos != last_pos) {
+      pos = ((Integer)input.get(1)).intValue();
+      
+      if (last_pos == -1 || pos != last_pos) {
                 new_pos = true;
 		bases = null;
 		basequals = null;
 		counter = 0;
-        }
       }
 
       while (it.hasNext()){
@@ -143,12 +155,13 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 		    // that starts there!!!
           		bases = bases +(String)t.get(1);
 
-			if(t.get(2) != null)
+			if(t.get(2) != null) {
           			basequals = basequals + (String)t.get(2);
-			counter++;
+				counter++;
+			}
           	    } else {
           		bases = (String)t.get(1);
-          		basequals = (String)t.get(2);
+          		basequals = (String)t.get(2); // note: it should not be the case that basequals is null here!!!!	
 			counter = 1;
           	    }
            }
