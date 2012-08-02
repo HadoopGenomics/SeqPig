@@ -131,8 +131,11 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 	    // NOTE: code based on copy&paste from Seal AbstractTaggedMapping::calculateReferenceMatches
 
-	    if (mdOps.isEmpty())
-		throw new IOException("no MD operators extracted from tag! (tag: " + (String)input.get(6) + ")");
+	    if (mdOps.isEmpty()) {
+		//throw new IOException("no MD operators extracted from tag! (tag: " + (String)input.get(6) + ")");
+	    	warn("no MD operators extracted from tag! (tag: " + (String)input.get(6) + "), silently IGNORING read", PigWarning.UDF_WARNING_3);
+		return null;
+            }
 
 	    if (!compareLengthCigarMd()) {
 		warn("CIGAR, MD and sequence lengths do not match! ignoring read! (CIGAR: " + (String)input.get(4) + " MD: " + (String)input.get(6) + " seq: " + sequence + ")", PigWarning.UDF_WARNING_1);

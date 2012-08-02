@@ -56,6 +56,8 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 	//   pos  
 	//
 
+   private final static int DEBUG_PILEUP_OUTPUT_FORMATTING = 0;
+
    private String refbase = null;	
    private String bases = null;
    private String basequals = null;
@@ -100,9 +102,13 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
                 if(t.get(0) != null) {
 		    if(refbase == null || new_pos)
 			refbase = (String)t.get(0);
-		   else if(!refbase.equals((String)t.get(0)))
-			throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" read: "+(String)t.get(3)+" start: "+((Integer)t.get(4)).intValue()+" cigar: "+(String)t.get(5)+" MD: "+(String)t.get(6)+" pos: "+pos+" counter: "+counter+" mbases: "+mbases+" mbasequals: "+mbasequals);
-	         }
+		   else if(!refbase.equals((String)t.get(0))) {
+			if( DEBUG_PILEUP_OUTPUT_FORMATTING > 0)
+				throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" read: "+(String)t.get(3)+" start: "+((Integer)t.get(4)).intValue()+" cigar: "+(String)t.get(5)+" MD: "+(String)t.get(6)+" pos: "+pos+" counter: "+counter+" mbases: "+mbases+" mbasequals: "+mbasequals);
+	         	else
+				throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" (enable DEBUG for more information)");
+			}
+		   }
 	   }
       }
 
@@ -168,9 +174,13 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 	   if(t != null && t.size() > 0 && t.get(0) != null) {
                 if(refbase == null || new_pos)
                         refbase = (String)t.get(0);
-                else if(!refbase.equals((String)t.get(0)))
-			throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" read: "+(String)t.get(3)+" start: "+((Integer)t.get(4)).intValue()+" cigar: "+(String)t.get(5)+" MD: "+(String)t.get(6)+" pos: "+pos+" counter: "+counter+" bases: "+bases+" basequals: "+basequals);
-           }
+                else if(!refbase.equals((String)t.get(0))) {
+			if( DEBUG_PILEUP_OUTPUT_FORMATTING > 0)
+				throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" read: "+(String)t.get(3)+" start: "+((Integer)t.get(4)).intValue()+" cigar: "+(String)t.get(5)+" MD: "+(String)t.get(6)+" pos: "+pos+" counter: "+counter+" bases: "+bases+" basequals: "+basequals);
+			else
+				throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" (enable debug for more information)");
+           	     }
+	    }
       }
 
       last_pos = pos;
