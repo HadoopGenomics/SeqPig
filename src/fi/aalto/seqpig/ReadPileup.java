@@ -46,7 +46,7 @@ public class ReadPileup extends EvalFunc<DataBag>
     private int MAX_READ_LENGTH = 150;
 
     private WritableMapping mapping = new WritableMapping();
-    private ArrayList<Integer> refPositions = new ArrayList(MAX_READ_LENGTH);
+    //private ArrayList<Integer> refPositions = new ArrayList(MAX_READ_LENGTH);
     private ArrayList<Boolean> matches = new ArrayList();
     private List<AlignOp> alignment;
     private List<MdOp> mdOps;
@@ -87,7 +87,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 	    }
 
 	try {
-	    mapping.setTag("MD", AbstractTaggedMapping.TagDataType.String, (String)tpl.get(6));
+	    mapping.setTag("MD", AbstractTaggedMapping.TagDataType.String, ((String)tpl.get(6)).toUpperCase());
 	    mdOps = MdOp.scanMdTag((String)tpl.get(6));
 	} catch(IllegalStateException e) {
 	    throw new IOException("Caught exception processing input read "+(String)tpl.get(0));
@@ -97,13 +97,13 @@ public class ReadPileup extends EvalFunc<DataBag>
     // compares the length indicated by CIGAR and MD strings and CIGAR and read sequence length; returns true if these match and
     // false otherwise
     private boolean compareLengthCigarMd() {
-	int insert_length = 0, match_length = 0, md_length = 0;
+	int insertclip_length = 0, match_length = 0, md_length = 0;
 
 	for (AlignOp alignOp: alignment) {
                 if (alignOp.getType() == AlignOp.Type.Match)
 			match_length += alignOp.getLen();
-		else if(alignOp.getType() == AlignOp.Type.Insert)
-			insert_length += alignOp.getLen();
+		else if(alignOp.getType() == AlignOp.Type.Insert || alignOp.getType() == AlignOp.Type.SoftClip)
+			insertclip_length += alignOp.getLen();
    	}
 
 	for (MdOp mdOp: mdOps) {
@@ -113,7 +113,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 	}
 
-	return ((match_length == md_length) && (match_length + insert_length == sequence.length()));
+	return ((match_length == md_length) && (match_length + insertclip_length == sequence.length()));
     }
 
     @Override 
@@ -122,7 +122,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 	    return null;
 	try {
 	    loadTuple(input);
-	    mapping.calculateReferenceCoordinates(refPositions);
+	    //mapping.calculateReferenceCoordinates(refPositions);
 	    //mapping.calculateReferenceMatches(matches);
 
 	    DataBag output = mBagFactory.newDefaultBag();
@@ -168,8 +168,8 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 			    for (int i = 0; i < consumed; i++) {
 
-				if(refPositions.get(seqpos) < 0)
-					throw new IOException("BUG or bad data?? unknown refpos inside match/mismatch! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);
+				/*if(refPositions.get(seqpos) < 0)
+					throw new IOException("BUG or bad data?? unknown refpos inside match/mismatch! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);*/
 
 				Tuple tpl = TupleFactory.getInstance().newTuple(5);
 				tpl.set(0, mapping.getContig());
@@ -186,7 +186,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 				    tpl.set(2, mdOp.getSeq().substring(i, i+1));
 
 				    if(!mapping.isOnReverse()) // mismatch on forward strand
-					pileuppref += sequence.substring(seqpos, seqpos+1).toUpperCase();
+					pileuppref += sequence.substring(seqpos, seqpos+1);
 				    //pileuppref += mdOp.getSeq().substring(i, i+1).toUpperCase();
 				    else
 					pileuppref += sequence.substring(seqpos, seqpos+1).toLowerCase(); // mismatch on reverse strand
@@ -260,7 +260,11 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    if(seqpos + alignOp.getLen() == sequence.length()-1)
 			pileuppof = "$";
 
-		    tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen())+pileuppof);
+	            if(mapping.isOnReverse())
+		    	tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen()).toLowerCase()+pileuppof);
+		    else
+			tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen())+pileuppof);
+			
 		    tpl.set(4, basequal.substring(seqpos, seqpos+alignOp.getLen()));
 		    seqpos += alignOp.getLen();
 
@@ -310,6 +314,11 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
 
 		    String deleted_bases = mdOp.getSeq();
+
+		    if(mapping.isOnReverse())
+			deleted_bases = deleted_bases.toLowerCase();
+		    else
+			deleted_bases = deleted_bases.toUpperCase();
 
 		    /*for (int i = consumed; i > 0; --i) {
 		      if(!mapping.isOnReverse()) // matching on forward strand
