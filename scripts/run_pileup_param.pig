@@ -1,4 +1,4 @@
-A = load 'input2.bam' using fi.aalto.seqpig.BamUDFLoader('yes');
+A = load 'input3.bam' using fi.aalto.seqpig.BamUDFLoader('yes');
 A = FOREACH A GENERATE read, flags, refname, start, cigar, basequal, mapqual, attributes;
 B = FILTER A BY (flags/4)%2==0;
 C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual), start;

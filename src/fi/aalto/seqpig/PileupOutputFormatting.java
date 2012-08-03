@@ -56,6 +56,12 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 	//   pos  
 	//
 
+
+	// WARNINGS:
+	//   we use the folling Pig UDF warnings:
+	//   PigWarning.UDF_WARNING_5 :      incomplete input
+	//   PigWarning.UDF_WARNING_6 :      other problem
+
    private final static int DEBUG_PILEUP_OUTPUT_FORMATTING = 0;
 
    private String refbase = null;	
@@ -71,7 +77,7 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
       String mbasequals = "";
 
       if(input.size() < 2 || input.get(0) == null || input.get(1) == null) {
-	warn("Pileup output formatter received incomplete tuple!", PigWarning.UDF_WARNING_2);
+	warn("Pileup output formatter received incomplete tuple!", PigWarning.UDF_WARNING_5);
 	return null;
       }
 
@@ -105,8 +111,10 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 		   else if(!refbase.equals((String)t.get(0))) {
 			if( DEBUG_PILEUP_OUTPUT_FORMATTING > 0)
 				throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" read: "+(String)t.get(3)+" start: "+((Integer)t.get(4)).intValue()+" cigar: "+(String)t.get(5)+" MD: "+(String)t.get(6)+" pos: "+pos+" counter: "+counter+" mbases: "+mbases+" mbasequals: "+mbasequals);
-	         	else
-				throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" (enable DEBUG for more information)");
+	         	else {
+				warn("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" (enable DEBUG for more information)", PigWarning.UDF_WARNING_6);
+				return null;
+			}
 			}
 		   }
 	   }
@@ -122,17 +130,10 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
       last_pos = pos;
 
       return tpl;
-      /*} catch (Exception e) {
-            int errCode = 2106;
-            String msg = "Error while computing pairwise string concatenation in " + this.getClass().getSimpleName() + ":" + e.toString();
-            throw new ExecException(msg, errCode, PigException.BUG, e);
-      }*/
    }
 
    @Override
    public void accumulate(Tuple input) throws IOException {
-
-      try {
 
       if(input.size() < 2 || input.get(0) == null || input.get(1) == null) {
         warn("Pileup output formatter received incomplete tuple!", PigWarning.UDF_WARNING_2);
@@ -177,18 +178,15 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
                 else if(!refbase.equals((String)t.get(0))) {
 			if( DEBUG_PILEUP_OUTPUT_FORMATTING > 0)
 				throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" read: "+(String)t.get(3)+" start: "+((Integer)t.get(4)).intValue()+" cigar: "+(String)t.get(5)+" MD: "+(String)t.get(6)+" pos: "+pos+" counter: "+counter+" bases: "+bases+" basequals: "+basequals);
-			else
-				throw new IOException("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" (enable debug for more information)");
+			else {
+				warn("PileupOutputFormatting: found refbase mismatch: "+refbase+" vs "+(String)t.get(0)+" (enable DEBUG for more information)", PigWarning.UDF_WARNING_6);
+                                return;
+			}
            	     }
 	    }
       }
 
       last_pos = pos;
-      } catch (Exception e) {
-            int errCode = 2106;
-            String msg = "Error while computing pairwise string concatenation in " + this.getClass().getSimpleName() + ":" + e.toString();
-            throw new ExecException(msg, errCode, PigException.BUG, e);           
-      }
     }
 
     @Override
@@ -209,11 +207,6 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 		tpl.set(1, new Integer(counter));
 		tpl.set(2, bases);
         	tpl.set(3, basequals);
-
-		/*refbase = null;
-        	bases = null;
-        	basequals = null;
-		counter = 0;*/
 
         	return tpl;
 	} catch (Exception e) {

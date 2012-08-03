@@ -34,6 +34,7 @@ import it.crs4.seal.common.AlignOp;
 import it.crs4.seal.common.MdOp;
 import it.crs4.seal.common.WritableMapping;
 import it.crs4.seal.common.AbstractTaggedMapping;
+import it.crs4.seal.common.FormatException;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -43,10 +44,7 @@ import java.util.List;
 
 public class ReadPileup extends EvalFunc<DataBag>
 {
-    private int MAX_READ_LENGTH = 150;
-
     private WritableMapping mapping = new WritableMapping();
-    //private ArrayList<Integer> refPositions = new ArrayList(MAX_READ_LENGTH);
     private ArrayList<Boolean> matches = new ArrayList();
     private List<AlignOp> alignment;
     private List<MdOp> mdOps;
@@ -56,7 +54,7 @@ public class ReadPileup extends EvalFunc<DataBag>
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private BagFactory mBagFactory = BagFactory.getInstance();
 
-    // tuple format:
+    // tuple input format:
     //   sequence
     //   flag
     //   chr
@@ -65,34 +63,13 @@ public class ReadPileup extends EvalFunc<DataBag>
     //   base qualities
     //   MD tag
     //   mapping quality
-    
-
-    // extracts mapping from tuple
-    private void loadTuple(Tuple tpl) throws IOException, org.apache.pig.backend.executionengine.ExecException {
-	mapping.clear();
-
-	sequence = (String)tpl.get(0);
-	mapping.setSequence(sequence);
-	mapping.setFlag(((Integer)tpl.get(1)).intValue());
-
-	// now get the rest of the fields
-	if (mapping.isMapped())
-	    {
-		mapping.setContig((String)tpl.get(2));
-		mapping.set5Position(((Integer)tpl.get(3)).intValue());
-		mapping.setAlignment(AlignOp.scanCigar((String)tpl.get(4)));
-
-		mapping_quality = new String(new byte[]{(byte)(((Integer)tpl.get(7)).intValue()+33)}, "US-ASCII");
-		alignment = mapping.getAlignment();
-	    }
-
-	try {
-	    mapping.setTag("MD", AbstractTaggedMapping.TagDataType.String, ((String)tpl.get(6)).toUpperCase());
-	    mdOps = MdOp.scanMdTag((String)tpl.get(6));
-	} catch(IllegalStateException e) {
-	    throw new IOException("Caught exception processing input read "+(String)tpl.get(0));
-	}
-    }
+   
+    // WARNINGS:
+    // we use the folling Pig UDF warnings:
+    // 	PigWarning.UDF_WARNING_2 :	problems with parsing CIGAR string
+    // 	PigWarning.UDF_WARNING_3 :	problem with parsing MD tag
+    // 	PigWarning.UDF_WARNING_4 :	other problem
+ 
 
     // compares the length indicated by CIGAR and MD strings and CIGAR and read sequence length; returns true if these match and
     // false otherwise
@@ -121,12 +98,40 @@ public class ReadPileup extends EvalFunc<DataBag>
 	if (input == null || input.size() == 0)
 	    return null;
 	try {
-	    loadTuple(input);
-	    //mapping.calculateReferenceCoordinates(refPositions);
-	    //mapping.calculateReferenceMatches(matches);
+	    // first load the mapping and do some error checks
+
+	    mapping.clear();
+
+            sequence = (String)input.get(0);
+            mapping.setSequence(sequence);
+            mapping.setFlag(((Integer)input.get(1)).intValue());
+
+	    if (!mapping.isMapped()) {
+	    	warn("encountered unmapped read!", PigWarning.UDF_WARNING_4);
+		return null;
+            }
+
+	    mapping.setContig((String)input.get(2));
+            mapping.set5Position(((Integer)input.get(3)).intValue());
+            mapping_quality = new String(new byte[]{(byte)(((Integer)input.get(7)).intValue()+33)}, "US-ASCII");
+
+            try {
+                mapping.setAlignment(AlignOp.scanCigar((String)input.get(4)));
+                alignment = mapping.getAlignment();
+            } catch(FormatException e) {
+                warn("errors parsing CIGAR string (input: " + (String)input.get(4) + "), silently IGNORING read, exception: "+e.toString(), PigWarning.UDF_WARNING_2);
+		return null;
+            }
+
+            try {
+            	mapping.setTag("MD", AbstractTaggedMapping.TagDataType.String, ((String)input.get(6)).toUpperCase());
+           	mdOps = MdOp.scanMdTag(((String)input.get(6)).toUpperCase());
+            } catch(FormatException e) {
+            	warn("errors parsing MD string (input: " + (String)input.get(6) + "), silently IGNORING read, exception: "+e.toString(), PigWarning.UDF_WARNING_3);
+		return null;
+            }
 
 	    DataBag output = mBagFactory.newDefaultBag();
-	    //String seq = mapping.getSequenceString();
 	    String basequal = (String)input.get(5);
 
 	    // NOTE: code based on copy&paste from Seal AbstractTaggedMapping::calculateReferenceMatches
