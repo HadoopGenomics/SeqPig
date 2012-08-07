@@ -106,8 +106,8 @@ public class ReadPileup extends EvalFunc<DataBag>
             mapping.setSequence(sequence);
             mapping.setFlag(((Integer)input.get(1)).intValue());
 
-	    if (!mapping.isMapped()) {
-	    	warn("encountered unmapped read!", PigWarning.UDF_WARNING_4);
+	    if (!mapping.isMapped() || input.get(2)==null) {
+	    	warn("encountered unmapped read or empty chromosome/contig id!", PigWarning.UDF_WARNING_4);
 		return null;
             }
 
@@ -177,7 +177,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 					throw new IOException("BUG or bad data?? unknown refpos inside match/mismatch! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);*/
 
 				Tuple tpl = TupleFactory.getInstance().newTuple(5);
-				tpl.set(0, mapping.getContig());
+				tpl.set(0, (String)input.get(2));
 				tpl.set(1, refpos++); //refPositions.get(seqpos));
 
 				if(match) { // reference and read have matching bases
@@ -236,7 +236,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 		    if(true) {
 		    Tuple tpl = TupleFactory.getInstance().newTuple(5);
-		    tpl.set(0, mapping.getContig());
+		    tpl.set(0, (String)input.get(2));
 
 		    /*if(seqpos > 0 && refPositions.get(seqpos-1) >= 0) {
 			tpl.set(1, refPositions.get(seqpos-1)); // NOTE: this may cause problems with grouping!!
@@ -305,7 +305,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    }
 			
 		    Tuple tpl = TupleFactory.getInstance().newTuple(5);
-		    tpl.set(0, mapping.getContig());
+		    tpl.set(0, (String)input.get(2));
 		    tpl.set(1, refpos-1);
 
 		    /*if(seqpos > 0 && refPositions.get(seqpos-1)>=0) {
@@ -347,7 +347,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 		    for(int i=0;i<mdOp.getLen();i++) {
 			Tuple dtpl = TupleFactory.getInstance().newTuple(5);
-			dtpl.set(0, mapping.getContig());
+			dtpl.set(0, (String)input.get(2));
 			dtpl.set(1, refpos++); //start_deletion+i+1);
 			dtpl.set(2, deleted_bases.substring(i,i+1).toUpperCase());
 			dtpl.set(3, "*");
@@ -384,7 +384,7 @@ public class ReadPileup extends EvalFunc<DataBag>
                     }*/
 		    tpl.set(1, refpos);
 
-		    tpl.set(0, mapping.getContig());
+		    tpl.set(0, (String)input.get(2));
 		    //tpl.set(1, refPositions.get(seqpos-1)); // NOTE: this may cause problems with grouping!!
 		    // since the inserted sequence of bases should appear together with the entry for the previous
 		    // position before the insert??
