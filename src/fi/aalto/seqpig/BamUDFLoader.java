@@ -47,11 +47,15 @@ import org.apache.hadoop.io.Text;
 import fi.tkk.ics.hadoop.bam.BAMInputFormat;
 import fi.tkk.ics.hadoop.bam.BAMRecordReader;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
+import net.sf.samtools.SAMRecord;
+import net.sf.samtools.SAMTextHeaderCodec;
 import fi.tkk.ics.hadoop.bam.FileVirtualSplit;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMReadGroupRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMProgramRecord;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMReadGroupRecord;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMProgramRecord;
+import net.sf.samtools.SAMReadGroupRecord;
+import net.sf.samtools.SAMProgramRecord;
 
 import net.sf.samtools.SAMFileReader.ValidationStringency;
 
@@ -106,7 +110,8 @@ public class BamUDFLoader extends LoadFunc implements LoadMetadata {
 	    mProtoTuple.add(new Integer(samrec.getInferredInsertSize()));
 	    mProtoTuple.add(new Integer(samrec.getMappingQuality()));
 	    mProtoTuple.add(new Integer(samrec.getMateAlignmentStart()));
-	    mProtoTuple.add(new Integer(samrec.getIndexingBin()));
+	    // note: we cannt access this field anymore since it is not public inside samtools/picard
+	    //mProtoTuple.add(new Integer(samrec.getIndexingBin()));
 	    mProtoTuple.add(new Integer(samrec.getMateReferenceIndex()));
 	    mProtoTuple.add(new Integer(samrec.getReferenceIndex()));
 	    mProtoTuple.add(new String(samrec.getReferenceName()));
@@ -196,7 +201,7 @@ public class BamUDFLoader extends LoadFunc implements LoadMetadata {
 	s.add(new Schema.FieldSchema("insertsize", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("mapqual", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("matestart", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("indexbin", DataType.INTEGER));
+	//s.add(new Schema.FieldSchema("indexbin", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("materefindex", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("refindex", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("refname", DataType.CHARARRAY));

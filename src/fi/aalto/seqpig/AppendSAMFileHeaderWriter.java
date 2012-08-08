@@ -27,14 +27,23 @@ import net.sf.samtools.SAMFileReader.ValidationStringency;
 import net.sf.samtools.util.StringLineReader;
 import net.sf.samtools.util.BlockCompressedInputStream;
 
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
+/*import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileHeader;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileReader;
 import fi.tkk.ics.hadoop.bam.custom.samtools.BAMRecordCodec;
 import fi.tkk.ics.hadoop.bam.custom.samtools.BlockCompressedOutputStream;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMSequenceDictionary;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMSequenceRecord;
+import fi.tkk.ics.hadoop.bam.custom.samtools.SAMSequenceRecord;*/
+
+import net.sf.samtools.SAMRecord;
+import net.sf.samtools.SAMFileHeader;
+import net.sf.samtools.SAMTextHeaderCodec;
+import net.sf.samtools.SAMFileReader;
+import net.sf.samtools.BAMRecordCodec;
+import net.sf.samtools.util.BlockCompressedOutputStream;
+import net.sf.samtools.SAMSequenceDictionary;
+import net.sf.samtools.SAMSequenceRecord;
 
 import java.io.IOException;
 import java.io.StringWriter;
