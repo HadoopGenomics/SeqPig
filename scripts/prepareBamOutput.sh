@@ -46,6 +46,7 @@ then
 
                 if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
                 then
+			echo "adding terminator!! (disable if you encounter problems)"
                         cat ${SEQPIG_HOME}/data/bgzf-terminator.bin >> tmphdr
                         mv tmphdr ${1}
                 else
