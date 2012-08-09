@@ -33,7 +33,7 @@ then
         if [ -e "$baminputfilename" ]
         then
                 $JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
-                cat $bamoutputfilename >> tmphdr
+                cat $bamoutputfilename > tmphdr
 
                 if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
                 then
