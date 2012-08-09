@@ -39,11 +39,12 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordWriter; 
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import fi.tkk.ics.hadoop.bam.SAMOutputFormat;
+import fi.tkk.ics.hadoop.bam.SAMFormat;
+import fi.tkk.ics.hadoop.bam.AnySAMOutputFormat;
 import fi.tkk.ics.hadoop.bam.SAMRecordWriter;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringSAMRecordWriter;
-import fi.tkk.ics.hadoop.bam.KeyIgnoringSAMOutputFormat;
+import fi.tkk.ics.hadoop.bam.KeyIgnoringAnySAMOutputFormat;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileHeader;
 import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
@@ -72,7 +73,7 @@ import java.net.URI;
 
 import org.apache.commons.codec.binary.Base64;
 
-public class BamUDFStorer extends StoreFunc {
+public class SamUDFStorer extends StoreFunc {
     protected RecordWriter writer = null;
     protected String samfileheader = null;
     protected SAMFileHeader samfileheader_decoded = null;
@@ -81,12 +82,12 @@ public class BamUDFStorer extends StoreFunc {
     protected HashMap<String,Integer> selectedSAMAttributes = null;
     protected HashMap<String,Integer> allSAMFieldNames = null;
 
-    public BamUDFStorer() {
+    public SamUDFStorer() {
 	System.out.println("WARNING: noarg BamUDFStorer() constructor!");
         decodeSAMFileHeader();
     }
 
-    public BamUDFStorer(String samfileheaderfilename) {
+    public SamUDFStorer(String samfileheaderfilename) {
 
 	String str = "";
 	this.samfileheader = "";
@@ -578,8 +579,8 @@ public class BamUDFStorer extends StoreFunc {
 
     @Override
     public OutputFormat getOutputFormat() {
-	KeyIgnoringSAMOutputFormat outputFormat = new KeyIgnoringSAMOutputFormat();
-	outputFormat.setSAMHeader(getSAMFileHeader());
+	KeyIgnoringAnySAMOutputFormat outputFormat = new KeyIgnoringAnySAMOutputFormat(SAMFormat.SAM);
+        outputFormat.setSAMHeader(getSAMFileHeader());
 	return outputFormat;
     }
 

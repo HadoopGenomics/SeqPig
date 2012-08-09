@@ -62,18 +62,18 @@ import java.util.Map;
 import java.util.HashMap;
 import java.io.StringWriter;
 
-public class BamUDFLoader extends LoadFunc implements LoadMetadata {
+public class SamUDFLoader extends LoadFunc implements LoadMetadata {
     protected RecordReader in = null;
     private ArrayList<Object> mProtoTuple = null;
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private boolean loadAttributes;
 
-    public BamUDFLoader() {
+    public SamUDFLoader() {
 	loadAttributes = false;
 	System.out.println("BamUDFLoader: ignoring attributes");
     }
     
-	public BamUDFLoader(String loadAttributesStr) {
+	public SamUDFLoader(String loadAttributesStr) {
 	    if(loadAttributesStr.equals("yes"))
 		loadAttributes = true;
 	    else {
