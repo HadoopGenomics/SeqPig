@@ -30,7 +30,7 @@ if [ -e "./$bamoutputfilename" ]
 then
         echo "writing to file $bamoutputfilename";
 
-        if [ -e "./$baminputfilename" ]
+        if [ -e "$baminputfilename" ]
         then
                 $JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
                 cat $bamoutputfilename >> tmphdr
