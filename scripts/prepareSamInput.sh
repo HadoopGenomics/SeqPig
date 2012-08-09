@@ -2,7 +2,7 @@
 
 if [ -z "$1" ]
 then
-        echo "error: usage $0 <bam_inputfile>"
+        echo "error: usage $0 <sam_inputfile>"
 	exit 0
 fi
 
@@ -24,7 +24,7 @@ then
 	bamfilename=`basename $1`
 
 	${HADOOP} fs -rmr ${bamfilename}
-        ${HADOOP} fs -rmr ${bamfilename}.asciiheader
+	${HADOOP} fs -rmr ${bamfilename}.asciiheader
 
 	${HADOOP} fs -put $1 ${bamfilename}
 

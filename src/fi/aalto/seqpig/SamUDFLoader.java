@@ -106,7 +106,7 @@ public class SamUDFLoader extends LoadFunc implements LoadMetadata {
 	    mProtoTuple.add(new Integer(samrec.getInferredInsertSize()));
 	    mProtoTuple.add(new Integer(samrec.getMappingQuality()));
 	    mProtoTuple.add(new Integer(samrec.getMateAlignmentStart()));
-	    mProtoTuple.add(new Integer(samrec.getIndexingBin()));
+	    //mProtoTuple.add(new Integer(samrec.getIndexingBin()));
 	    mProtoTuple.add(new Integer(samrec.getMateReferenceIndex()));
 	    mProtoTuple.add(new Integer(samrec.getReferenceIndex()));
 	    mProtoTuple.add(new String(samrec.getReferenceName()));
@@ -196,7 +196,7 @@ public class SamUDFLoader extends LoadFunc implements LoadMetadata {
 	s.add(new Schema.FieldSchema("insertsize", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("mapqual", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("matestart", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("indexbin", DataType.INTEGER));
+	//s.add(new Schema.FieldSchema("indexbin", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("materefindex", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("refindex", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("refname", DataType.CHARARRAY));

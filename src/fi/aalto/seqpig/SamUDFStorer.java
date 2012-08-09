@@ -333,10 +333,10 @@ public class SamUDFStorer extends StoreFunc {
 	    samrec.setMateAlignmentStart(((Integer)f.get(index)).intValue());
 	}
 
-	index = getFieldIndex("indexbin", allSAMFieldNames);
+	/*index = getFieldIndex("indexbin", allSAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setIndexingBin((Integer)f.get(index));
-	}
+	}*/
 
 	index = getFieldIndex("materefindex", allSAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
@@ -436,7 +436,7 @@ public class SamUDFStorer extends StoreFunc {
 	      && allSAMFieldNames.containsKey("insertsize")
 	      && allSAMFieldNames.containsKey("mapqual")
 	      && allSAMFieldNames.containsKey("matestart")
-	      && allSAMFieldNames.containsKey("indexbin")
+	      //&& allSAMFieldNames.containsKey("indexbin")
 	      && allSAMFieldNames.containsKey("materefindex")
 	      && allSAMFieldNames.containsKey("refindex")))
 	    throw new IOException("Error: Incorrect SAM tuple-field name or compulsory field missing");

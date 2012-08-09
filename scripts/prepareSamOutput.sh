@@ -34,16 +34,23 @@ then
 
         if [ -e "$baminputfilename" ]
         then
-                $JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
+                #$JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
+		#$JAVA_HOME/bin/java -classpath $CLASSPATH fi.aalto.seqpig.SAMFileHeaderReader $1
+                #mv $1.asciiheader tmphdr
+		#cat ${1} >> tmphdr
+
+		rm -f tmphdr
+		$JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
                 cat $bamoutputfilename > tmphdr
 
-                if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
-                then
-                        cat ${SEQPIG_HOME}/data/bgzf-terminator.bin >> tmphdr
-                        mv tmphdr ${1}
-                else
-                        echo "error: cannot find bgzf-terminator.bin"
-                fi
+		# note: ther terminator seems to make trouble when reading in again
+                #if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
+                #then
+                #        cat ${SEQPIG_HOME}/data/bgzf-terminator.bin >> tmphdr
+                mv tmphdr ${1}
+                #else
+                #        echo "error: cannot find bgzf-terminator.bin"
+                #fi
         else
                 echo "error: bam input file $baminputfilename does not exist";
         fi
