@@ -54,6 +54,8 @@ public class ReadPileup extends EvalFunc<DataBag>
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private BagFactory mBagFactory = BagFactory.getInstance();
 
+    private List<Tuple> deletionTuples = new ArrayList();
+
     // tuple input format:
     //   sequence
     //   flag
@@ -120,7 +122,8 @@ public class ReadPileup extends EvalFunc<DataBag>
 	   if( //((Integer)input.get(7)).intValue() == 255 ||
 		((Integer)input.get(7)).intValue() < 0 || ((Integer)input.get(7)).intValue() >= 93) {// mapping quality not available or otherwise weird
 		mapping_quality = "~";
-		basequal = "S" + basequal.substring(1);		
+		/*if(((Integer)input.get(7)).intValue() == 255)
+			basequal = "2" + basequal.substring(1);*/		
 	   } else
             	mapping_quality = new String(new byte[]{(byte)(((Integer)input.get(7)).intValue()+33)}, "US-ASCII");
 
@@ -179,12 +182,20 @@ public class ReadPileup extends EvalFunc<DataBag>
 			    boolean match = mdOp.getType() == MdOp.Type.Match;
 			    int consumed = Math.min(mdOp.getLen() - mdOpConsumed, positionsToCover);
 
+			    if(!deletionTuples.isEmpty()) {
+			    	for (Tuple tpl: deletionTuples) {
+					tpl.set(4, basequal.substring(seqpos, seqpos+1));
+					output.add(tpl);
+				}
+				deletionTuples.clear();
+			    }
+
 			    for (int i = 0; i < consumed; i++) {
 
 				/*if(refPositions.get(seqpos) < 0)
 					throw new IOException("BUG or bad data?? unknown refpos inside match/mismatch! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);*/
 
-				Tuple tpl = TupleFactory.getInstance().newTuple(5);
+				Tuple tpl = TupleFactory.getInstance().newTuple(6);
 				tpl.set(0, (String)input.get(2));
 				tpl.set(1, refpos++); //refPositions.get(seqpos));
 
@@ -211,6 +222,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 				tpl.set(3, pileuppref+pileuppof);
 				tpl.set(4, basequal.substring(seqpos, seqpos+1));
+				tpl.set(5, 0);
 				output.add(tpl);
 				seqpos++;
 				pileuppref = "";
@@ -243,7 +255,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    }
 
 		    if(true) {
-		    Tuple tpl = TupleFactory.getInstance().newTuple(5);
+		    Tuple tpl = TupleFactory.getInstance().newTuple(6);
 		    tpl.set(0, (String)input.get(2));
 
 		    /*if(seqpos > 0 && refPositions.get(seqpos-1) >= 0) {
@@ -270,7 +282,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		      seqpos++;
 		      }*/
 
-		    if(seqpos + alignOp.getLen() == sequence.length()-1)
+		    if(seqpos + alignOp.getLen() == sequence.length())
 			pileuppof = "$";
 
 	            if(mapping.isOnReverse())
@@ -278,7 +290,12 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    else
 			tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen())+pileuppof);
 			
-		    tpl.set(4, basequal.substring(seqpos, seqpos+alignOp.getLen()));
+		    //tpl.set(4, basequal.substring(seqpos, seqpos+alignOp.getLen()));
+		    tpl.set(4, null); // note: it seems samtools silently drops base
+		    // qualities of inserted bases
+		    tpl.set(5, 1); // insertion!!		    
+
+
 		    seqpos += alignOp.getLen();
 
 		    /*tpl.set(3, pileuppref+"+"+insert_bases.length()+insert_bases+pileuppof);
@@ -312,7 +329,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 			throw new IOException("BUG or bad data?? Could not find matching MD deletion after finding CIGAR deletion! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence+ "; MdOp: "+(mdOp==null?"null":mdOp.toString()));
 		    }
 			
-		    Tuple tpl = TupleFactory.getInstance().newTuple(5);
+		    Tuple tpl = TupleFactory.getInstance().newTuple(6);
 		    tpl.set(0, (String)input.get(2));
 		    tpl.set(1, refpos-1);
 
@@ -343,24 +360,27 @@ public class ReadPileup extends EvalFunc<DataBag>
 		      seqpos++;
 		      }*/
 
-		    if(seqpos + alignOp.getLen() == sequence.length()-1)
-			pileuppof = "$";
+		    /*if(seqpos + alignOp.getLen() == sequence.length()-1)
+			pileuppof = "$";*/
 
 		    tpl.set(3, pileuppref+"-"+alignOp.getLen()+deleted_bases+pileuppof);
 		    tpl.set(4, null);
+		    tpl.set(5, 1); // deletion!
 
 		    output.add(tpl);
 
 		    //int start_deletion = refpos; //refPositions.get(seqpos-1);
 
 		    for(int i=0;i<mdOp.getLen();i++) {
-			Tuple dtpl = TupleFactory.getInstance().newTuple(5);
+			Tuple dtpl = TupleFactory.getInstance().newTuple(6);
 			dtpl.set(0, (String)input.get(2));
 			dtpl.set(1, refpos++); //start_deletion+i+1);
 			dtpl.set(2, deleted_bases.substring(i,i+1).toUpperCase());
 			dtpl.set(3, "*");
-			dtpl.set(4, mapping_quality);
-			output.add(dtpl);
+			//dtpl.set(4, mapping_quality);
+			dtpl.set(5, 0);
+			//output.add(dtpl);
+			deletionTuples.add(dtpl);
 		    }
 
 		    pileuppref = "";
@@ -383,7 +403,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		} else if(alignOp.getType() == AlignOp.Type.SoftClip) {
 		    if(true) {
 
-		    Tuple tpl = TupleFactory.getInstance().newTuple(5);
+		    Tuple tpl = TupleFactory.getInstance().newTuple(6);
 
 		    /*if(seqpos > 0 && refPositions.get(seqpos-1)>=0) {
                         tpl.set(1, refPositions.get(seqpos-1)); // NOTE: this may cause problems with grouping!!
@@ -399,6 +419,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
 		    tpl.set(3, "$");
 		    tpl.set(4, null);
+		    tpl.set(5, 0);
 
 		    output.add(tpl);
 
@@ -467,6 +488,8 @@ public class ReadPileup extends EvalFunc<DataBag>
 	    bagSchema.add(new Schema.FieldSchema("refbase", DataType.CHARARRAY));
 	    bagSchema.add(new Schema.FieldSchema("pileup", DataType.CHARARRAY));
 	    bagSchema.add(new Schema.FieldSchema("qual", DataType.CHARARRAY));
+	    bagSchema.add(new Schema.FieldSchema("flag", DataType.INTEGER)); // 1 if there is a special
+		// entry (insertion or deletion); only useful for sorting after later grouping
 
 	    return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
 	}catch (Exception e){
