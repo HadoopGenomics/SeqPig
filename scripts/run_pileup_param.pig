@@ -1,6 +1,6 @@
-A = load 'input3.bam' using fi.aalto.seqpig.BamUDFLoader('yes');
+A = load '$inputfile' using fi.aalto.seqpig.BamUDFLoader('yes');
 A = FOREACH A GENERATE read, flags, refname, start, cigar, basequal, mapqual, attributes;
-B = FILTER A BY (flags/4)%2==0;
+B = FILTER A BY (flags/4)%2==0 and (flags/1024)==0;
 C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual), start;
 D = FOREACH C GENERATE flatten($0), start;
 E = GROUP D BY (chr, pos) PARALLEL 8;

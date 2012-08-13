@@ -24,33 +24,35 @@ fi
 bamoutputfilename="$1";
 baminputfilename="$2"; # required for sam file header
 
+rm -f $bamoutputfilename
+
 ${HADOOP} fs -getmerge ${1} ${1}
 
 if [ -e "./$bamoutputfilename" ]
 then
-	echo "writing to file $bamoutputfilename";
+        echo "writing to file $bamoutputfilename";
 
-	if [ -e "./$baminputfilename" ]
-	then
-		$JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
-		cat $bamoutputfilename >> tmphdr
-	
-		if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
-        	then
-			cat ${SEQPIG_HOME}/data/bgzf-terminator.bin >> tmphdr
-			mv tmphdr ${1}
-		else
-			echo "error: cannot find bgzf-terminator.bin"
-		fi	
-	else
-		echo "error: bam input file $baminputfilename does not exist";
-	fi
+        if [ -e "$baminputfilename" ]
+        then
+                $JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
+                cat $bamoutputfilename > tmphdr
+
+                if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
+                then
+                        cat ${SEQPIG_HOME}/data/bgzf-terminator.bin >> tmphdr
+                        mv tmphdr ${1}
+                else
+                        echo "error: cannot find bgzf-terminator.bin"
+                fi
+        else
+                echo "error: bam input file $baminputfilename does not exist";
+        fi
 else
-	echo "error: file does not exist: $bamoutputfilename";
+        echo "error: file does not exist: $bamoutputfilename";
 fi
 
 if [ -e ".${bamoutputfilename}.crc" ]
 then
-	echo "removing (now incorrect) hadoop checksum to allow later import";
-	rm -f .${bamoutputfilename}.crc
+        echo "removing (now incorrect) hadoop checksum to allow later import";
+        rm -f .${bamoutputfilename}.crc
 fi

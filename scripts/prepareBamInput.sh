@@ -22,6 +22,10 @@ fi
 if [ -e "$1" ]
 then
 	bamfilename=`basename $1`
+
+	${HADOOP} fs -rmr ${bamfilename}
+        ${HADOOP} fs -rmr ${bamfilename}.asciiheader
+
 	${HADOOP} fs -put $1 ${bamfilename}
 
 	$JAVA_HOME/bin/java -classpath $CLASSPATH fi.aalto.seqpig.SAMFileHeaderReader $1

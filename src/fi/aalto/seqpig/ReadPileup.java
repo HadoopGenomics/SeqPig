@@ -99,6 +99,8 @@ public class ReadPileup extends EvalFunc<DataBag>
 	    return null;
 	try {
 	    // first load the mapping and do some error checks
+	    
+	    String basequal = (String)input.get(5);
 
 	    mapping.clear();
 
@@ -113,7 +115,14 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 	    mapping.setContig((String)input.get(2));
             mapping.set5Position(((Integer)input.get(3)).intValue());
-            mapping_quality = new String(new byte[]{(byte)(((Integer)input.get(7)).intValue()+33)}, "US-ASCII");
+
+	   // note: the following tries to mimic samtools mpileup
+	   if( //((Integer)input.get(7)).intValue() == 255 ||
+		((Integer)input.get(7)).intValue() < 0 || ((Integer)input.get(7)).intValue() >= 93) {// mapping quality not available or otherwise weird
+		mapping_quality = "~";
+		basequal = "S" + basequal.substring(1);		
+	   } else
+            	mapping_quality = new String(new byte[]{(byte)(((Integer)input.get(7)).intValue()+33)}, "US-ASCII");
 
             try {
                 mapping.setAlignment(AlignOp.scanCigar((String)input.get(4)));
@@ -132,7 +141,6 @@ public class ReadPileup extends EvalFunc<DataBag>
             }
 
 	    DataBag output = mBagFactory.newDefaultBag();
-	    String basequal = (String)input.get(5);
 
 	    // NOTE: code based on copy&paste from Seal AbstractTaggedMapping::calculateReferenceMatches
 
@@ -243,7 +251,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    } else {
 			throw new IOException("BUG or bad data?? Found insertion before first CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence);
 		    }*/
-		    tpl.set(1, refpos);
+		    tpl.set(1, refpos-1);
 
 		    // since the inserted sequence of bases should appear together with the entry for the previous
 		    // position before the insert??
