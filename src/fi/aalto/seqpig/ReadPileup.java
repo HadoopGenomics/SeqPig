@@ -183,6 +183,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		
 	    for (AlignOp alignOp: alignment) {
 		if (alignOp.getType() == AlignOp.Type.Match) {
+
 		    int positionsToCover = alignOp.getLen();
 
 		    while (positionsToCover > 0 && mdOp != null) {
@@ -192,6 +193,12 @@ public class ReadPileup extends EvalFunc<DataBag>
 			    throw new IOException("BUG or bad data?? found MD deletion while parsing CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);
 
 			} else {
+
+			    if(prev_tpl != null) {
+                        	output.add(prev_tpl);
+                        	prev_tpl = null;
+                    	    }
+
 			    // must be a match or a mismatch
 			    boolean match = mdOp.getType() == MdOp.Type.Match;
 			    int consumed = Math.min(mdOp.getLen() - mdOpConsumed, positionsToCover);
@@ -287,7 +294,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 			tpl.set(4, null); // note: it seems samtools silently drops base qualities of inserted bases
 		    } else {
 			tpl = prev_tpl;
-			pileuppref = tpl.get(3);
+			pileuppref = (String)tpl.get(3);
 		    }
 
 		    /*if(seqpos > 0 && refPositions.get(seqpos-1) >= 0) {
@@ -367,7 +374,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 			tpl.set(4, null);
 		    } else {
 			tpl = prev_tpl;
-			pileuppref = tpl.get(3);
+			pileuppref = (String)tpl.get(3);
 		    }
 
 		    String deleted_bases = mdOp.getSeq();
@@ -498,6 +505,10 @@ public class ReadPileup extends EvalFunc<DataBag>
 		  }*/
 	          }
 	    }
+
+
+	    if(prev_tpl != null)
+		output.add(prev_tpl);
 
 	    return output;
 
