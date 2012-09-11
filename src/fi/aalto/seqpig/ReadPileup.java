@@ -41,6 +41,11 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 
+/* UDF ReadPileup 
+   
+ * takes a single read (created via input format from SAMRecord) and produces pileup data
+    for each reference position
+*/
 
 public class ReadPileup extends EvalFunc<DataBag>
 {
@@ -65,13 +70,20 @@ public class ReadPileup extends EvalFunc<DataBag>
     //   base qualities
     //   MD tag
     //   mapping quality
+
+    // tuple output format:
+    //   chr
+    //   position
+    //   ref base (if known, else null value)
+    //   pileup string (according to samtools)
+    //   base quality/ies (if applicable else null)
+    //   Boolean flag (1 for insertion and deletion, 0 otherwise)
    
     // WARNINGS:
     // we use the folling Pig UDF warnings:
     // 	PigWarning.UDF_WARNING_2 :	problems with parsing CIGAR string
     // 	PigWarning.UDF_WARNING_3 :	problem with parsing MD tag
     // 	PigWarning.UDF_WARNING_4 :	other problem
- 
 
     // compares the length indicated by CIGAR and MD strings and CIGAR and read sequence length; returns true if these match and
     // false otherwise
@@ -166,6 +178,8 @@ public class ReadPileup extends EvalFunc<DataBag>
 	    int refpos = (((Integer)input.get(3)).intValue());
 	    String pileuppref = ("^" + mapping_quality);
 	    String pileuppof = "";
+
+	    Tuple prev_tpl = null; // used for insertions and deletions to join their records; always set to last created tuple!
 		
 	    for (AlignOp alignOp: alignment) {
 		if (alignOp.getType() == AlignOp.Type.Match) {
@@ -223,7 +237,12 @@ public class ReadPileup extends EvalFunc<DataBag>
 				tpl.set(3, pileuppref+pileuppof);
 				tpl.set(4, basequal.substring(seqpos, seqpos+1));
 				tpl.set(5, 0);
-				output.add(tpl);
+				
+				if(i < consumed-1)
+				    output.add(tpl);
+				else
+				    prev_tpl = tpl;
+
 				seqpos++;
 				pileuppref = "";
 			    }
@@ -254,20 +273,28 @@ public class ReadPileup extends EvalFunc<DataBag>
 			continue;
 		    }
 
-		    if(true) {
-		    Tuple tpl = TupleFactory.getInstance().newTuple(6);
-		    tpl.set(0, (String)input.get(2));
+		    //if(prev_tpl == null)
+		    //throw new IOException("BUG or bad data?? Found insertion before first CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence);
+
+		    Tuple tpl ;
+
+		    if(prev_tpl == null) {
+			tpl = TupleFactory.getInstance().newTuple(6);
+
+			tpl.set(0, (String)input.get(2));
+			tpl.set(1, refpos-1);
+			tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
+			tpl.set(4, null); // note: it seems samtools silently drops base qualities of inserted bases
+		    } else {
+			tpl = prev_tpl;
+			pileuppref = tpl.get(3);
+		    }
 
 		    /*if(seqpos > 0 && refPositions.get(seqpos-1) >= 0) {
 			tpl.set(1, refPositions.get(seqpos-1)); // NOTE: this may cause problems with grouping!!
 		    } else {
 			throw new IOException("BUG or bad data?? Found insertion before first CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence);
 		    }*/
-		    tpl.set(1, refpos-1);
-
-		    // since the inserted sequence of bases should appear together with the entry for the previous
-		    // position before the insert??
-		    tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
 
 		    /*String insert_bases = "";
 		      String insert_qualities = "";
@@ -291,10 +318,9 @@ public class ReadPileup extends EvalFunc<DataBag>
 			tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen())+pileuppof);
 			
 		    //tpl.set(4, basequal.substring(seqpos, seqpos+alignOp.getLen()));
-		    tpl.set(4, null); // note: it seems samtools silently drops base
+		    //tpl.set(4, null); // note: it seems samtools silently drops base
 		    // qualities of inserted bases
 		    tpl.set(5, 1); // insertion!!		    
-
 
 		    seqpos += alignOp.getLen();
 
@@ -302,6 +328,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		      tpl.set(4, insert_qualities);*/
 
 		    output.add(tpl);
+		    prev_tpl = null;
 
 		    pileuppref = "";
 
@@ -314,7 +341,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		      else
 		      mdOp = null;
 		      }*/
-                    }	
+                   	
 		}  else if(alignOp.getType() == AlignOp.Type.Delete) {
 		    /*int positionsToCover = alignOp.getLen();
 
@@ -323,25 +350,25 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    //int consumed = Math.min(mdOp.getLen() - mdOpConsumed, positionsToCover);
 		    //int consumed = alignOp.getLen();
 
-		    if(true) {
+		    //if(true) {
 
 		    if(mdOp == null || mdOp.getType() != MdOp.Type.Delete || mdOp.getLen() != alignOp.getLen()) {
 			throw new IOException("BUG or bad data?? Could not find matching MD deletion after finding CIGAR deletion! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence+ "; MdOp: "+(mdOp==null?"null":mdOp.toString()));
 		    }
-			
-		    Tuple tpl = TupleFactory.getInstance().newTuple(6);
-		    tpl.set(0, (String)input.get(2));
-		    tpl.set(1, refpos-1);
+	
+		    Tuple tpl ;
 
-		    /*if(seqpos > 0 && refPositions.get(seqpos-1)>=0) {
-			tpl.set(1, refPositions.get(seqpos-1)); // NOTE: this may cause problems with grouping!!
+		    if(prev_tpl == null) {
+			tpl = TupleFactory.getInstance().newTuple(6);
+
+			tpl.set(0, (String)input.get(2));
+			tpl.set(1, refpos-1);
+			tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
+			tpl.set(4, null);
 		    } else {
-			throw new IOException("BUG or bad data?? Found deletion before first CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence);
-		    }*/
-
-		    // since the inserted sequence of bases should appear together with the entry for the previous
-		    // position before the insert??
-		    tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
+			tpl = prev_tpl;
+			pileuppref = tpl.get(3);
+		    }
 
 		    String deleted_bases = mdOp.getSeq();
 
@@ -364,10 +391,10 @@ public class ReadPileup extends EvalFunc<DataBag>
 			pileuppof = "$";*/
 
 		    tpl.set(3, pileuppref+"-"+alignOp.getLen()+deleted_bases+pileuppof);
-		    tpl.set(4, null);
 		    tpl.set(5, 1); // deletion!
 
 		    output.add(tpl);
+		    prev_tpl = null;
 
 		    //int start_deletion = refpos; //refPositions.get(seqpos-1);
 
@@ -399,7 +426,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		      else
 		      mdOp = null;
 		      }*/	
-		    }
+		    
 		} else if(alignOp.getType() == AlignOp.Type.SoftClip) {
 		    if(true) {
 
