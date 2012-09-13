@@ -77,7 +77,6 @@ public class ReadPileup extends EvalFunc<DataBag>
     //   ref base (if known, else null value)
     //   pileup string (according to samtools)
     //   base quality/ies (if applicable else null)
-    //   Boolean flag (1 for insertion and deletion, 0 otherwise)
    
     // WARNINGS:
     // we use the folling Pig UDF warnings:
@@ -216,7 +215,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 				/*if(refPositions.get(seqpos) < 0)
 					throw new IOException("BUG or bad data?? unknown refpos inside match/mismatch! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);*/
 
-				Tuple tpl = TupleFactory.getInstance().newTuple(6);
+				Tuple tpl = TupleFactory.getInstance().newTuple(5);
 				tpl.set(0, (String)input.get(2));
 				tpl.set(1, refpos++); //refPositions.get(seqpos));
 
@@ -243,7 +242,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 				tpl.set(3, pileuppref+pileuppof);
 				tpl.set(4, basequal.substring(seqpos, seqpos+1));
-				tpl.set(5, 0);
 				
 				if(i < consumed-1)
 				    output.add(tpl);
@@ -286,7 +284,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    Tuple tpl ;
 
 		    if(prev_tpl == null) {
-			tpl = TupleFactory.getInstance().newTuple(6);
+			tpl = TupleFactory.getInstance().newTuple(5);
 
 			tpl.set(0, (String)input.get(2));
 			tpl.set(1, refpos-1);
@@ -327,7 +325,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    //tpl.set(4, basequal.substring(seqpos, seqpos+alignOp.getLen()));
 		    //tpl.set(4, null); // note: it seems samtools silently drops base
 		    // qualities of inserted bases
-		    tpl.set(5, 1); // insertion!!		    
 
 		    seqpos += alignOp.getLen();
 
@@ -366,7 +363,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    Tuple tpl ;
 
 		    if(prev_tpl == null) {
-			tpl = TupleFactory.getInstance().newTuple(6);
+			tpl = TupleFactory.getInstance().newTuple(5);
 
 			tpl.set(0, (String)input.get(2));
 			tpl.set(1, refpos-1);
@@ -398,7 +395,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 			pileuppof = "$";*/
 
 		    tpl.set(3, pileuppref+"-"+alignOp.getLen()+deleted_bases+pileuppof);
-		    tpl.set(5, 1); // deletion!
 
 		    output.add(tpl);
 		    prev_tpl = null;
@@ -406,13 +402,12 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    //int start_deletion = refpos; //refPositions.get(seqpos-1);
 
 		    for(int i=0;i<mdOp.getLen();i++) {
-			Tuple dtpl = TupleFactory.getInstance().newTuple(6);
+			Tuple dtpl = TupleFactory.getInstance().newTuple(5);
 			dtpl.set(0, (String)input.get(2));
 			dtpl.set(1, refpos++); //start_deletion+i+1);
 			dtpl.set(2, deleted_bases.substring(i,i+1).toUpperCase());
 			dtpl.set(3, "*");
 			//dtpl.set(4, mapping_quality);
-			dtpl.set(5, 0);
 			//output.add(dtpl);
 			deletionTuples.add(dtpl);
 		    }
@@ -437,7 +432,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		} else if(alignOp.getType() == AlignOp.Type.SoftClip) {
 		    if(true) {
 
-		    Tuple tpl = TupleFactory.getInstance().newTuple(6);
+		    Tuple tpl = TupleFactory.getInstance().newTuple(5);
 
 		    /*if(seqpos > 0 && refPositions.get(seqpos-1)>=0) {
                         tpl.set(1, refPositions.get(seqpos-1)); // NOTE: this may cause problems with grouping!!
@@ -453,7 +448,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
 		    tpl.set(3, "$");
 		    tpl.set(4, null);
-		    tpl.set(5, 0);
 
 		    output.add(tpl);
 
@@ -526,8 +520,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 	    bagSchema.add(new Schema.FieldSchema("refbase", DataType.CHARARRAY));
 	    bagSchema.add(new Schema.FieldSchema("pileup", DataType.CHARARRAY));
 	    bagSchema.add(new Schema.FieldSchema("qual", DataType.CHARARRAY));
-	    bagSchema.add(new Schema.FieldSchema("flag", DataType.INTEGER)); // 1 if there is a special
-		// entry (insertion or deletion); only useful for sorting after later grouping
 
 	    return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
 	}catch (Exception e){
