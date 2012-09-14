@@ -1,12 +1,6 @@
 SeqPig is a library of import and export functions for file formats commonly
 used in bioinformatics for Apache Pig.
 
-For more examples see also the wiki of two past COST hackathons:
-
-http://seqahead.cs.tu-dortmund.de/meetings:fastqpigscripting
-http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:pileuptask
-http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:seqpig_life_savers_page
-
 A) Setup instructions:
 
  A1. Set HADOOP_HOME and PIG_HOME to the installation directories of
@@ -134,4 +128,20 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
     grunt> F = ORDER F BY chr, pos;
     grunt> G = FOREACH F GENERATE chr, pos, flatten($2);
     grunt> store G into 'input.pileup' using PigStorage('\t');
+
+  For more examples see also the wiki of two past COST hackathons:
+
+  http://seqahead.cs.tu-dortmund.de/meetings:fastqpigscripting
+  http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:pileuptask
+  http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:seqpig_life_savers_page
+
+D) Further comments
+
+ Note that alternatively to using the Pig grunt shell (which can lead to
+ delays due to Hadoop queuing and exectution delays), users can write scripts
+ that are then submitted to Pig for execution. This type of exectution has the
+ advantage of being able to handle parameters, for example for input and
+ oputput files. Example C2 could be also performed over the command line via:
+
+ pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/run_input_bam_sorting.pig
 
