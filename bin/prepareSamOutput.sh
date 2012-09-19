@@ -8,18 +8,7 @@ then
         exit 0
 fi
 
-if [ "$HADOOP" = "" ]; then
-        HADOOP="$HADOOP_HOME/bin/hadoop"
-fi
-
-if [ "$SEQPIG_HOME" = "" ]; then
-        SEQPIG_HOME=`dirname $0`
-        SEQPIG_HOME="${SEQPIG_HOME}/../"
-fi
-
-if [ "$CLASSPATH" = "" ]; then
-        CLASSPATH="${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/sam-1.56.jar:${SEQPIG_HOME}/lib/hadoop-bam-4.0.jar"
-fi
+source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
 
 bamoutputfilename="$1";
 baminputfilename="$2"; # required for sam file header
