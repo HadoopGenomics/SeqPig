@@ -1,6 +1,5 @@
 Register 'python/SAMReadStreaming.py' using jython as myfuncs;
-A = load 'input.bam' using fi.aalto.seqpig.BamUDFLoader('yes') AS (name:chararray, start:int, end:int, read:chararray, cigar:chararray, basequal:chararray, flags:int, insertsize:int, mapqual:int, matestart:int, indexbin:int, materefindex:int, refindex:int, refname:chararray, attributes:map []);
-B = LIMIT A 2000;
+B = load '$inputfile' using BamUDFLoader('yes');
 C = foreach B generate name, start, end, read, cigar, basequal, flags, insertsize, mapqual, matestart, indexbin, materefindex, refindex, attributes, start / 1000;
 D = foreach B generate name, start, end, read, cigar, basequal, flags, insertsize, mapqual, matestart, indexbin, materefindex, refindex, attributes, end / 1000;
 E = UNION C, D;

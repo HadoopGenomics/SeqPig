@@ -1,4 +1,4 @@
-A = load '$inputfile' using fi.aalto.seqpig.BamUDFLoader('yes');
+A = load '$inputfile' using BamUDFLoader('yes');
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual), start, flags, name;
 D = FOREACH C GENERATE flatten($0), start, flags, name;
