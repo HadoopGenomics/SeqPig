@@ -47,16 +47,12 @@ import org.apache.hadoop.io.Text;
 import fi.tkk.ics.hadoop.bam.BAMInputFormat;
 import fi.tkk.ics.hadoop.bam.BAMRecordReader;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
+import fi.tkk.ics.hadoop.bam.FileVirtualSplit;
+
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMTextHeaderCodec;
-import fi.tkk.ics.hadoop.bam.FileVirtualSplit;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMReadGroupRecord;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMProgramRecord;
 import net.sf.samtools.SAMReadGroupRecord;
 import net.sf.samtools.SAMProgramRecord;
-
 import net.sf.samtools.SAMFileReader.ValidationStringency;
 
 import java.io.IOException;

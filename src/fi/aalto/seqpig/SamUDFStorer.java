@@ -39,21 +39,21 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordWriter; 
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
+import net.sf.samtools.SAMRecord;
+import net.sf.samtools.SAMFileHeader;
+import net.sf.samtools.SAMTextHeaderCodec;
+import net.sf.samtools.SAMTagUtil;
+import net.sf.samtools.SAMReadGroupRecord;
+import net.sf.samtools.SAMProgramRecord;
+import net.sf.samtools.SAMFileReader.ValidationStringency;
+import net.sf.samtools.util.StringLineReader;
+
 import fi.tkk.ics.hadoop.bam.SAMFormat;
 import fi.tkk.ics.hadoop.bam.AnySAMOutputFormat;
 import fi.tkk.ics.hadoop.bam.SAMRecordWriter;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringSAMRecordWriter;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringAnySAMOutputFormat;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileHeader;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTagUtil;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMReadGroupRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMProgramRecord;
-
-import net.sf.samtools.SAMFileReader.ValidationStringency;
-import net.sf.samtools.util.StringLineReader;
 
 import java.io.IOException;
 import java.util.ArrayList;

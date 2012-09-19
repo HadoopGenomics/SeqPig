@@ -20,11 +20,14 @@
 
 package fi.aalto.seqpig;
 
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileHeader;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileReader;
-
+import net.sf.samtools.SAMRecord;
+import net.sf.samtools.SAMFileHeader;
+import net.sf.samtools.SAMTextHeaderCodec;
+import net.sf.samtools.SAMFileReader;
+import net.sf.samtools.BAMRecordCodec;
+import net.sf.samtools.util.BlockCompressedOutputStream;
+import net.sf.samtools.SAMSequenceDictionary;
+import net.sf.samtools.SAMSequenceRecord;
 import net.sf.samtools.SAMFileReader.ValidationStringency;
 import net.sf.samtools.util.StringLineReader;
 

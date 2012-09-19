@@ -44,12 +44,6 @@ import fi.tkk.ics.hadoop.bam.BAMRecordWriter;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringBAMRecordWriter;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringBAMOutputFormat;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileHeader;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTagUtil;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMReadGroupRecord;
-//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMProgramRecord;
 
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMFileHeader;
