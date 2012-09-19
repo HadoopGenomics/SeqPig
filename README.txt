@@ -3,7 +3,7 @@ used in bioinformatics for Apache Pig.
 
 A) Setup instructions:
 
- A1. Set HADOOP_HOME and PIG_HOME to the installation directories of
+    Set HADOOP_HOME and PIG_HOME to the installation directories of
     Hadoop and Pig, respectively, and SEQPIG_HOME to the installtion
     directory of SeqPig. On a Cloudera Hadoop installation with
     a local installation of the most recent Pig release, this would be
@@ -18,42 +18,55 @@ A) Setup instructions:
 
     export PATH=${PATH}:${SEQPIG_HOME}/bin
 
- A2. Download hadoop-bam-4.0 from
-    https://sourceforge.net/projects/hadoop-bam/
+B) Instructions for building SeqPig.jar
 
- A3. inside the cloned git repository ($SEQPIG_HOME), create a lib/ subdirectory
+ B1. Download hadoop-bam-5.0 from
+    
+	https://sourceforge.net/projects/hadoop-bam/
+
+ B2. Download and compile the latest biodoop/seal version from
+
+	http://biodoop-seal.sourceforge.net/
+
+     (requires to set HADOOP_BAM to the installation directory of hadoop-bam)
+
+ B3. Inside the cloned git repository ($SEQPIG_HOME), create a lib/ subdirectory
     and copy the following jar files contained in the
     hadoop-bam release to this location:
  
-    hadoop-bam-4.0.jar  picard-1.56.jar  sam-1.56.jar
+    seal.jar	hadoop-bam-5.0.jar	sam-1.76.jar	picard-1.76.jar
 
     Note: the Picard and Sam jar files are contained in the hadoop-bam release
     for convenience.
 
- A4. Run ant to build SeqPig.jar.
+ B4. Run ant to build SeqPig.jar.
 
-B) How to start the pig grunt shell for interactive operations (assumes pig is in
-your path):
+C) Usage:
 
- B1. Inside the seqpig repository execute:
+ C1. Using the pig grunt shell for interactive operations (assumes pig is in your
+   PATH); inside the seqpig repository execute:
 
-    pig -Dpig.additional.jars=lib/hadoop-bam-4.0.jar:build/jar/SeqPig.jar:lib/seal.jar:lib/picard-1.56.jar:lib/sam-1.56.jar -Dudf.import.list=fi.aalto.seqpig
+    pig -Dpig.additional.jars=lib/hadoop-bam-5.0.jar:build/jar/SeqPig.jar:lib/seal.jar:lib/picard-1.76.jar:lib/sam-1.76.jar -Dudf.import.list=fi.aalto.seqpig
 
-    Note: for convenience it may be best to add the following entry to your
-    .bashrc:
+    Note: for convenience it may be best to add the following entry to your .bashrc:
 
     alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-4.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.56.jar:${SEQPIG_HOME}/lib/sam-1.56.jar -Dudf.import.list=fi.aalto.seqpig' 
- 
 
-C) Examples for bam file manipulation inside the grunt shell:
+ C2. Alternatively to using the Pig grunt shell (which can lead to delays due
+   to Hadoop queuing and exectution delays), users can write scripts that are
+   then submitted to Pig/Hadoop for execution. This type of exectution has the
+   advantage of being able to handle parameters, for example for input and oputput
+   files. See /scripts inside the seqpig directory and the examples below.
+
+D) Examples for operations on bam files:
 
   All examples assume that an input bam file is initially imported to HDFS via
 
-    ${SEQPIG_HOME}/scripts/prepareBamInput.sh input.bam
+    ${SEQPIG_HOME}/bin/prepareBamInput.sh input.bam
 
   and then loaded in the grunt shell via
 
-    grunt> A = load 'input.bam' using fi.aalto.seqpig.BamUDFLoader('yes');
+    grunt> A = load 'input.bam' using BamUDFLoader('yes');
 
   (the 'yes' chooses read attributes to be loaded; choose 'no' whenever these
   are not required)
@@ -65,7 +78,7 @@ C) Examples for bam file manipulation inside the grunt shell:
 
   and can also be exported from HDFS to the local filesystem via
 
-    ./scripts/prepareBamOutput.sh output.bam input.bam
+    ${SEQPIG_HOME}/bin/prepareBamOutput.sh output.bam input.bam
 
   (note: the export requires the original input bam in order to obtain the
   header of the bam file which is required for writing bam files)
@@ -106,17 +119,11 @@ C) Examples for bam file manipulation inside the grunt shell:
 
   will sample from A with sampling probability 0.01.
 
-  Alternatively to using the Pig grunt shell (which can lead to delays due to Hadoop
-  queuing and exectution delays), users can write scripts that are then submitted to
-  Pig for execution. This type of exectution has the advantage of being able to handle
-  parameters, for example for input and oputput files. See /scripts inside the
-  seqpig directory.
-
- C1. Filtering out unmapped reads and PCR or optical duplicates:
+ D1. Filtering out unmapped reads and PCR or optical duplicates:
 
     grunt> A = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 
- C2. Sorting bam input file by chromosome, reference start coordinate, strand
+ D2. Sorting bam input file by chromosome, reference start coordinate, strand
   and readname (in this hierarchical order):
 
     grunt> A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
@@ -127,7 +134,7 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
 
     pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 
- C3. Computing read coverage over reference-coordinate bins of a fixed size,
+ D3. Computing read coverage over reference-coordinate bins of a fixed size,
   for example:
 
     grunt> B = GROUP A BY start/200;
@@ -137,7 +144,7 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
    will output the number of reads that lie in any non-overlapping bin of size
    200 base pairs.
 
- C4. Computing base frequencies (counts) for each reference coordinate:
+ D4. Computing base frequencies (counts) for each reference coordinate:
 
     grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
     grunt> A = FILTER A BY (flags/4)%2==0;
@@ -152,7 +159,7 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
 
     pig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
 
- C5. Generating samtools compatible pileup (for a correctly sorted bam file
+ D5. Generating samtools compatible pileup (for a correctly sorted bam file
    with MD tags aligned to the same reference, should produce the same output as
    samtools mpileup -f ref.fasta -B input.bam):
 
@@ -179,7 +186,7 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
   http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:pileuptask
   http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:seqpig_life_savers_page
 
-D) Further comments
+E) Further comments
 
  For performance reasons it is typically advisable to enable compression of
  Hadoop map (and possible reduce) output, as well as temporary data generated
