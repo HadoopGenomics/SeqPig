@@ -115,7 +115,7 @@ public class QseqUDFStorer extends StoreFunc {
 
 	index = getFieldIndex("run_number", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setRunNumber(((Integer)f.get(index)).intValue());
+	    fastqrec.setRunNumber(((Integer)f.get(index)));
 	}
 
 	index = getFieldIndex("flow_cell_id", allFastqFieldNames);
@@ -125,27 +125,27 @@ public class QseqUDFStorer extends StoreFunc {
 
 	index = getFieldIndex("lane", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setLane(((Integer)f.get(index)).intValue());
+	    fastqrec.setLane(((Integer)f.get(index)));
 	}
 
 	index = getFieldIndex("tile", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setTile(((Integer)f.get(index)).intValue());
+	    fastqrec.setTile(((Integer)f.get(index)));
 	}
 
 	index = getFieldIndex("xpos", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setXpos(((Integer)f.get(index)).intValue());
+	    fastqrec.setXpos(((Integer)f.get(index)));
 	}
 	
 	index = getFieldIndex("ypos", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setYpos(((Integer)f.get(index)).intValue());
+	    fastqrec.setYpos(((Integer)f.get(index)));
 	}
 	
 	index = getFieldIndex("read", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setRead(((Integer)f.get(index)).intValue());
+	    fastqrec.setRead(((Integer)f.get(index)));
 	}
 
 	index = getFieldIndex("qc_passed", allFastqFieldNames);
@@ -155,7 +155,7 @@ public class QseqUDFStorer extends StoreFunc {
 
 	index = getFieldIndex("control_number", allFastqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setControlNumber(((Integer)f.get(index)).intValue());
+	    fastqrec.setControlNumber(((Integer)f.get(index)));
 	}
 
 	index = getFieldIndex("index_sequence", allFastqFieldNames);

@@ -72,7 +72,7 @@ public class FastqUDFLoader extends LoadFunc implements LoadMetadata {
     //   xpos: int
     //   ypos: int
     //   read: int
-    //   qc_passed (a.k.a. filter): boolean
+    //   qc_passed: boolean
     //   control_number: int
     //   index_sequence: string
     //   sequence: string
