@@ -13,6 +13,11 @@ A) Setup instructions:
     export PIG_HOME=/root/pig-0.10.0
     export SEQPIG_HOME=/root/seqpig 
 
+    To make life simpler also add the directory ${SEQPIG_HOME}/bin to your
+    PATH:
+
+    export PATH=${PATH}:${SEQPIG_HOME}/bin
+
  A2. Download hadoop-bam-4.0 from
     https://sourceforge.net/projects/hadoop-bam/
 
@@ -90,6 +95,23 @@ C) Examples for bam file manipulation inside the grunt shell:
 
   will output all read names and their corresponding MD tag.
 
+  Another useful command is LIMIT and SAMPLE, which can be used for example for obtaining
+  a subset of reads from a bam/sam file which can be useful for debugging.
+
+   grunt> B = LIMIT A 20;
+
+  will assign the first 20 records of A to B, while
+
+   grunt> B = SAMPLE A 0.01;
+
+  will sample from A with sampling probability 0.01.
+
+  Alternatively to using the Pig grunt shell (which can lead to delays due to Hadoop
+  queuing and exectution delays), users can write scripts that are then submitted to
+  Pig for execution. This type of exectution has the advantage of being able to handle
+  parameters, for example for input and oputput files. See /scripts inside the
+  seqpig directory.
+
  C1. Filtering out unmapped reads and PCR or optical duplicates:
 
     grunt> A = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
@@ -101,7 +123,9 @@ C) Examples for bam file manipulation inside the grunt shell:
 mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flags/16)%2;
     grunt> A = ORDER A BY refname, start, $15, name;
 
-  (see also scripts/run_input_bam_sorting.pig)
+  NOTE: this is roughly equivalent to executing from the command line:
+
+    pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 
  C3. Computing read coverage over reference-coordinate bins of a fixed size,
   for example:
@@ -113,10 +137,26 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
    will output the number of reads that lie in any non-overlapping bin of size
    200 base pairs.
 
- C4. Generating samtools compatible pileup (complete example, see also
-     scripts/run_pileup_param.pig):
+ C4. Computing base frequencies (counts) for each reference coordinate:
 
-    grunt> A = load 'input.bam' using fi.aalto.seqpig.BamUDFLoader('yes');
+    grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
+    grunt> A = FILTER A BY (flags/4)%2==0;
+    grunt> RefPos = FOREACH A GENERATE ReadRefPositions(read, flags, refname, start, cigar), mapqual;
+    grunt> flatset = FOREACH RefPos GENERATE flatten($0), mapqual;
+    grunt> grouped = GROUP flatset BY ($0, $1, $2);
+    grunt> base_counts = FOREACH grouped GENERATE group.chr, group.pos, group.base, COUNT(flatset);
+    grunt> base_counts = ORDER base_counts BY chr,pos;
+    grunt> store base_counts into 'input.basecounts';
+
+  NOTE: this is roughly equivalent to executing from the command line:
+
+    pig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
+
+ C5. Generating samtools compatible pileup (for a correctly sorted bam file
+   with MD tags aligned to the same reference, should produce the same output as
+   samtools mpileup -f ref.fasta -B input.bam):
+
+    grunt> A = load 'input.bam' using BamUDFLoader('yes');
     grunt> B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
     grunt> C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
       basequal, attributes#'MD', mapqual), start, flags, name;
@@ -129,6 +169,10 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
     grunt> G = FOREACH F GENERATE chr, pos, flatten($2);
     grunt> store G into 'input.pileup' using PigStorage('\t');
 
+   NOTE: this is equivalent to executing from the command line:
+
+    pig -param inputfile=input.bam -param outputfile=input.pileup -param pparallel=1 ${SEQPIG_HOME}/scripts/pileup.pig
+
   For more examples see also the wiki of two past COST hackathons:
 
   http://seqahead.cs.tu-dortmund.de/meetings:fastqpigscripting
@@ -137,11 +181,15 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
 
 D) Further comments
 
- Note that alternatively to using the Pig grunt shell (which can lead to
- delays due to Hadoop queuing and exectution delays), users can write scripts
- that are then submitted to Pig for execution. This type of exectution has the
- advantage of being able to handle parameters, for example for input and
- oputput files. Example C2 could be also performed over the command line via:
+ For performance reasons it is typically advisable to enable compression of
+ Hadoop map (and possible reduce) output, as well as temporary data generated
+ by Pig. The details depend on which compression codecs are used, but it can
+ be enabled by passing parameters along the lines of
 
- pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/run_input_bam_sorting.pig
+  -Djava.library.path=/opt/hadoopgpl/native/Linux-amd64-64
+  -Dpig.tmpfilecompression=true -Dpig.tmpfilecompression.codec=lzo
+  -Dmapred.output.compress=true
+  -Dmapred.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec
 
+ to the pig command. Note that currently not all Hadoop compression codecs are
+ supported by Pig.
