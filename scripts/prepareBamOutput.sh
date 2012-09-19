@@ -18,7 +18,16 @@ if [ "$SEQPIG_HOME" = "" ]; then
 fi
 
 if [ "$CLASSPATH" = "" ]; then
-        CLASSPATH="${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/sam-1.56.jar:${SEQPIG_HOME}/lib/hadoop-bam-4.0.jar"
+	CLASSPATH="${SEQPIG_HOME}/build/jar/SeqPig.jar";
+	for i in lib/*.jar; do
+	CLASSPATH="${CLASSPATH}:${SEQPIG_HOME}/${i}";
+	done
+fi
+
+echo "CLASSPATH: $CLASSPATH"
+
+if [ "$CLASSPATH" = "" ]; then
+        CLASSPATH="${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/sam-1.56.jar:${SEQPIG_HOME}/lib/hadoop-bam.jar"
 fi
 
 bamoutputfilename="$1";
@@ -39,6 +48,7 @@ then
 
                 if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
                 then
+			echo "adding terminator!! (disable if you encounter problems)"
                         cat ${SEQPIG_HOME}/data/bgzf-terminator.bin >> tmphdr
                         mv tmphdr ${1}
                 else

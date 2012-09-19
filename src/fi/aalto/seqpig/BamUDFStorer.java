@@ -44,13 +44,19 @@ import fi.tkk.ics.hadoop.bam.BAMRecordWriter;
 import fi.tkk.ics.hadoop.bam.SAMRecordWritable;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringBAMRecordWriter;
 import fi.tkk.ics.hadoop.bam.KeyIgnoringBAMOutputFormat;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileHeader;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTagUtil;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMReadGroupRecord;
-import fi.tkk.ics.hadoop.bam.custom.samtools.SAMProgramRecord;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMRecord;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMFileHeader;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTextHeaderCodec;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMTagUtil;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMReadGroupRecord;
+//import fi.tkk.ics.hadoop.bam.custom.samtools.SAMProgramRecord;
 
+import net.sf.samtools.SAMRecord;
+import net.sf.samtools.SAMFileHeader;
+import net.sf.samtools.SAMTextHeaderCodec;
+import net.sf.samtools.SAMTagUtil;
+import net.sf.samtools.SAMReadGroupRecord;
+import net.sf.samtools.SAMProgramRecord;
 import net.sf.samtools.SAMFileReader.ValidationStringency;
 import net.sf.samtools.util.StringLineReader;
 
@@ -332,10 +338,11 @@ public class BamUDFStorer extends StoreFunc {
 	    samrec.setMateAlignmentStart(((Integer)f.get(index)).intValue());
 	}
 
-	index = getFieldIndex("indexbin", allBAMFieldNames);
+	// note: we cannot access this anymore since it is not public inside samtools
+	/*index = getFieldIndex("indexbin", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setIndexingBin((Integer)f.get(index));
-	}
+	}*/
 
 	index = getFieldIndex("materefindex", allBAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
@@ -435,7 +442,7 @@ public class BamUDFStorer extends StoreFunc {
 	      && allBAMFieldNames.containsKey("insertsize")
 	      && allBAMFieldNames.containsKey("mapqual")
 	      && allBAMFieldNames.containsKey("matestart")
-	      && allBAMFieldNames.containsKey("indexbin")
+	      //&& allBAMFieldNames.containsKey("indexbin")
 	      && allBAMFieldNames.containsKey("materefindex")
 	      && allBAMFieldNames.containsKey("refindex")))
 	    throw new IOException("Error: Incorrect BAM tuple-field name or compulsory field missing");
