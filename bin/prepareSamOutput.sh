@@ -4,7 +4,7 @@
 
 if [ $# -lt 2 ]
 then
-        echo "error: usage $0 <outputfile.bam> <original_source.bam>"
+        echo "error: usage $0 <outputfile.sam> <original_source.sam>"
         exit 0
 fi
 
@@ -21,30 +21,19 @@ if [ -e "./$bamoutputfilename" ]
 then
         echo "writing to file $bamoutputfilename";
 
-        if [ -e "$baminputfilename" ]
-        then
-                #$JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
-		#$JAVA_HOME/bin/java -classpath $CLASSPATH fi.aalto.seqpig.SAMFileHeaderReader $1
-                #mv $1.asciiheader tmphdr
-		#cat ${1} >> tmphdr
+        cat $bamoutputfilename > tmphdr
 
-		rm -f tmphdr
-		$JAVA_HOME/bin/java -classpath $CLASSPATH fi.tkk.ics.hadoop.bam.util.GetSortedBAMHeader $baminputfilename tmphdr
-                cat $bamoutputfilename > tmphdr
-
-		# note: ther terminator seems to make trouble when reading in again
-                #if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
-                #then
-                #        cat ${SEQPIG_HOME}/data/bgzf-terminator.bin >> tmphdr
+	# NOTE: adding the terminator seems to cause problems
+	# when later importing again.
+        #if [ -e "${SEQPIG_HOME}/data/bgzf-terminator.bin" ]
+        #then
+        	#cat ${SEQPIG_HOME}/data/bgzf-terminator.bin >> tmphdr
                 mv tmphdr ${1}
-                #else
-                #        echo "error: cannot find bgzf-terminator.bin"
-                #fi
-        else
-                echo "error: bam input file $baminputfilename does not exist";
-        fi
+        #else
+        #        echo "error: cannot find bgzf-terminator.bin"
+        #fi
 else
-        echo "error: file does not exist: $bamoutputfilename";
+        echo "error: could not find $bamoutputfilename in HDFS!";
 fi
 
 if [ -e ".${bamoutputfilename}.crc" ]

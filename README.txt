@@ -1,5 +1,6 @@
 SeqPig is a library of import and export functions for file formats commonly
-used in bioinformatics for Apache Pig.
+used in bioinformatics for Apache Pig. Currently it supports BAM/SAM, FastQ
+and Qseq input and output. It is built on top of the Hadoop-BAM library.
 
 A) Setup instructions:
 

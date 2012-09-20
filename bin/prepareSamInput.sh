@@ -12,8 +12,8 @@ if [ -e "$1" ]
 then
 	bamfilename=`basename $1`
 
-	${HADOOP} fs -rmr ${bamfilename}
-	${HADOOP} fs -rmr ${bamfilename}.asciiheader
+	${HADOOP} fs -rmr ${bamfilename} > /dev/null 2>&1
+	${HADOOP} fs -rmr ${bamfilename}.asciiheader > /dev/null 2>&1
 
 	${HADOOP} fs -put $1 ${bamfilename}
 
