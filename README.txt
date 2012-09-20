@@ -63,7 +63,7 @@ D) Examples for operations on BAM files:
 
   All examples assume that an input BAM file is initially imported to HDFS via
 
-    ${SEQPIG_HOME}/bin/prepareBamInput.sh input.bam
+    prepareBamInput.sh input.bam
 
   and then loaded in the grunt shell via
 
@@ -79,10 +79,11 @@ D) Examples for operations on BAM files:
 
   and can also be exported from HDFS to the local filesystem via
 
-    ${SEQPIG_HOME}/bin/prepareBamOutput.sh output.bam input.bam
+    prepareBamOutput.sh output.bam
 
-  (note: the export requires the original input BAM in order to obtain the
-  header of the BAM file which is required for writing BAM files)
+  (note: the Pig store operation requires a valid header for the BAM output file,
+  for example the header of the source file used to generate it, which is
+  generated automatically by the prepareBamInput.sh script used to import it)
 
   Note that dumping the BAM data to the screen (similarly to samtools view)
   can be done simply by
