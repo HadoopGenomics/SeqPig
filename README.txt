@@ -24,7 +24,7 @@ B) Instructions for building SeqPig.jar
     
 	https://sourceforge.net/projects/hadoop-bam/
 
- B2. Download and compile the latest biodoop/seal version from
+ B2. Download and compile the latest biodoop/seal git master version from
 
 	http://biodoop-seal.sourceforge.net/
 
@@ -50,7 +50,7 @@ C) Usage:
 
     Note: for convenience it may be best to add the following entry to your .bashrc:
 
-    alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-4.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.56.jar:${SEQPIG_HOME}/lib/sam-1.56.jar -Dudf.import.list=fi.aalto.seqpig' 
+    alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dudf.import.list=fi.aalto.seqpig' 
 
  C2. Alternatively to using the Pig grunt shell (which can lead to delays due
    to Hadoop queuing and exectution delays), users can write scripts that are
@@ -58,9 +58,9 @@ C) Usage:
    advantage of being able to handle parameters, for example for input and oputput
    files. See /scripts inside the seqpig directory and the examples below.
 
-D) Examples for operations on bam files:
+D) Examples for operations on BAM files:
 
-  All examples assume that an input bam file is initially imported to HDFS via
+  All examples assume that an input BAM file is initially imported to HDFS via
 
     ${SEQPIG_HOME}/bin/prepareBamInput.sh input.bam
 
@@ -72,7 +72,7 @@ D) Examples for operations on bam files:
   are not required)
 
   Once some operations have been performed, the resulting (modified) read
-  data can then be stored into a new bam file via
+  data can then be stored into a new BAM file via
 
     grunt> store A into 'output.bam' using BamUDFStorer('input.bam.asciiheader');
 
@@ -80,10 +80,10 @@ D) Examples for operations on bam files:
 
     ${SEQPIG_HOME}/bin/prepareBamOutput.sh output.bam input.bam
 
-  (note: the export requires the original input bam in order to obtain the
-  header of the bam file which is required for writing bam files)
+  (note: the export requires the original input BAM in order to obtain the
+  header of the BAM file which is required for writing BAM files)
 
-  Note that dumping the bam data to the screen (similarly to samtools view)
+  Note that dumping the BAM data to the screen (similarly to samtools view)
   can be done simply by
 
    grunt> dump A;
@@ -93,11 +93,11 @@ D) Examples for operations on bam files:
 
    grunt> describe A;
 
-  which returns for bam data
+  which returns for BAM data
             
-  A: {name: chararray,start: int,end: int,read: chararray,cigar:chararray,
+  A: {name: chararray,start: int,end: int,read: chararray,cigar: chararray,
    basequal: chararray,flags: int,insertsize: int,mapqual:int,matestart: int,
-   indexbin: int,materefindex: int,refindex: int,refname:chararray,attributes: map[]}
+   materefindex: int,refindex: int,refname: chararray,attributes: map[]}
 
   Note that all fields except the attributes are standard data types (strings
   or integers). Specific attributes can be accessed via attributes#'name', for
@@ -109,7 +109,7 @@ D) Examples for operations on bam files:
   will output all read names and their corresponding MD tag.
 
   Another useful command is LIMIT and SAMPLE, which can be used for example for obtaining
-  a subset of reads from a bam/sam file which can be useful for debugging.
+  a subset of reads from a BAM/SAM file which can be useful for debugging.
 
    grunt> B = LIMIT A 20;
 
@@ -123,7 +123,11 @@ D) Examples for operations on bam files:
 
     grunt> A = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 
- D2. Sorting bam input file by chromosome, reference start coordinate, strand
+ D2. Filtering out reads with low mapping quality:
+
+    grunt> A = FILTER A BY mapqual > 19;
+
+ D3. Sorting BAM input file by chromosome, reference start coordinate, strand
   and readname (in this hierarchical order):
 
     grunt> A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
@@ -134,7 +138,7 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
 
     pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 
- D3. Computing read coverage over reference-coordinate bins of a fixed size,
+ D4. Computing read coverage over reference-coordinate bins of a fixed size,
   for example:
 
     grunt> B = GROUP A BY start/200;
@@ -144,7 +148,7 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
    will output the number of reads that lie in any non-overlapping bin of size
    200 base pairs.
 
- D4. Computing base frequencies (counts) for each reference coordinate:
+ D5. Computing base frequencies (counts) for each reference coordinate:
 
     grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
     grunt> A = FILTER A BY (flags/4)%2==0;
@@ -159,7 +163,7 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
 
     pig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
 
- D5. Generating samtools compatible pileup (for a correctly sorted bam file
+ D6. Generating samtools compatible pileup (for a correctly sorted BAM file
    with MD tags aligned to the same reference, should produce the same output as
    samtools mpileup -f ref.fasta -B input.bam):
 
@@ -186,7 +190,14 @@ mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flag
   http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:pileuptask
   http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:seqpig_life_savers_page
 
-E) Further comments
+E) Other supported file formats
+
+ Besides BAM files, seqpig also supports the uncompressed file format SAM for
+ aligned sequence data. For raw read data seqpig supports both FastQ and Qseq
+ input and output. Loading and storing data follows along the same lines as
+ for BAM.
+
+F) Further comments
 
  For performance reasons it is typically advisable to enable compression of
  Hadoop map (and possible reduce) output, as well as temporary data generated
