@@ -4,6 +4,7 @@ and Qseq input and output. It is built on top of the Hadoop-BAM library.
 
 A) Setup instructions:
 
+    Install Hadoop and Pig (tested with Hadoop 0.20.2 and Pig 0.10.0.
     Set HADOOP_HOME and PIG_HOME to the installation directories of
     Hadoop and Pig, respectively, and SEQPIG_HOME to the installtion
     directory of SeqPig. On a Cloudera Hadoop installation with
@@ -133,8 +134,8 @@ D) Examples for operations on BAM files:
   and readname (in this hierarchical order):
 
     grunt> A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
-mapqual, matestart, indexbin, materefindex, refindex, refname, attributes, (flags/16)%2;
-    grunt> A = ORDER A BY refname, start, $15, name;
+mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
+    grunt> A = ORDER A BY refname, start, $14, name;
 
   NOTE: this is roughly equivalent to executing from the command line:
 
