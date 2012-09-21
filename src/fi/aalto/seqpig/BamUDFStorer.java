@@ -76,6 +76,7 @@ public class BamUDFStorer extends StoreFunc {
     protected RecordWriter writer = null;
     protected String samfileheader = null;
     protected SAMFileHeader samfileheader_decoded = null;
+    private static final int BUFFER_SIZE = 1024;
 
     protected HashMap<String,Integer> selectedBAMAttributes = null;
     protected HashMap<String,Integer> allBAMFieldNames = null;
@@ -129,6 +130,7 @@ public class BamUDFStorer extends StoreFunc {
 	}
 
 	try {
+	    //BASE64Encoder encode = new BASE64Encoder();
 	    Base64 codec = new Base64();
 	    Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 	    
@@ -136,9 +138,11 @@ public class BamUDFStorer extends StoreFunc {
 	    ObjectOutputStream ostream = new ObjectOutputStream(bstream);
 	    ostream.writeObject(this.samfileheader);
 	    ostream.close();
+	    //String datastr = encode.encode(bstream.toByteArray());
 	    String datastr = codec.encodeBase64String(bstream.toByteArray());
 	    p.setProperty("samfileheader", datastr);
 	} catch (Exception e) {
+	    //throw new IOException(e);
 	    System.out.println("ERROR: Unable to store SAMFileHeader in BamUDFStorer!");
 	}
 
@@ -147,11 +151,13 @@ public class BamUDFStorer extends StoreFunc {
 
     protected void decodeSAMFileHeader(){
 	try {
+            //BASE64Decoder decode = new BASE64Decoder();
             Base64 codec = new Base64();
             Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
             String datastr;
 
             datastr = p.getProperty("samfileheader");
+            //byte[] buffer = decode.decodeBuffer(datastr);
             byte[] buffer = codec.decodeBase64(datastr);
             ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
             ObjectInputStream ostream = new ObjectInputStream(bstream);
@@ -168,11 +174,13 @@ public class BamUDFStorer extends StoreFunc {
 
 	if(selectedBAMAttributes == null || allBAMFieldNames == null) {
 	    try {
+		//BASE64Decoder decode = new BASE64Decoder();
 		Base64 codec = new Base64();
 		Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 		String datastr;
 	
 		datastr = p.getProperty("selectedBAMAttributes");
+		//byte[] buffer = decode.decodeBuffer(datastr);
 		byte[] buffer = codec.decodeBase64(datastr);
 		ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
 		ObjectInputStream ostream = new ObjectInputStream(bstream);
@@ -181,6 +189,7 @@ public class BamUDFStorer extends StoreFunc {
 		    (HashMap<String,Integer>)ostream.readObject();
 
 		datastr = p.getProperty("allBAMFieldNames");
+		//buffer = decode.decodeBuffer(datastr);
 		buffer = codec.decodeBase64(datastr);
 		bstream = new ByteArrayInputStream(buffer);
 		ostream = new ObjectInputStream(bstream);
