@@ -130,7 +130,15 @@ D) Examples for operations on BAM files:
 
     grunt> A = FILTER A BY mapqual > 19;
 
- D3. Sorting BAM input file by chromosome, reference start coordinate, strand
+ D3. Filtering by regions (samtools syntax):
+
+    grunt> DEFINE myFilter CoordinateFilter('input.bam.asciiheader','20:0-44350673');
+    grunt> B = FILTER A BY myFilter(refindex,start,end);
+
+  Note that filtering by regions requires a valid ascii header for mapping
+  sequence names to sequence indices.
+
+ D4. Sorting BAM input file by chromosome, reference start coordinate, strand
   and readname (in this hierarchical order):
 
     grunt> A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
@@ -141,7 +149,7 @@ mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
 
     pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 
- D4. Computing read coverage over reference-coordinate bins of a fixed size,
+ D5. Computing read coverage over reference-coordinate bins of a fixed size,
   for example:
 
     grunt> B = GROUP A BY start/200;
@@ -151,7 +159,7 @@ mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
    will output the number of reads that lie in any non-overlapping bin of size
    200 base pairs.
 
- D5. Computing base frequencies (counts) for each reference coordinate:
+ D6. Computing base frequencies (counts) for each reference coordinate:
 
     grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
     grunt> A = FILTER A BY (flags/4)%2==0;
@@ -166,7 +174,7 @@ mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
 
     pig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
 
- D6. Generating samtools compatible pileup (for a correctly sorted BAM file
+ D7. Generating samtools compatible pileup (for a correctly sorted BAM file
    with MD tags aligned to the same reference, should produce the same output as
    samtools mpileup -f ref.fasta -B input.bam):
 
