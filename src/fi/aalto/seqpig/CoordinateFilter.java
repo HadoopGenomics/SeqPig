@@ -3,6 +3,30 @@ package fi.aalto.seqpig;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.List;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.regex.Pattern;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.net.URI;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.mapreduce.OutputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.RecordWriter; 
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import org.apache.pig.FilterFunc;
 import org.apache.pig.PigException;
@@ -10,6 +34,10 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.DataType;
+import org.apache.pig.data.DataByteArray;
+import org.apache.pig.data.DataType;
+import org.apache.pig.ResourceSchema;
+import org.apache.pig.impl.util.UDFContext;
 
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMFileHeader;
@@ -17,8 +45,11 @@ import net.sf.samtools.SAMTextHeaderCodec;
 import net.sf.samtools.SAMTagUtil;
 import net.sf.samtools.SAMReadGroupRecord;
 import net.sf.samtools.SAMProgramRecord;
+import net.sf.samtools.SAMSequenceRecord;
 import net.sf.samtools.SAMFileReader.ValidationStringency;
 import net.sf.samtools.util.StringLineReader;
+
+import org.apache.commons.codec.binary.Base64;
 
 // tuple input format:
     //   chr
@@ -28,16 +59,34 @@ import net.sf.samtools.util.StringLineReader;
 
 public class CoordinateFilter extends FilterFunc {
 
+    class RegionEntry {
+	public int index=-1;
+	public int start=-1;
+	public int end=-1;
+
+	public RegionEntry(int i, int s, int e) {
+		index = i;
+		start = s;
+		end = e;
+	}
+    }
+
     protected String samfileheader = null;
     protected SAMFileHeader samfileheader_decoded = null;
 
+    protected List<RegionEntry> regions = null;
+    protected String regions_str = null;
+
     public CoordinateFilter() {
 	decodeSAMFileHeader();
+	decodeRegions();
     }
 
-    public CoordinateFilter(String samfileheaderfilename) {
+    public CoordinateFilter(String samfileheaderfilename, String regions_str) {
 	String str = "";
 	this.samfileheader = "";
+
+        this.regions_str = regions_str;
 
 	try {
 	    Configuration conf = UDFContext.getUDFContext().getJobConf();
@@ -87,11 +136,13 @@ public class CoordinateFilter extends FilterFunc {
 	    ostream.close();
 	    String datastr = codec.encodeBase64String(bstream.toByteArray());
 	    p.setProperty("samfileheader", datastr);
+	    p.setProperty("regionsstr", regions_str);
 	} catch (Exception e) {
 	    System.out.println("ERROR: Unable to store SAMFileHeader in CoordinateFilter!");
 	}
 
 	this.samfileheader_decoded = getSAMFileHeader();
+	populateRegions();
     }
 
     protected void decodeSAMFileHeader(){
@@ -112,11 +163,88 @@ public class CoordinateFilter extends FilterFunc {
         this.samfileheader_decoded = getSAMFileHeader();
     }
 
+    protected void decodeRegions(){
+        try {
+            Base64 codec = new Base64();
+            Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
+            String datastr;
+
+            datastr = p.getProperty("regionsstr");
+            byte[] buffer = codec.decodeBase64(datastr);
+            ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
+            ObjectInputStream ostream = new ObjectInputStream(bstream);
+
+            this.regions_str = (String)ostream.readObject();
+        } catch (Exception e) {
+        }
+
+        populateRegions();
+    }
+
     private SAMFileHeader getSAMFileHeader() {
 	final SAMTextHeaderCodec codec = new SAMTextHeaderCodec();
 	codec.setValidationStringency(ValidationStringency.SILENT);
 	return codec.decode(new StringLineReader(this.samfileheader), "SAMFileHeader.clone");
     }
+
+    // note: most of this is shamelessly copied from hadoop-bam
+    private void populateRegions() {
+	StringTokenizer rst = new StringTokenizer(regions_str, ",");
+	boolean errors = false;
+	
+	regions = new ArrayList();
+
+	while(rst.hasMoreTokens()) {
+		String region = rst.nextToken();
+
+	        final StringTokenizer st = new StringTokenizer(region, ":-");
+                final String refStr = st.nextToken();
+                final int beg, end;
+
+                if (st.hasMoreTokens()) {
+                	beg = parseCoordinate(st.nextToken());
+                      	end = st.hasMoreTokens() ? parseCoordinate(st.nextToken()) : -1;
+
+                      	if (beg < 0 || end < 0 || end < beg) {
+                      		errors = true;
+                                continue;
+                        }
+                } else
+              		beg = end = 0;
+
+                SAMSequenceRecord ref = samfileheader_decoded.getSequence(refStr);
+                
+		if (ref == null) try {
+                	ref = samfileheader_decoded.getSequence(Integer.parseInt(refStr));
+                } catch (NumberFormatException e) {}
+
+                if (ref == null) {
+                                //System.err.printf(
+                                 //       "view :: Not a valid sequence name or index: '%s'\n", refStr);
+                	errors = true;
+                        continue;
+               	}
+
+		regions.add(new RegionEntry(ref.getSequenceIndex(), beg, end));
+    	}
+    }
+
+    private int parseCoordinate(String s) {
+                int c;
+                try {
+                        c = Integer.parseInt(s);
+                } catch (NumberFormatException e) {
+                        c = -1;
+                }
+                if (c < 0)
+                        System.err.printf("view :: Not a valid coordinate: '%s'\n", s);
+                return c;
+    }    
+
+    // tuple input format:
+    //   chrom index
+    //   start position
+    //   end postition
 
     @Override
     public Boolean exec(Tuple input) throws IOException {
@@ -133,10 +261,16 @@ public class CoordinateFilter extends FilterFunc {
                 throw new ExecException(msg, errCode, PigException.BUG);
 		}*/
 
-	    Integer chrom = (Integer)input.get(0);
-	    Integer pos = (Integer)input.get(1);
+	    int chrom = ((Integer)input.get(0)).intValue();
+	    int start_pos = ((Integer)input.get(1)).intValue();
+	    int end_pos = ((Integer)input.get(2)).intValue();
+	    
+	    for(RegionEntry entry : regions) {
+		if(entry.index == chrom && entry.start <= start_pos && entry.end >= end_pos)
+			return true;
+	    }
 
-	    return ( chrom.intValue() == 0 && pos.intValue() < 10000 );
+	    return false;
 
         } catch (ExecException ee) {
             throw ee;
