@@ -69,6 +69,11 @@ public class CoordinateFilter extends FilterFunc {
 		start = s;
 		end = e;
 	}
+
+	public String toString() {
+		String ret = "region: ("+index+","+start+","+end+")";
+		return ret;
+	}
     }
 
     protected String samfileheader = null;
@@ -167,15 +172,11 @@ public class CoordinateFilter extends FilterFunc {
         try {
             Base64 codec = new Base64();
             Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-            String datastr;
+	    this.regions_str = p.getProperty("regionsstr");
 
-            datastr = p.getProperty("regionsstr");
-            byte[] buffer = codec.decodeBase64(datastr);
-            ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
-            ObjectInputStream ostream = new ObjectInputStream(bstream);
-
-            this.regions_str = (String)ostream.readObject();
+	    //System.err.println("decoded regions!");
         } catch (Exception e) {
+	    //System.err.println("error: "+e.toString());
         }
 
         populateRegions();
@@ -193,6 +194,7 @@ public class CoordinateFilter extends FilterFunc {
 	boolean errors = false;
 	
 	regions = new ArrayList();
+	int ctr = 0;
 
 	while(rst.hasMoreTokens()) {
 		String region = rst.nextToken();
@@ -225,8 +227,13 @@ public class CoordinateFilter extends FilterFunc {
                         continue;
                	}
 
-		regions.add(new RegionEntry(ref.getSequenceIndex(), beg, end));
+		RegionEntry e = new RegionEntry(ref.getSequenceIndex(), beg, end);
+		regions.add(e);
+		//System.err.println(e.toString());
+		ctr++;
     	}
+
+	//System.err.println("decoded "+ctr+" regions!");
     }
 
     private int parseCoordinate(String s) {
@@ -237,7 +244,7 @@ public class CoordinateFilter extends FilterFunc {
                         c = -1;
                 }
                 if (c < 0)
-                        System.err.printf("view :: Not a valid coordinate: '%s'\n", s);
+                        System.err.printf("CoordinateFilter :: Not a valid coordinate: '%s'\n", s);
                 return c;
     }    
 
@@ -249,18 +256,6 @@ public class CoordinateFilter extends FilterFunc {
     @Override
     public Boolean exec(Tuple input) throws IOException {
         try {
-            /*Object values = input.get(0);
-            if (values instanceof DataBag)
-                return ((DataBag)values).size() >= csize;
-            else if (values instanceof Map)
-                return ((Map)values).size() >= csize;
-            else {
-                int errCode = 2102;
-                String msg = "Cannot test a " +
-                DataType.findTypeName(values) + " for emptiness.";
-                throw new ExecException(msg, errCode, PigException.BUG);
-		}*/
-
 	    int chrom = ((Integer)input.get(0)).intValue();
 	    int start_pos = ((Integer)input.get(1)).intValue();
 	    int end_pos = ((Integer)input.get(2)).intValue();
