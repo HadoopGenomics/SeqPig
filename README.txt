@@ -163,7 +163,7 @@ mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
 
     grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
     grunt> A = FILTER A BY (flags/4)%2==0;
-    grunt> RefPos = FOREACH A GENERATE ReadRefPositions(read, flags, refname, start, cigar), mapqual;
+    grunt> RefPos = FOREACH A GENERATE ReadRefPositions(read, flags, refname, start, cigar, basequal), mapqual;
     grunt> flatset = FOREACH RefPos GENERATE flatten($0), mapqual;
     grunt> grouped = GROUP flatset BY ($0, $1, $2);
     grunt> base_counts = FOREACH grouped GENERATE group.chr, group.pos, group.base, COUNT(flatset);
