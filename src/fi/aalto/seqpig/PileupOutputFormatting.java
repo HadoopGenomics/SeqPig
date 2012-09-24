@@ -105,7 +105,7 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 			counter++;
 		}
 	   
-                if(t.get(0) != null) {
+                if(t.get(0) != null && DataType.findType(t.get(0)) == DataType.CHARARRAY) {
 		    if(refbase == null || new_pos)
 			refbase = (String)t.get(0);
 		   else if(!refbase.equals((String)t.get(0))) {
