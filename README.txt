@@ -185,6 +185,7 @@ mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
     grunt> B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
     grunt> C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
       basequal, attributes#'MD', mapqual), start, flags, name;
+    grunt> C = FILTER C BY $0 is not null;
     grunt> D = FOREACH C GENERATE flatten($0), start, flags, name;
     grunt> E = GROUP D BY (chr, pos);
     grunt> F = FOREACH E { G = FOREACH D GENERATE refbase, pileup, qual, start,
