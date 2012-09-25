@@ -4,7 +4,10 @@ and Qseq input and output. It is built on top of the Hadoop-BAM library.
 
 A) Setup instructions:
 
-    Install Hadoop and Pig (tested with Hadoop 0.20.2 and Pig 0.10.0.
+    Install Hadoop (tested with Hadoop 0.20.2) and Pig. Note that some
+    of the example scripts require the latest release of Pig (currently
+    0.10.0) to be installed.
+
     Set HADOOP_HOME and PIG_HOME to the installation directories of
     Hadoop and Pig, respectively, and SEQPIG_HOME to the installtion
     directory of SeqPig. On a Cloudera Hadoop installation with
