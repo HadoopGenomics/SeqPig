@@ -1,3 +1,4 @@
+DEFINE filteredReadPileup ReadPileup('$min_base_qual');
 A = load '$inputfile' using BamUDFLoader('yes');
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual), start, flags, name;

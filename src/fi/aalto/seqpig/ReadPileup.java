@@ -61,6 +61,19 @@ public class ReadPileup extends EvalFunc<DataBag>
 
     private List<Tuple> deletionTuples = new ArrayList();
 
+    private int qual_threshold = 0; // base quality threshold:
+	// in any base has base quality smaller this value the
+	// read is discarded for the purpose of pileup (as samtools
+	// does it)
+
+    public ReadPileup() {
+        qual_threshold = 0;
+    }
+
+    public ReadPileup(String min_quality) {
+	qual_threshold = Integer.parseInt(min_quality);	
+    }
+
     // tuple input format:
     //   sequence
     //   flag
@@ -242,6 +255,10 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 				tpl.set(3, pileuppref+pileuppof);
 				tpl.set(4, basequal.substring(seqpos, seqpos+1));
+
+				if(qual_threshold > 0 && (int)(((String)tpl.get(4)).charAt(0)) - 33 < qual_threshold) {
+					return null;
+				}
 				
 				if(i < consumed-1)
 				    output.add(tpl);
