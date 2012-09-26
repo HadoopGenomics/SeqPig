@@ -1,0 +1,8 @@
+ ** V0.2 **
+
+   - AS: tried to improve bash scripts for import and export of bam/sam
+   - AS: support for sam, qseq and fastq added
+   - AS: first version of samtools compatible pileup (although currently with
+     disabled base quality re-calibration, option -B for samtools)
+   - many more examples in the readme and some (hopefully) more useful
+     setup instructions.
