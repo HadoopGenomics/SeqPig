@@ -217,7 +217,7 @@ E) Other supported file formats
  input and output. Loading and storing data follows along the same lines as
  for BAM.
 
-F) Further comments
+F) Optimization
 
  For performance reasons it is typically advisable to enable compression of
  Hadoop map (and possible reduce) output, as well as temporary data generated
@@ -231,3 +231,12 @@ F) Further comments
 
  to the pig command. Note that currently not all Hadoop compression codecs are
  supported by Pig.
+
+G) Further information
+
+ Releases of SeqPig come bundled with Picard/Samtools, which were developed at
+ the Wellcome Trust Sanger Institute, and Biodoop/Seal, which were developed
+ at the Center for Advanced Studies, Research and Development in Sardinia. See
+
+ http://samtools.sourceforge.net/
+ http://biodoop-seal.sourceforge.net/
