@@ -199,6 +199,11 @@ mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
 
     pig -param inputfile=input.bam -param outputfile=input.pileup -param pparallel=1 ${SEQPIG_HOME}/scripts/pileup.pig
 
+   There are two optional parameters for pileup.pig: min_map_qual and
+   min_base_qual (both with default value 0) that filter out reads with
+   either insufficient map quality or base qualities. Their values can
+   be set the same way as the other parameters above.
+
   For more examples see also the wiki of two past COST hackathons:
 
   http://seqahead.cs.tu-dortmund.de/meetings:fastqpigscripting
