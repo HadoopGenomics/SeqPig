@@ -1,3 +1,11 @@
+ ** V0.3 **
+
+   - AS: added filtering by regions for bam files
+   - AS: fixed some bugs in example scripts (thanks Sebastian!)
+   - AS: added map and base quality filtering to pileup script
+   - AS: added changelog (this file)
+   - AS: some clean up
+
  ** V0.2 **
 
    - AS: tried to improve bash scripts for import and export of bam/sam
