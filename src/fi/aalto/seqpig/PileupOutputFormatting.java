@@ -36,11 +36,6 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.WrappedIOException;
 
-//import it.crs4.seal.common.AlignOp;
-//import it.crs4.seal.common.WritableMapping;
-
-//import java.util.ArrayList;
-
 
 public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulator<Tuple>
 {
@@ -214,6 +209,7 @@ public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulat
 	}
     }
 
+    @Override
     public Schema outputSchema(Schema input) {
 	try{
             Schema tupleSchema = new Schema();

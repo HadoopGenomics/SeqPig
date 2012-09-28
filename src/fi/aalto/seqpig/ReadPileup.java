@@ -146,8 +146,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 	   if( //((Integer)input.get(7)).intValue() == 255 ||
 		((Integer)input.get(7)).intValue() < 0 || ((Integer)input.get(7)).intValue() >= 93) {// mapping quality not available or otherwise weird
 		mapping_quality = "~";
-		/*if(((Integer)input.get(7)).intValue() == 255)
-			basequal = "2" + basequal.substring(1);*/		
 	   } else
             	mapping_quality = new String(new byte[]{(byte)(((Integer)input.get(7)).intValue()+33)}, "US-ASCII");
 
@@ -200,7 +198,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 		    while (positionsToCover > 0 && mdOp != null) {
 			if (mdOp.getType() == MdOp.Type.Delete) {
-			    //mdOp = mdIt.next(); // skip it
 
 			    throw new IOException("BUG or bad data?? found MD deletion while parsing CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);
 
@@ -241,10 +238,8 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 				    if(!mapping.isOnReverse()) // mismatch on forward strand
 					pileuppref += sequence.substring(seqpos, seqpos+1);
-				    //pileuppref += mdOp.getSeq().substring(i, i+1).toUpperCase();
 				    else
 					pileuppref += sequence.substring(seqpos, seqpos+1).toLowerCase(); // mismatch on reverse strand
-				    //pileuppref += mdOp.getSeq().substring(i, i+1).toLowerCase(); // mismatch on reverse strand
 				}
 
 				if(seqpos == sequence.length()-1)
