@@ -256,7 +256,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 				tpl.set(3, pileuppref+pileuppof);
 				tpl.set(4, basequal.substring(seqpos, seqpos+1));
 
-				if(qual_threshold > 0 && (int)(((String)tpl.get(4)).charAt(0)) - 33 < qual_threshold) {
+				if(qual_threshold > 0 && (int)(basequal.substring(seqpos, seqpos+1).charAt(0)) - 33 < qual_threshold) {
 					return null;
 				}
 				

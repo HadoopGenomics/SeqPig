@@ -1,7 +1,9 @@
+%default min_map_qual '0'
+%default min_base_qual '0'
 DEFINE filteredReadPileup ReadPileup('$min_base_qual');
 A = load '$inputfile' using BamUDFLoader('yes');
-B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
-C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual), start, flags, name;
+B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual;
+C = FOREACH B GENERATE filteredReadPileup(read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual), start, flags, name;
 C = FILTER C BY $0 is not null;
 D = FOREACH C GENERATE flatten($0), start, flags, name;
 E = GROUP D BY (chr, pos) PARALLEL $pparallel;
