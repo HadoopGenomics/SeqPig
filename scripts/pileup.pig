@@ -2,7 +2,7 @@
 %default min_base_qual '0'
 DEFINE filteredReadPileup ReadPileup('$min_base_qual');
 --
--- start of script
+-- start of script: generate samtools-like pileup for given set of reads
 --
 --   import BAM file
 A = load '$inputfile' using BamUDFLoader('yes');
