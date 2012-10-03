@@ -29,6 +29,7 @@ import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.WrappedIOException;
+import org.apache.pig.backend.executionengine.ExecException;
 
 import it.crs4.seal.common.AlignOp;
 import it.crs4.seal.common.MdOp;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 /* UDF ReadPileup 
    
@@ -72,7 +74,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	public int cur_index=-1; // used for iterating through reads in bucket
 	public int size=0;
 
-	public ReadPileupEntry(Tuple read, int qual_threshold) {
+	public ReadPileupEntry(Tuple read) throws ExecException, IOException {
 	    start_pos = ((Integer)read.get(3)).intValue();
 	    cur_index = 0;
 
@@ -163,8 +165,6 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    while(readit.hasNext()) {
 		ReadPileupEntry cur_entry = readit.next();
 
-		right_pos = cur_entry.start_pos;
-
 		if(left_pos == -1) {// i.e., if this is the first read of the bin
 		    left_pos = cur_entry.start_pos;
 		} 
@@ -183,9 +183,9 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	}
     }
 
-    void produce_pileup(DataBag output, boolean final_read) {
+    void produce_pileup(DataBag output, boolean final_read) throws IOException {
 	
-	ReadPileupEntry cur_entry = null;
+	int right_pos;
 
 	// note: we may assume that if a bin is non-empty it contains at least 2 reads!!
 
@@ -193,7 +193,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    ReadPileupEntry right_entry = readPileups.get(right_readindex);
 	    right_pos = right_entry.start_pos;
 
-	    ReadPileupEntry left_entry =  readPileups.get(leftread_index);
+	    ReadPileupEntry left_entry =  readPileups.get(left_readindex);
 	    left_pos = left_entry.start_pos + left_entry.cur_index;
 	} else {
 	    right_pos = end_pos;
@@ -207,7 +207,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    DataBag this_output = mBagFactory.newDefaultBag();
 	    int min_non_empty_read = right_readindex;
 	    
-	    for(int i=leftread_index; i < right_readindex; i++) {
+	    for(int i=left_readindex; i < right_readindex; i++) {
 		ReadPileupEntry cur_entry =  readPileups.get(i);
 
 		if(cur_entry.cur_index < cur_entry.size) {
@@ -220,7 +220,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		}
 	    }
 
-	    leftread_index = min_non_empty_read;
+	    left_readindex = min_non_empty_read;
 
 	    if(final_read) { // that means we are processing the last read of this bin
 		ReadPileupEntry cur_entry =  readPileups.get(right_readindex);

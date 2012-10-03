@@ -74,6 +74,10 @@ public class ReadPileup extends EvalFunc<DataBag>
 	qual_threshold = Integer.parseInt(min_quality);	
     }
 
+    public ReadPileup(int min_quality) {
+        qual_threshold = min_quality;
+    }
+
     // tuple input format:
     //   sequence
     //   flag
