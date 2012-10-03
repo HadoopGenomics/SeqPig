@@ -47,30 +47,64 @@ import java.util.List;
     for each reference position
 */
 
-public class ReadPileup extends EvalFunc<DataBag>
+public class BinReadPileup extends EvalFunc<DataBag>
 {
-    private WritableMapping mapping = new WritableMapping();
-    private ArrayList<Boolean> matches = new ArrayList();
-    private List<AlignOp> alignment;
-    private List<MdOp> mdOps;
-    private String sequence;
-    private String mapping_quality;
+    private ArrayList<ReadPileupEntry> readPileups = new ArrayList();
+   
 
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private BagFactory mBagFactory = BagFactory.getInstance();
-
-    private List<Tuple> deletionTuples = new ArrayList();
 
     private int qual_threshold = 0; // base quality threshold:
 	// in any base has base quality smaller this value the
 	// read is discarded for the purpose of pileup (as samtools
 	// does it)
 
-    public ReadPileup() {
+    private int left_readindex = 0;
+    private int right_readindex = 0;
+    private int left_pos = 0;
+    private int end_pos = 0;
+
+    class ReadPileupEntry implements Comparable<ReadPileupEntry> {
+	//public DataBag pileup;
+	public ArrayList<Tuple> pileup; 
+	public int start_pos=-1;
+	public int cur_index=-1; // used for iterating through reads in bucket
+	public int size=0;
+
+	public ReadPileupEntry(Tuple read, int qual_threshold) {
+	    start_pos = ((Integer)read.get(3)).intValue();
+	    cur_index = 0;
+
+	    ReadPileup readPileup = new ReadPileup(qual_threshold);
+	    DataBag pileup_bag = readPileup.exec(read);
+
+	    if(pileup_bag == null)
+		pileup = null;
+	    else {
+		Iterator it = pileup_bag.iterator();
+		pileup = new ArrayList<Tuple>();
+
+		while(it.hasNext()) {
+		    pileup.add((Tuple)it.next());
+		    size++;
+		}
+	    }
+	}
+
+	public int compareTo( ReadPileupEntry other) {
+	    if (start_pos < other.start_pos) return -1;
+	    else if (start_pos == other.start_pos)
+		return 0;
+	    else return 1;
+	}
+    }
+
+    public BinReadPileup() {
         qual_threshold = 0;
     }
 
-    public ReadPileup(String min_quality) {
+    public BinReadPileup(String min_quality) {
 	qual_threshold = Integer.parseInt(min_quality);	
     }
 
@@ -97,28 +131,6 @@ public class ReadPileup extends EvalFunc<DataBag>
     // 	PigWarning.UDF_WARNING_3 :	problem with parsing MD tag
     // 	PigWarning.UDF_WARNING_4 :	other problem
 
-    // compares the length indicated by CIGAR and MD strings and CIGAR and read sequence length; returns true if these match and
-    // false otherwise
-    private boolean compareLengthCigarMd() {
-	int insertclip_length = 0, match_length = 0, md_length = 0;
-
-	for (AlignOp alignOp: alignment) {
-                if (alignOp.getType() == AlignOp.Type.Match)
-			match_length += alignOp.getLen();
-		else if(alignOp.getType() == AlignOp.Type.Insert || alignOp.getType() == AlignOp.Type.SoftClip)
-			insertclip_length += alignOp.getLen();
-   	}
-
-	for (MdOp mdOp: mdOps) {
-		if (mdOp.getType() == MdOp.Type.Match || mdOp.getType() == MdOp.Type.Mismatch) {
-			md_length += mdOp.getLen();
-		}
-
-	}
-
-	return ((match_length == md_length) && (match_length + insertclip_length == sequence.length()));
-    }
-
     @Override 
     public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
 	if (input == null || input.size() == 0)
@@ -126,269 +138,110 @@ public class ReadPileup extends EvalFunc<DataBag>
 	try {
 	    // first load the mapping and do some error checks
 	    
-	    String basequal = (String)input.get(5);
-
-	    mapping.clear();
-
-            sequence = (String)input.get(0);
-            mapping.setSequence(sequence);
-            mapping.setFlag(((Integer)input.get(1)).intValue());
-
-	    if (!mapping.isMapped() || input.get(2)==null) {
-	    	warn("encountered unmapped read or empty chromosome/contig id!", PigWarning.UDF_WARNING_4);
-		return null;
-            }
-
-	    mapping.setContig((String)input.get(2));
-            mapping.set5Position(((Integer)input.get(3)).intValue());
-
-	   // note: the following tries to mimic samtools mpileup
-	   if( //((Integer)input.get(7)).intValue() == 255 ||
-		((Integer)input.get(7)).intValue() < 0 || ((Integer)input.get(7)).intValue() >= 93) {// mapping quality not available or otherwise weird
-		mapping_quality = "~";
-	   } else
-            	mapping_quality = new String(new byte[]{(byte)(((Integer)input.get(7)).intValue()+33)}, "US-ASCII");
-
-            try {
-                mapping.setAlignment(AlignOp.scanCigar((String)input.get(4)));
-                alignment = mapping.getAlignment();
-            } catch(FormatException e) {
-                warn("errors parsing CIGAR string (input: " + (String)input.get(4) + "), silently IGNORING read, exception: "+e.toString(), PigWarning.UDF_WARNING_2);
-		return null;
-            }
-
-            try {
-            	mapping.setTag("MD", AbstractTaggedMapping.TagDataType.String, ((String)input.get(6)).toUpperCase());
-           	mdOps = MdOp.scanMdTag(((String)input.get(6)).toUpperCase());
-            } catch(FormatException e) {
-            	warn("errors parsing MD string (input: " + (String)input.get(6) + "), silently IGNORING read, exception: "+e.toString(), PigWarning.UDF_WARNING_3);
-		return null;
-            }
-
+	    DataBag bag = (DataBag)input.get(0);
+	    Iterator it = bag.iterator();
 	    DataBag output = mBagFactory.newDefaultBag();
 
-	    // NOTE: code based on copy&paste from Seal AbstractTaggedMapping::calculateReferenceMatches
+	    left_readindex = 0;
+	    right_readindex = 0;
+	    //left_pos = ((Integer)input.get(1)).intValue();
+	    left_pos = -1;
+	    end_pos = ((Integer)input.get(2)).intValue();
 
-	    if (mdOps.isEmpty()) {
-		//throw new IOException("no MD operators extracted from tag! (tag: " + (String)input.get(6) + ")");
-	    	warn("no MD operators extracted from tag! (tag: " + (String)input.get(6) + "), silently IGNORING read", PigWarning.UDF_WARNING_3);
-		return null;
-            }
+	    while (it.hasNext()) {
+		ReadPileupEntry entry = new ReadPileupEntry((Tuple)it.next());
 
-	    if (!compareLengthCigarMd()) {
-		warn("CIGAR, MD and sequence lengths do not match! ignoring read! (CIGAR: " + (String)input.get(4) + " MD: " + (String)input.get(6) + " seq: " + sequence + ")", PigWarning.UDF_WARNING_1);
-		return null;
-	    }
-		
-	    Iterator<MdOp> mdIt = mdOps.iterator();
-
-	    MdOp mdOp = mdIt.next();
-	    int mdOpConsumed = 0; // the number of positions within the current mdOp that have been consumed.
-	    int seqpos = 0;
-	    int refpos = (((Integer)input.get(3)).intValue());
-	    String pileuppref = ("^" + mapping_quality);
-	    String pileuppof = "";
-
-	    Tuple prev_tpl = null; // used for insertions and deletions to join their records; always set to last created tuple!
-		
-	    for (AlignOp alignOp: alignment) {
-		if (alignOp.getType() == AlignOp.Type.Match) {
-
-		    int positionsToCover = alignOp.getLen();
-
-		    while (positionsToCover > 0 && mdOp != null) {
-			if (mdOp.getType() == MdOp.Type.Delete) {
-
-			    throw new IOException("BUG or bad data?? found MD deletion while parsing CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);
-
-			} else {
-
-			    if(prev_tpl != null) {
-                        	output.add(prev_tpl);
-                        	prev_tpl = null;
-                    	    }
-
-			    // must be a match or a mismatch
-			    boolean match = mdOp.getType() == MdOp.Type.Match;
-			    int consumed = Math.min(mdOp.getLen() - mdOpConsumed, positionsToCover);
-
-			    if(!deletionTuples.isEmpty()) {
-			    	for (Tuple tpl: deletionTuples) {
-					tpl.set(4, basequal.substring(seqpos, seqpos+1));
-					output.add(tpl);
-				}
-				deletionTuples.clear();
-			    }
-
-			    for (int i = 0; i < consumed; i++) {
-
-				Tuple tpl = TupleFactory.getInstance().newTuple(5);
-				tpl.set(0, (String)input.get(2));
-				tpl.set(1, refpos++); //refPositions.get(seqpos));
-
-				if(match) { // reference and read have matching bases
-				    tpl.set(2, sequence.substring(seqpos, seqpos+1));
-
-				    if(!mapping.isOnReverse()) // matching on forward strand
-					pileuppref += ".";
-				    else
-					pileuppref += ","; // matching on reverse strand
-				} else {
-				    tpl.set(2, mdOp.getSeq().substring(i, i+1));
-
-				    if(!mapping.isOnReverse()) // mismatch on forward strand
-					pileuppref += sequence.substring(seqpos, seqpos+1);
-				    else
-					pileuppref += sequence.substring(seqpos, seqpos+1).toLowerCase(); // mismatch on reverse strand
-				}
-
-				if(seqpos == sequence.length()-1)
-				    pileuppof = "$";
-
-				tpl.set(3, pileuppref+pileuppof);
-				tpl.set(4, basequal.substring(seqpos, seqpos+1));
-
-				if(qual_threshold > 0 && (int)(basequal.substring(seqpos, seqpos+1).charAt(0)) - 33 < qual_threshold) {
-					return null;
-				}
-				
-				if(i < consumed-1)
-				    output.add(tpl);
-				else
-				    prev_tpl = tpl;
-
-				seqpos++;
-				pileuppref = "";
-			    }
-
-			    positionsToCover -= consumed;
-			    mdOpConsumed += consumed;
-			    if (mdOpConsumed >= mdOp.getLen()) { // operator consumed.  Advance to next
-				mdOpConsumed = 0;
-				if (mdIt.hasNext())
-				    mdOp = mdIt.next();
-				else
-				    mdOp = null;
-			    }
-			}
-		    }
-
-		    if (positionsToCover > 0 && mdOp == null)
-			throw new IOException("BUG or bad data?? Found more read positions than was covered by the MD tag. CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence);
-		}
-
-		else if(alignOp.getType() == AlignOp.Type.Insert) {
-
-		    // NOTE!!! for now we ignore trailing insertions!!!
-		    if(seqpos == 0) {
-			seqpos += alignOp.getLen();
-			continue;
-		    }
-
-		    Tuple tpl ;
-
-		    if(prev_tpl == null) {
-			tpl = TupleFactory.getInstance().newTuple(5);
-
-			tpl.set(0, (String)input.get(2));
-			tpl.set(1, refpos-1);
-			tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
-			tpl.set(4, null); // note: it seems samtools silently drops base qualities of inserted bases
-		    } else {
-			tpl = prev_tpl;
-			pileuppref = (String)tpl.get(3);
-		    }
-
-		    if(seqpos + alignOp.getLen() == sequence.length())
-			pileuppof = "$";
-
-	            if(mapping.isOnReverse())
-		    	tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen()).toLowerCase()+pileuppof);
-		    else
-			tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen())+pileuppof);
-			
-		    seqpos += alignOp.getLen();
-
-		    output.add(tpl);
-		    prev_tpl = null;
-
-		    pileuppref = "";
-
-		}  else if(alignOp.getType() == AlignOp.Type.Delete) {
-
-		    if(mdOp == null || mdOp.getType() != MdOp.Type.Delete || mdOp.getLen() != alignOp.getLen()) {
-			throw new IOException("BUG or bad data?? Could not find matching MD deletion after finding CIGAR deletion! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence+ "; MdOp: "+(mdOp==null?"null":mdOp.toString()));
-		    }
-	
-		    Tuple tpl ;
-
-		    if(prev_tpl == null) {
-			tpl = TupleFactory.getInstance().newTuple(5);
-
-			tpl.set(0, (String)input.get(2));
-			tpl.set(1, refpos-1);
-			tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
-			tpl.set(4, null);
-		    } else {
-			tpl = prev_tpl;
-			pileuppref = (String)tpl.get(3);
-		    }
-
-		    String deleted_bases = mdOp.getSeq();
-
-		    if(mapping.isOnReverse())
-			deleted_bases = deleted_bases.toLowerCase();
-		    else
-			deleted_bases = deleted_bases.toUpperCase();
-
-		    tpl.set(3, pileuppref+"-"+alignOp.getLen()+deleted_bases+pileuppof);
-
-		    output.add(tpl);
-		    prev_tpl = null;
-
-		    for(int i=0;i<mdOp.getLen();i++) {
-			Tuple dtpl = TupleFactory.getInstance().newTuple(5);
-			dtpl.set(0, (String)input.get(2));
-			dtpl.set(1, refpos++); //start_deletion+i+1);
-			dtpl.set(2, deleted_bases.substring(i,i+1).toUpperCase());
-			dtpl.set(3, "*");
-			deletionTuples.add(dtpl);
-		    }
-
-		    pileuppref = "";
-
-		    if (mdIt.hasNext())
-                      mdOp = mdIt.next();
-                    else
-                      mdOp = null;
-
-		} else if(alignOp.getType() == AlignOp.Type.SoftClip) {
-		    if(true) {
-
-		    Tuple tpl = TupleFactory.getInstance().newTuple(5);
-
-		    tpl.set(1, refpos);
-
-		    tpl.set(0, (String)input.get(2));
-		    tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
-		    tpl.set(3, "$");
-		    tpl.set(4, null);
-
-		    output.add(tpl);
-
-		    pileuppref = ("^" + mapping_quality);
-		}
-	          }
+		if(entry.pileup != null)
+		    readPileups.add(entry);
 	    }
 
+	    // sort by start position
+	    Collections.sort(readPileups);
 
-	    if(prev_tpl != null)
-		output.add(prev_tpl);
+	    Iterator<ReadPileupEntry> readit = readPileups.iterator();
+	    
+	    while(readit.hasNext()) {
+		ReadPileupEntry cur_entry = readit.next();
+
+		right_pos = cur_entry.start_pos;
+
+		if(left_pos == -1) {// i.e., if this is the first read of the bin
+		    left_pos = cur_entry.start_pos;
+		} 
+
+		boolean final_read = !(readit.hasNext());
+		    
+		produce_pileup(output, final_read);
+		
+		right_readindex++;
+	    }
 
 	    return output;
 
 	} catch(Exception e) {
 	    throw new IOException("Caught exception processing input row " + e.toString());
+	}
+    }
+
+    void produce_pileup(DataBag output, boolean final_read) {
+	
+	ReadPileupEntry cur_entry = null;
+
+	// note: we may assume that if a bin is non-empty it contains at least 2 reads!!
+
+	if(!final_read) {
+	    ReadPileupEntry right_entry = readPileups.get(right_readindex);
+	    right_pos = right_entry.start_pos;
+
+	    ReadPileupEntry left_entry =  readPileups.get(leftread_index);
+	    left_pos = left_entry.start_pos + left_entry.cur_index;
+	} else {
+	    right_pos = end_pos;
+	}
+
+	// idea: for all but last read, iterate over all reads whose pileup can now be determined
+	// note: for the last read we still need to iterate over the positions that fall into the bin
+
+	while(left_pos < right_pos) {
+	    
+	    DataBag this_output = mBagFactory.newDefaultBag();
+	    int min_non_empty_read = right_readindex;
+	    
+	    for(int i=leftread_index; i < right_readindex; i++) {
+		ReadPileupEntry cur_entry =  readPileups.get(i);
+
+		if(cur_entry.cur_index < cur_entry.size) {
+		    this_output.add(cur_entry.pileup.get(cur_entry.cur_index));
+		    cur_entry.cur_index++;
+
+		    if(min_non_empty_read > i && cur_entry.cur_index < cur_entry.size) {
+			min_non_empty_read = i;
+		    }
+		}
+	    }
+
+	    leftread_index = min_non_empty_read;
+
+	    if(final_read) { // that means we are processing the last read of this bin
+		ReadPileupEntry cur_entry =  readPileups.get(right_readindex);
+
+		if(cur_entry.cur_index < cur_entry.size) {
+		    this_output.add(cur_entry.pileup.get(cur_entry.cur_index));
+		    cur_entry.cur_index++;
+		} else
+		    return;
+	    }
+
+	    PileupOutputFormatting pileupOutputFormatting = new PileupOutputFormatting();
+	    ArrayList<Object> tuple = new ArrayList<Object>();
+	    tuple.add(this_output);
+	    tuple.add(new Integer(left_pos));
+	    Tuple t =  mTupleFactory.newTupleNoCopy(tuple);
+	    
+	    output.add(pileupOutputFormatting.exec(t));
+
+	    // TODO: add call to format output!!!!
+	    left_pos++;
 	}
     }
 
