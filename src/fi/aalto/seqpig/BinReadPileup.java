@@ -67,6 +67,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
     private int left_pos = 0;
     private int end_pos = 0;
 
+    private String chrom;
+
     class ReadPileupEntry implements Comparable<ReadPileupEntry> {
 	//public DataBag pileup;
 	public ArrayList<Tuple> pileup; 
@@ -88,7 +90,18 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		pileup = new ArrayList<Tuple>();
 
 		while(it.hasNext()) {
-		    pileup.add((Tuple)it.next());
+
+	            Tuple piledup = (Tuple)it.next();
+		    ArrayList<Object> tuple = new ArrayList<Object>();
+
+                    // refbase, pileup, qual
+             	    tuple.add((String)piledup.get(2));
+                    tuple.add((String)piledup.get(3));
+                    tuple.add((String)piledup.get(4));
+		    
+   		    Tuple t =  mTupleFactory.newTupleNoCopy(tuple);
+		    pileup.add(t);
+
 		    size++;
 		}
 	    }
@@ -137,7 +150,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
     public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
 	if (input == null || input.size() == 0)
 	    return null;
-	try {
+	//try {
 	    // first load the mapping and do some error checks
 	    
 	    DataBag bag = (DataBag)input.get(0);
@@ -148,10 +161,19 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    right_readindex = 0;
 	    //left_pos = ((Integer)input.get(1)).intValue();
 	    left_pos = -1;
-	    end_pos = ((Integer)input.get(2)).intValue();
+	    end_pos = ((Integer)input.get(1)).intValue();
+
+	    boolean first_read = true;
 
 	    while (it.hasNext()) {
-		ReadPileupEntry entry = new ReadPileupEntry((Tuple)it.next());
+	        Tuple t = (Tuple)it.next();
+
+		if(first_read) {
+			first_read = false;
+			chrom = (String)t.get(2);
+	  	}
+
+		ReadPileupEntry entry = new ReadPileupEntry(t);
 
 		if(entry.pileup != null)
 		    readPileups.add(entry);
@@ -178,9 +200,9 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 	    return output;
 
-	} catch(Exception e) {
-	    throw new IOException("Caught exception processing input row " + e.toString());
-	}
+	//} catch(Exception e) {
+	  //  throw new IOException("Caught exception processing input row " + e.toString());
+	//}
     }
 
     void produce_pileup(DataBag output, boolean final_read) throws IOException {
@@ -234,14 +256,31 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 	    PileupOutputFormatting pileupOutputFormatting = new PileupOutputFormatting();
 	    ArrayList<Object> tuple = new ArrayList<Object>();
+
+	    // refbase, pileup, qual, start, (flags/16)%2, name
+
 	    tuple.add(this_output);
 	    tuple.add(new Integer(left_pos));
-	    Tuple t =  mTupleFactory.newTupleNoCopy(tuple);
-	    
-	    output.add(pileupOutputFormatting.exec(t));
+	    Tuple tin =  mTupleFactory.newTupleNoCopy(tuple);
+	    Tuple tout = pileupOutputFormatting.exec(tin);
 
-	    // TODO: add call to format output!!!!
-	    left_pos++;
+	    if(((Integer)tout.get(1)).intValue() > 0) {
+	    	ArrayList<Object> tuple_output = new ArrayList<Object>();
+	    	tuple_output.add(chrom);
+	    	tuple_output.add(left_pos);
+	    	tuple_output.add(tout.get(0));
+	    	tuple_output.add(tout.get(1));
+	    	tuple_output.add(tout.get(2));
+	    	tuple_output.add(tout.get(3));
+	    
+	    	output.add(mTupleFactory.newTupleNoCopy(tuple_output));
+
+	    	// TODO: add call to format output!!!!
+	    	left_pos++;
+	     } else {
+		left_pos = right_pos;
+		return;
+	     }
 	}
     }
 
@@ -251,9 +290,10 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    Schema bagSchema = new Schema();
 	    bagSchema.add(new Schema.FieldSchema("chr", DataType.CHARARRAY));
 	    bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
-	    bagSchema.add(new Schema.FieldSchema("refbase", DataType.CHARARRAY));
-	    bagSchema.add(new Schema.FieldSchema("pileup", DataType.CHARARRAY));
-	    bagSchema.add(new Schema.FieldSchema("qual", DataType.CHARARRAY));
+            bagSchema.add(new Schema.FieldSchema("refbase", DataType.CHARARRAY));
+            bagSchema.add(new Schema.FieldSchema("count", DataType.INTEGER));
+            bagSchema.add(new Schema.FieldSchema("pileup", DataType.CHARARRAY));
+            bagSchema.add(new Schema.FieldSchema("basequals", DataType.CHARARRAY));
 
 	    return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
 	}catch (Exception e){

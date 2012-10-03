@@ -127,7 +127,7 @@ public class ReadPileup extends EvalFunc<DataBag>
     public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
 	if (input == null || input.size() == 0)
 	    return null;
-	try {
+	//try {
 	    // first load the mapping and do some error checks
 	    
 	    String basequal = (String)input.get(5);
@@ -391,9 +391,9 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 	    return output;
 
-	} catch(Exception e) {
+	/*} catch(Exception e) {
 	    throw new IOException("Caught exception processing input row " + e.toString());
-	}
+	}*/
     }
 
     @Override
