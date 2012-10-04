@@ -163,6 +163,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    left_pos = -1;
 	    end_pos = ((Integer)input.get(1)).intValue();
 
+            readPileups.clear();
+
 	    boolean first_read = true;
 
 	    while (it.hasNext()) {
