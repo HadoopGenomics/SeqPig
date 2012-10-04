@@ -1,5 +1,6 @@
 %default min_map_qual '0'
 %default min_base_qual '0'
+%default pparallel 1
 DEFINE filteredReadPileup ReadPileup('$min_base_qual');
 --
 -- start of script: generate samtools-like pileup for given set of reads

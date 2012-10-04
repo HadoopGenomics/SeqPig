@@ -1,7 +1,8 @@
 %default min_map_qual '0'
 %default min_base_qual '0'
-%default binsize '100'
-DEFINE filteredReadPileup ReadPileup('$min_base_qual');
+%default pparallel 1
+%default binsize 100
+DEFINE filteredReadPileup BinReadPileup('$min_base_qual');
 --
 -- start of script: generate samtools-like pileup for given set of reads
 --
@@ -9,9 +10,19 @@ DEFINE filteredReadPileup ReadPileup('$min_base_qual');
 A = load '$inputfile' using BamUDFLoader('yes');
 --   filter reads based on flags (unmapped or duplicates) and mapping quality
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual;
-B = LIMIT B 50;
 --   generate pileup data for each read (one record per position)
-C = FOREACH B GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual;
-D = GROUP C BY start/$binsize;
-E = FOREACH D GENERATE BinReadPileup(C,(group+1)*$binsize);
-dump E;
+C = FILTER B BY start/$binsize!=end/$binsize;
+--
+D = FOREACH C GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, end/$binsize;
+E = FOREACH B GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, start/$binsize;
+--
+F = UNION D, E;
+G = GROUP F BY $8 PARALLEL $pparallel;
+--
+H = FOREACH G GENERATE BinReadPileup(F,group*$binsize,(group+1)*$binsize);
+I = FILTER H BY $0 is not null;
+--
+J = FOREACH I GENERATE flatten($0);
+K = ORDER J BY chr, pos PARALLEL $pparallel;
+--
+store K into '$outputfile' using PigStorage('\t');

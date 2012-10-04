@@ -66,6 +66,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
     private int right_readindex = 0;
     private int left_pos = 0;
     private int right_end_pos = 0;
+    private int left_end_pos = 0;
 
     private String chrom;
 
