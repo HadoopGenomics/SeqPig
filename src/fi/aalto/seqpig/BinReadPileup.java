@@ -76,10 +76,18 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	public int start_pos=-1;
 	public int cur_index=-1; // used for iterating through reads in bucket
 	public int size=0;
+        public String name;
+	public boolean reverse_strand;
 
 	public ReadPileupEntry(Tuple read) throws ExecException, IOException {
 	    start_pos = ((Integer)read.get(3)).intValue();
-	    cur_index = 0;
+	    name = (String)read.get(8);
+	    reverse_strand = (((((Integer)read.get(1)).intValue()) & 16) == 16);
+
+	    if(start_pos < left_end_pos)
+	    	cur_index = left_end_pos - start_pos;
+	    else
+	 	cur_index = 0;
 
 	    ReadPileup readPileup = new ReadPileup(qual_threshold);
 	    DataBag pileup_bag = readPileup.exec(read);
@@ -108,11 +116,18 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    }
 	}
 
+	// Note: we assume that refname (chrom) are already the same!!!! (this is a local sort after all
+	// and both reads are expected to fall into the same bin)
 	public int compareTo( ReadPileupEntry other) {
 	    if (start_pos < other.start_pos) return -1;
-	    else if (start_pos == other.start_pos)
-		return 0;
-	    else return 1;
+	    else if (start_pos == other.start_pos) {
+		if(!reverse_strand && other.reverse_strand)
+			return -1;
+		if(reverse_strand && !other.reverse_strand)
+			return 1;
+
+		return name.compareTo(other.name);
+	    } else return 1;
 	}
     }
 

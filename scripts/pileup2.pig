@@ -13,11 +13,11 @@ B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual;
 --   generate pileup data for each read (one record per position)
 C = FILTER B BY start/$binsize!=end/$binsize;
 --
-D = FOREACH C GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, end/$binsize;
-E = FOREACH B GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, start/$binsize;
+D = FOREACH C GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, name, end/$binsize;
+E = FOREACH B GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, name, start/$binsize;
 --
 F = UNION D, E;
-G = GROUP F BY $8 PARALLEL $pparallel;
+G = GROUP F BY $9 PARALLEL $pparallel;
 --
 H = FOREACH G GENERATE BinReadPileup(F,group*$binsize,(group+1)*$binsize);
 I = FILTER H BY $0 is not null;
