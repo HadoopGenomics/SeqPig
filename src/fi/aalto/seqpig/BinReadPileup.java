@@ -65,7 +65,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
     private int left_readindex = 0;
     private int right_readindex = 0;
     private int left_pos = 0;
-    private int end_pos = 0;
+    private int right_end_pos = 0;
 
     private String chrom;
 
@@ -159,9 +159,9 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 	    left_readindex = 0;
 	    right_readindex = 0;
-	    //left_pos = ((Integer)input.get(1)).intValue();
+	    left_end_pos = ((Integer)input.get(1)).intValue();
 	    left_pos = -1;
-	    end_pos = ((Integer)input.get(1)).intValue();
+	    right_end_pos = ((Integer)input.get(2)).intValue();
 
             readPileups.clear();
 
@@ -224,8 +224,11 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    right_pos = right_entry.start_pos + right_entry.size;
 	}
 
-	if(right_pos > end_pos)
-		right_pos = end_pos;
+	if(right_pos > right_end_pos)
+		right_pos = right_end_pos;
+
+	if(left_pos < left_end_pos)
+	    left_pos = left_end_pos;
 
 	// idea: for all but last read, iterate over all reads whose pileup can now be determined
 	// note: for the last read we still need to iterate over the positions that fall into the bin
