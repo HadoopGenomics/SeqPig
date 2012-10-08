@@ -253,12 +253,24 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    
 	    DataBag this_output = mBagFactory.newDefaultBag();
 	    int min_non_empty_read = right_readindex;
+	    boolean first_in_bag = true;
+	    String refbase = null;
 	    
 	    for(int i=left_readindex; i < right_readindex; i++) {
 		ReadPileupEntry cur_entry =  readPileups.get(i);
 
 		if(cur_entry.cur_index < cur_entry.size) {
-		    this_output.add(cur_entry.pileup.get(cur_entry.cur_index));
+		    Tuple t =  cur_entry.pileup.get(cur_entry.cur_index);
+		    
+		    if(first_in_bag) {
+			refbase = (String)t.get(0);
+			first_in_bag = false;
+		    }
+		    
+		    if(!refbase.equals((String)t.get(0)))
+			throw new IOException("mismatching rebases: "+refbase+ " and "+(String)t.get(0)+" for "+i+" in ["+leftread_index+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+cur_entry.cur_index+"/"+cur_entry.size+" read: "+cur_entry.name);
+
+		    this_output.add(t);
 		    cur_entry.cur_index++;
 
 		    if(min_non_empty_read > i && cur_entry.cur_index < cur_entry.size) {
@@ -270,6 +282,10 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    left_readindex = min_non_empty_read;
 
 	    if(final_read) { // that means we are processing the last read of this bin
+
+		if(left_readindex != right_readindex)
+		    throw new IOException("final read but read indices don't match!: left: "+left_readindex+" right: "+right_readindex);
+
 		ReadPileupEntry cur_entry =  readPileups.get(right_readindex);
 
 		if(cur_entry.cur_index < cur_entry.size) {
