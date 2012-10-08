@@ -104,9 +104,9 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		    ArrayList<Object> tuple = new ArrayList<Object>();
 
                     // refbase, pileup, qual
-             	    tuple.add((String)piledup.get(2));
-                    tuple.add((String)piledup.get(3));
-                    tuple.add((String)piledup.get(4));
+             	    tuple.add(piledup.get(2));
+                    tuple.add(piledup.get(3));
+                    tuple.add(piledup.get(4));
 		    
    		    Tuple t =  mTupleFactory.newTupleNoCopy(tuple);
 		    pileup.add(t);
@@ -260,12 +260,12 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		if(cur_entry.cur_index < cur_entry.size) {
 		    Tuple t =  cur_entry.pileup.get(cur_entry.cur_index);
 		    
-		    if(first_in_bag) {
+		    if(first_in_bag && t.get(0) != null) {
 			refbase = (String)t.get(0);
 			first_in_bag = false;
 		    }
 		    
-		    if(!refbase.equals((String)t.get(0)))
+		    if(t.get(0) != null && !refbase.equals((String)t.get(0)))
 			throw new IOException("mismatching rebases: "+refbase+ " and "+(String)t.get(0)+" for "+i+" in ["+left_readindex+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+cur_entry.cur_index+"/"+cur_entry.size+" read: "+cur_entry.name);
 
 		    this_output.add(t);
@@ -284,7 +284,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 		    Tuple t =  right_entry.pileup.get(right_entry.cur_index);
 
-		    if(refbase != null)
+		    if(t.get(0) != null && refbase != null)
 			if(!refbase.equals((String)t.get(0)))
                         	throw new IOException("mismatching rebases (final read): "+refbase+ " and "+(String)t.get(0)+" for "+right_readindex+" in ["+left_readindex+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+right_entry.cur_index+"/"+right_entry.size+" read: "+right_entry.name);
 
@@ -319,8 +319,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	     left_pos++;
 	}
 
-	if(final_read && left_readindex != right_readindex)
-        	throw new IOException("final read but read indices don't match!: left: "+left_readindex+" right: "+right_readindex);
+	//if(final_read && left_readindex != right_readindex)
+        //	throw new IOException("final read but read indices don't match!: left: "+left_readindex+" right: "+right_readindex);
     }
 
     @Override
