@@ -73,11 +73,52 @@ public class BinReadPileup extends EvalFunc<DataBag>
     class ReadPileupEntry implements Comparable<ReadPileupEntry> {
 	//public DataBag pileup;
 	public ArrayList<Tuple> pileup; 
+	public ArrayList<Tuple> coordinates;
 	public int start_pos=-1;
 	public int cur_index=-1; // used for iterating through reads in bucket
 	public int size=0;
         public String name;
 	public boolean reverse_strand;
+
+        public String getPileupString(Tuple ct, Tuple pt) throws ExecException {
+		String retval = "chrom: ";
+
+		if(ct.get(0) == null)
+			retval += "?";
+		else retval += (String)ct.get(0);
+
+		retval += " pos: ";
+
+		if(ct.get(1) == null)
+			retval += "?";
+		else {
+			int val =  ((Integer)ct.get(1)).intValue();
+			retval += val;
+		}
+
+		retval += " refbase: ";
+
+		if(pt.get(0) == null)
+                        retval += "?";
+                else
+                        retval += (String)pt.get(0);
+		
+		retval += " pileup: ";
+
+		if(pt.get(1) == null)
+                        retval += "?";
+                else
+                        retval += (String)pt.get(1);
+
+		retval += " qual: ";
+
+                if(pt.get(2) == null)
+                        retval += "?";
+                else
+                        retval += (String)pt.get(2);
+
+		return retval;
+        }
 
 	public ReadPileupEntry(Tuple read) throws ExecException, IOException {
 	    start_pos = ((Integer)read.get(3)).intValue();
@@ -97,19 +138,39 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    else {
 		Iterator it = pileup_bag.iterator();
 		pileup = new ArrayList<Tuple>();
+		coordinates = new ArrayList<Tuple>();
 
 		while(it.hasNext()) {
 
 	            Tuple piledup = (Tuple)it.next();
-		    ArrayList<Object> tuple = new ArrayList<Object>();
+		    ArrayList<Object> pileup_tuple = new ArrayList<Object>();
+		    ArrayList<Object> coordinates_tuple = new ArrayList<Object>();
 
-                    // refbase, pileup, qual
-             	    tuple.add(piledup.get(2));
-                    tuple.add(piledup.get(3));
-                    tuple.add(piledup.get(4));
-		    
-   		    Tuple t =  mTupleFactory.newTupleNoCopy(tuple);
-		    pileup.add(t);
+	            // chrom, pos
+                    coordinates_tuple.add(piledup.get(0));
+                    coordinates_tuple.add(piledup.get(1));
+
+		    Tuple ct =  mTupleFactory.newTupleNoCopy(coordinates_tuple);
+                    coordinates.add(ct);
+
+		    // refbase, pileup, qual
+                    pileup_tuple.add(piledup.get(2));
+                    pileup_tuple.add(piledup.get(3));
+                    pileup_tuple.add(piledup.get(4));
+
+                    Tuple pt =  mTupleFactory.newTupleNoCopy(pileup_tuple);
+                    pileup.add(pt);	
+
+		    if(((Integer)piledup.get(1)).intValue() - start_pos != size) {
+
+			if(size > 0)
+				throw new IOException("two records for the same position!? "+(((Integer)piledup.get(1)).intValue()-start_pos) +" vs "+size
+			+ " " + getPileupString(coordinates.get(size-1), pileup.get(size-1))
+			+ " " + getPileupString(coordinates.get(size), pileup.get(size)));
+			else
+				throw new IOException("start position of first pileup entry does not match read start position!!");
+
+		    }
 
 		    size++;
 		}

@@ -289,15 +289,30 @@ public class ReadPileup extends EvalFunc<DataBag>
 			continue;
 		    }
 
-		    Tuple tpl ;
+		    Tuple tpl = null;
 
 		    if(prev_tpl == null) {
-			tpl = TupleFactory.getInstance().newTuple(5);
+
+			if(!deletionTuples.isEmpty()) {
+				int ctr = 1;
+                        	for (Tuple t: deletionTuples) {
+                                        t.set(4, basequal.substring(seqpos, seqpos+1));
+                                        
+					if(ctr != deletionTuples.size())
+						output.add(t);
+					else tpl = t;
+					
+					ctr++;
+                                }
+                                deletionTuples.clear();
+				pileuppref = (String)tpl.get(3);
+                        } else
+				tpl = TupleFactory.getInstance().newTuple(5);
 
 			tpl.set(0, (String)input.get(2));
 			tpl.set(1, refpos-1);
-			tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
-			tpl.set(4, null); // note: it seems samtools silently drops base qualities of inserted bases
+			//tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
+			//tpl.set(4, null); // note: it seems samtools silently drops base qualities of inserted bases
 		    } else {
 			tpl = prev_tpl;
 			pileuppref = (String)tpl.get(3);
