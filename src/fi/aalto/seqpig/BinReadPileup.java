@@ -62,11 +62,13 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	// read is discarded for the purpose of pileup (as samtools
 	// does it)
 
-    private int left_readindex = 0;
-    private int right_readindex = 0;
-    private int left_pos = 0;
-    private int right_end_pos = 0;
-    private int left_end_pos = 0;
+    private int left_readindex = 0; // the index of the left-most read in the bucked that still needs to be processed; forms the left end of the processing frame
+    private int right_readindex = 0; // the index of the current read; forms the right end of the processing frame
+    private int left_pos = 0; // the ref-position that is currently processed
+    private int right_end_pos = 0; // the right end of the bin
+    private int left_end_pos = 0; // the left end of the bin
+
+    private int max_read_rightpos = 0; // the maximum end position of any read in the current bin
 
     private String chrom;
 
@@ -240,6 +242,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    left_pos = -1;
 	    right_end_pos = ((Integer)input.get(2)).intValue();
 
+	    max_read_rightpos = 0;
+
             readPileups.clear();
 
 	    boolean first_read = true;
@@ -271,6 +275,9 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		} 
 
 		boolean final_read = !(readit.hasNext());
+
+		if(cur_entry.start_pos + cur_entry.size > max_read_rightpos)
+			max_read_rightpos = cur_entry.start_pos + cur_entry.size; 
 		    
 		produce_pileup(output, final_read);
 		
@@ -297,7 +304,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
         right_pos = right_entry.start_pos;
 
         if(final_read) // that means we are processing the last read of this bin
-            right_pos = right_entry.start_pos + right_entry.size;
+            right_pos = max_read_rightpos;
 
 	if(right_pos > right_end_pos)
 		right_pos = right_end_pos;
