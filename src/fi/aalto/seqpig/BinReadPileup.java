@@ -126,6 +126,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    start_pos = ((Integer)read.get(3)).intValue();
 	    name = (String)read.get(8);
 	    reverse_strand = (((((Integer)read.get(1)).intValue()) & 16) == 16);
+	    size = 0;
 
 	    if(start_pos < left_end_pos)
 	    	cur_index = left_end_pos - start_pos;
@@ -161,7 +162,13 @@ public class BinReadPileup extends EvalFunc<DataBag>
                     pileup_tuple.add(piledup.get(4));
 
                     Tuple pt =  mTupleFactory.newTupleNoCopy(pileup_tuple);
-                    pileup.add(pt);	
+                    pileup.add(pt);
+
+		    if(size==0 && start_pos != ((Integer)piledup.get(1)).intValue()) {
+			start_pos = ((Integer)piledup.get(1)).intValue();
+			// note: there should be some warning probably
+			// the condition should only hold if the CIGAR starts with a clipping
+		    }
 
 		    if(((Integer)piledup.get(1)).intValue() - start_pos != size) {
 

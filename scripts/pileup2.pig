@@ -17,9 +17,9 @@ D = FOREACH C GENERATE read, flags, refname, start, cigar, basequal, attributes#
 E = FOREACH B GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, name, start/$binsize;
 --
 F = UNION D, E;
-G = GROUP F BY $9 PARALLEL $pparallel;
+G = GROUP F BY (refname, $9) PARALLEL $pparallel;
 --
-H = FOREACH G GENERATE BinReadPileup(F,group*$binsize,(group+1)*$binsize);
+H = FOREACH G GENERATE BinReadPileup(F,group.$1*$binsize,(group.$1+1)*$binsize);
 I = FILTER H BY $0 is not null;
 --
 J = FOREACH I GENERATE flatten($0);

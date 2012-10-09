@@ -382,21 +382,28 @@ public class ReadPileup extends EvalFunc<DataBag>
                       mdOp = null;
 
 		} else if(alignOp.getType() == AlignOp.Type.SoftClip) {
-		    if(true) {
 
-		    Tuple tpl = TupleFactory.getInstance().newTuple(5);
+		    Tuple tpl = null;
 
-		    tpl.set(1, refpos);
+		    if(prev_tpl != null) {
+			tpl = prev_tpl;
+			tpl.set(3, tpl.get(3) + "$");
+			output.add(tpl);
 
-		    tpl.set(0, (String)input.get(2));
-		    tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
-		    tpl.set(3, "$");
-		    tpl.set(4, null);
+			prev_tpl = null;
+		    }
 
-		    output.add(tpl);
+		    //tpl.set(1, refpos);
 
+		    //tpl.set(0, (String)input.get(2));
+		    //tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
+		    //tpl.set(3, "$");
+		    //tpl.set(4, null);
+
+		    //output.add(tpl);
+
+		    seqpos += alignOp.getLen();
 		    pileuppref = ("^" + mapping_quality);
-		}
 	          }
 	    }
 
