@@ -389,7 +389,10 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    	output.add(mTupleFactory.newTupleNoCopy(tuple_output));
 
 	    	// TODO: add call to format output!!!!
-	     }
+	     } else {
+		left_pos = right_pos;
+		return;
+             }
 
 	     left_pos++;
 	}
