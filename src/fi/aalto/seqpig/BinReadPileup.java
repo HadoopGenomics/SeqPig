@@ -84,6 +84,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	public int size=0;
         public String name;
 	public boolean reverse_strand;
+	public int flags, mapqual;
 
         public String getPileupString(Tuple ct, Tuple pt) throws ExecException {
 		String retval = "chrom: ";
@@ -127,6 +128,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 	public ReadPileupEntry(Tuple read) throws ExecException, IOException {
 	    start_pos = ((Integer)read.get(3)).intValue();
+	    flags = ((Integer)read.get(1)).intValue();
+	    mapqual = ((Integer)read.get(7)).intValue(); 
 	    name = (String)read.get(8);
 	    reverse_strand = (((((Integer)read.get(1)).intValue()) & 16) == 16);
 	    size = 0;
@@ -194,19 +197,32 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    }
 	}
 
-	// Note: we assume that refname (chrom) are already the same!!!! (this is a local sort after all
-	// and both reads are expected to fall into the same bin)
-	public int compareTo( ReadPileupEntry other) {
-	    if (start_pos < other.start_pos) return -1;
-	    else if (start_pos == other.start_pos) {
-		if(!reverse_strand && other.reverse_strand)
-			return -1;
-		if(reverse_strand && !other.reverse_strand)
-			return 1;
+    // NOTE: comparison code mostly taken over from Samtools/Picard SAMRecordCoordinateComparator
+    // notable difference: no tie-breaking based on read mate available currently, which may lead to
+    // a different sorting order, depending on bam file
+    private int compareInts(int i1, int i2) {
+        if (i1 < i2) return -1;
+        else if (i1 > i2) return 1;
+        else return 0;
+    }
 
-		return name.compareTo(other.name);
-	    } else return 1;
-	}
+    // Note1: we assume that refname (chrom) are already the same!!!! (this is a local sort after all
+    // and both reads are expected to fall into the same bin)
+    public int compareTo( ReadPileupEntry other) {
+	    if (start_pos == other.start_pos) {
+		if(reverse_strand == other.reverse_strand) {
+			int cmp = name.compareTo(other.name);
+			if(cmp != 0) return cmp;
+			cmp = compareInts(flags, other.flags);
+			if(cmp != 0) return cmp;
+			cmp = compareInts(mapqual, other.mapqual);
+			if(cmp != 0) return cmp;
+			// note: here should be also broken ties by: MateReferenceIndex, MateAlignmentStart and InferredInsertSize (currently not passed over to UDF)		 
+			return 0;
+		}
+		else return (reverse_strand? 1: -1);
+	    } else return compareInts(start_pos, other.start_pos);
+    }
     }
 
     public BinReadPileup() {
@@ -226,6 +242,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
     //   base qualities
     //   MD tag
     //   mapping quality
+    //   sequence name
+
 
     // tuple output format:
     //   chr
