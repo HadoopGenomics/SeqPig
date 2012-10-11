@@ -318,7 +318,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 			pileuppref = (String)tpl.get(3);
 		    }
 
-		    if(seqpos + alignOp.getLen() == sequence.length())
+		    if(seqpos + alignOp.getLen() == sequence.length()-1)
 			pileuppof = "$";
 
 	            if(mapping.isOnReverse())
