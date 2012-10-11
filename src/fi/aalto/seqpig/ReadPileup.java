@@ -55,6 +55,7 @@ public class ReadPileup extends EvalFunc<DataBag>
     private List<MdOp> mdOps;
     private String sequence;
     private String mapping_quality;
+    private int clipped_length;
 
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private BagFactory mBagFactory = BagFactory.getInstance();
@@ -103,14 +104,19 @@ public class ReadPileup extends EvalFunc<DataBag>
 
     // compares the length indicated by CIGAR and MD strings and CIGAR and read sequence length; returns true if these match and
     // false otherwise
-    private boolean compareLengthCigarMd() {
-	int insertclip_length = 0, match_length = 0, md_length = 0;
+    private boolean compareAndSetLengthCigarMd() {
+	int insert_length = 0, clip_length = 0, match_length = 0, md_length = 0;
 
 	for (AlignOp alignOp: alignment) {
                 if (alignOp.getType() == AlignOp.Type.Match)
 			match_length += alignOp.getLen();
-		else if(alignOp.getType() == AlignOp.Type.Insert || alignOp.getType() == AlignOp.Type.SoftClip)
-			insertclip_length += alignOp.getLen();
+		else {
+			if(alignOp.getType() == AlignOp.Type.Insert)
+				insert_length += alignOp.getLen();
+
+ 			else if(alignOp.getType() == AlignOp.Type.SoftClip)
+					clip_length += alignOp.getLen();
+		}
    	}
 
 	for (MdOp mdOp: mdOps) {
@@ -120,7 +126,9 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 	}
 
-	return ((match_length == md_length) && (match_length + insertclip_length == sequence.length()));
+	clipped_length = match_length + insert_length;
+
+	return ((match_length == md_length) && (match_length + insert_length + clip_length == sequence.length()));
     }
 
     @Override 
@@ -179,7 +187,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 		return null;
             }
 
-	    if (!compareLengthCigarMd()) {
+	    if (!compareAndSetLengthCigarMd()) {
 		warn("CIGAR, MD and sequence lengths do not match! ignoring read! (CIGAR: " + (String)input.get(4) + " MD: " + (String)input.get(6) + " seq: " + sequence + ")", PigWarning.UDF_WARNING_1);
 		return null;
 	    }
@@ -246,7 +254,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 					pileuppref += sequence.substring(seqpos, seqpos+1).toLowerCase(); // mismatch on reverse strand
 				}
 
-				if(seqpos == sequence.length()-1)
+				if(seqpos == clipped_length-1)
 				    pileuppof = "$";
 
 				tpl.set(3, pileuppref+pileuppof);
@@ -318,7 +326,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 			pileuppref = (String)tpl.get(3);
 		    }
 
-		    if(seqpos + alignOp.getLen() == sequence.length()-1)
+		    if(seqpos + alignOp.getLen() == clipped_length-1)
 			pileuppof = "$";
 
 	            if(mapping.isOnReverse())
@@ -387,7 +395,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 		    if(prev_tpl != null) {
 			tpl = prev_tpl;
-			tpl.set(3, tpl.get(3) + "$");
+			//tpl.set(3, tpl.get(3) + "$");
 			output.add(tpl);
 
 			prev_tpl = null;
