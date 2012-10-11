@@ -51,6 +51,9 @@ import java.util.Collections;
 
 public class BinReadPileup extends EvalFunc<DataBag>
 {
+
+    private static final boolean debug = false;
+
     private ArrayList<ReadPileupEntry> readPileups = new ArrayList();
    
 
@@ -147,6 +150,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 	            Tuple piledup = (Tuple)it.next();
 		    ArrayList<Object> pileup_tuple = new ArrayList<Object>();
+
+		    if(debug) {
 		    ArrayList<Object> coordinates_tuple = new ArrayList<Object>();
 
 	            // chrom, pos
@@ -155,6 +160,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 		    Tuple ct =  mTupleFactory.newTupleNoCopy(coordinates_tuple);
                     coordinates.add(ct);
+		    }
 
 		    // refbase, pileup, qual
                     pileup_tuple.add(piledup.get(2));
@@ -170,6 +176,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 			// the condition should only hold if the CIGAR starts with a clipping
 		    }
 
+		    if(debug) {
 		    if(((Integer)piledup.get(1)).intValue() - start_pos != size) {
 
 			if(size > 0)
@@ -179,6 +186,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 			else
 				throw new IOException("start position of first pileup entry does not match read start position!!");
 
+		    }
 		    }
 
 		    size++;
@@ -339,9 +347,11 @@ public class BinReadPileup extends EvalFunc<DataBag>
 			refbase = (String)t.get(0);
 			first_in_bag = false;
 		    }
-		    
+		   
+		    if(debug) { 
 		    if(t.get(0) != null && !refbase.equals((String)t.get(0)))
 			throw new IOException("mismatching rebases: "+refbase+ " and "+(String)t.get(0)+" for "+i+" in ["+left_readindex+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+cur_entry.cur_index+"/"+cur_entry.size+" read: "+cur_entry.name);
+		    }
 
 		    this_output.add(t);
 		    cur_entry.cur_index++;
@@ -359,9 +369,11 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 		    Tuple t =  right_entry.pileup.get(right_entry.cur_index);
 
+	            if(debug) {
 		    if(t.get(0) != null && refbase != null)
 			if(!refbase.equals((String)t.get(0)))
                         	throw new IOException("mismatching rebases (final read): "+refbase+ " and "+(String)t.get(0)+" for "+right_readindex+" in ["+left_readindex+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+right_entry.cur_index+"/"+right_entry.size+" read: "+right_entry.name);
+		    }
 
 		    this_output.add(t);
 		    right_entry.cur_index++;
@@ -390,8 +402,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 	    	// TODO: add call to format output!!!!
 	     } else {
-		left_pos = right_pos;
-		return;
+		left_pos = right_entry.start_pos-1; // -1 because directly afterwards it is incremented!
              }
 
 	     left_pos++;
