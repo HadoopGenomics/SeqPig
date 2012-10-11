@@ -55,7 +55,7 @@ public class ReadPileup extends EvalFunc<DataBag>
     private List<MdOp> mdOps;
     private String sequence;
     private String mapping_quality;
-    private int clipped_length;
+    private int last_unclipped_base; // 1-based position of last unclipped base (starting from potentially clipped ones)
 
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private BagFactory mBagFactory = BagFactory.getInstance();
@@ -107,15 +107,25 @@ public class ReadPileup extends EvalFunc<DataBag>
     private boolean compareAndSetLengthCigarMd() {
 	int insert_length = 0, clip_length = 0, match_length = 0, md_length = 0;
 
-	for (AlignOp alignOp: alignment) {
+	Iterator<AlignOp> alignOpIt = alignment.iterator();
+
+	last_unclipped_base = 0;
+
+	while(alignOpIt.hasNext()) {
+		AlignOp alignOp = alignOpIt.next();	
+
                 if (alignOp.getType() == AlignOp.Type.Match)
 			match_length += alignOp.getLen();
 		else {
 			if(alignOp.getType() == AlignOp.Type.Insert)
 				insert_length += alignOp.getLen();
 
- 			else if(alignOp.getType() == AlignOp.Type.SoftClip)
+ 			else if(alignOp.getType() == AlignOp.Type.SoftClip) {
+					if(!alignOpIt.hasNext()) // this is the final clipping!
+						last_unclipped_base = match_length + insert_length + clip_length;
+
 					clip_length += alignOp.getLen();
+				}
 		}
    	}
 
@@ -126,7 +136,8 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 	}
 
-	clipped_length = match_length + insert_length;
+	if(last_unclipped_base == 0)
+		last_unclipped_base = match_length + insert_length + clip_length;
 
 	return ((match_length == md_length) && (match_length + insert_length + clip_length == sequence.length()));
     }
@@ -254,8 +265,9 @@ public class ReadPileup extends EvalFunc<DataBag>
 					pileuppref += sequence.substring(seqpos, seqpos+1).toLowerCase(); // mismatch on reverse strand
 				}
 
-				if(seqpos == clipped_length-1)
+				if(seqpos == last_unclipped_base-1)
 				    pileuppof = "$";
+				else pileuppof = "";
 
 				tpl.set(3, pileuppref+pileuppof);
 				tpl.set(4, basequal.substring(seqpos, seqpos+1));
@@ -326,8 +338,10 @@ public class ReadPileup extends EvalFunc<DataBag>
 			pileuppref = (String)tpl.get(3);
 		    }
 
-		    if(seqpos + alignOp.getLen() == clipped_length-1)
+		    if(seqpos + alignOp.getLen() == last_unclipped_base-1)
 			pileuppof = "$";
+		    else
+			pileuppof = "";
 
 	            if(mapping.isOnReverse())
 		    	tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen()).toLowerCase()+pileuppof);
