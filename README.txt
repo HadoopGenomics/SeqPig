@@ -179,7 +179,7 @@ mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
 
  D7. Generating samtools compatible pileup (for a correctly sorted BAM file
    with MD tags aligned to the same reference, should produce the same output as
-   samtools mpileup -f ref.fasta -B input.bam):
+   samtools mpileup -A -f ref.fasta -B input.bam):
 
     grunt> A = load 'input.bam' using BamUDFLoader('yes');
     grunt> B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
