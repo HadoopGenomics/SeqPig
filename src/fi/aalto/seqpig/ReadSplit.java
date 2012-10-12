@@ -148,7 +148,8 @@ public class ReadSplit extends EvalFunc<DataBag>
 	return ((match_length == md_length) && (match_length + insert_length + clip_length == sequence.length()));
     }
 
-    private void setFields(Tuple tpl, int refpos, String refbase, int basepos, String readbase, int basequal) {
+    private void setFields(Tuple tpl, int refpos, String refbase, int basepos, String readbase, int basequal) 
+	throws org.apache.pig.backend.executionengine.ExecException {
         tpl.set(0, chromosome);
 	tpl.set(1, refpos);
         tpl.set(2, refbase);
@@ -187,7 +188,7 @@ public class ReadSplit extends EvalFunc<DataBag>
 	sequence = (String)input.get(2);
 	basequal = (String)input.get(4);
 	flags = ((Integer)input.get(5)).intValue();
-	mapqual = ((Integer)input.get(6).intValue();
+	mapqual = ((Integer)input.get(6)).intValue();
 		   chromosome = (String)input.get(8);
 
 		   mapping.clear();
