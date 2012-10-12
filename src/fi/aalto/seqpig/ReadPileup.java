@@ -303,7 +303,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 
 		else if(alignOp.getType() == AlignOp.Type.Insert) {
 
-		    // NOTE!!! for now we ignore trailing insertions!!!
+		    // NOTE!!! for now we ignore leading insertions!!!
 		    if(seqpos == 0 || (prev_tpl == null && deletionTuples.isEmpty())) { // the second part is to detect clipped bases followed by an insertions which are skipped by samtools mpilep
 			seqpos += alignOp.getLen();
 			continue;
@@ -338,7 +338,7 @@ public class ReadPileup extends EvalFunc<DataBag>
 			pileuppref = (String)tpl.get(3);
 		    }
 
-		    if(seqpos + alignOp.getLen() == last_unclipped_base-1)
+		    if(seqpos + alignOp.getLen() == last_unclipped_base)
 			pileuppof = "$";
 		    else
 			pileuppof = "";
