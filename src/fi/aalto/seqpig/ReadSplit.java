@@ -44,7 +44,7 @@ import java.util.List;
 /* UDF ReadPileup 
    
  * takes a single read (created via input format from SAMRecord) and produces pileup data
-    for each reference position
+ for each reference position
 */
 
 public class ReadSplit extends EvalFunc<DataBag>
@@ -52,34 +52,51 @@ public class ReadSplit extends EvalFunc<DataBag>
     private WritableMapping mapping = new WritableMapping();
     private List<AlignOp> alignment;
     private List<MdOp> mdOps;
+
+    private String chrom; // or reference sequence id
+
+    private String name;
+    private int start;
     private String sequence;
-    private String mapping_quality;
-    private int last_unclipped_base; // 1-based position of last unclipped base (starting from potentially clipped ones)
+    private String basequal;
+    private String chromosome;
+    private int flags;
+    private int mapqual;
+
+    private int last_unclipped_base; // 1-based position of last unclipped base (starting from (potentially) clipped ones)
+    private int read_length; // length of (potentially clipped) read
+    private int read_clip_offset; // number of clipped bases at the front of the read
 
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private BagFactory mBagFactory = BagFactory.getInstance();
 
-    private List<Tuple> deletionTuples = new ArrayList();
+    //private List<Tuple> deletionTuples = new ArrayList();
 
     public ReadSplit() {
     }
 
-    // tuple input format:
+    // tuple input format: (subset of BamUDFLoader output format + MD tag)
+    //   name
+    //   start
     //   sequence
-    //   flag
-    //   chr
-    //   position
     //   cigar
     //   base qualities
+    //   flags
+    //   map quality
+    //   refindex
+    //   refname
     //   MD tag
-    //   mapping quality
 
     // tuple output format:
-    //   chr
-    //   position
-    //   ref base (if known, else null value)
-    //   pileup string (according to samtools)
-    //   base quality/ies (if applicable else null)
+    //   chromosome/reference id
+    //   reference position
+    //   reference base (if known, else null value)
+    //   read name
+    //   read length (clipped)
+    //   mapping quality
+    //   flags
+    //   base position (inside read)
+    //   base quality (if applicable else null)
    
     // WARNINGS:
     // we use the folling Pig UDF warnings:
@@ -97,339 +114,267 @@ public class ReadSplit extends EvalFunc<DataBag>
 	last_unclipped_base = 0;
 
 	while(alignOpIt.hasNext()) {
-		AlignOp alignOp = alignOpIt.next();	
+	    AlignOp alignOp = alignOpIt.next();	
 
-                if (alignOp.getType() == AlignOp.Type.Match)
-			match_length += alignOp.getLen();
-		else {
-			if(alignOp.getType() == AlignOp.Type.Insert)
-				insert_length += alignOp.getLen();
+	    if (alignOp.getType() == AlignOp.Type.Match)
+		match_length += alignOp.getLen();
+	    else {
+		if(alignOp.getType() == AlignOp.Type.Insert)
+		    insert_length += alignOp.getLen();
 
- 			else if(alignOp.getType() == AlignOp.Type.SoftClip) {
-					if(!alignOpIt.hasNext()) // this is the final clipping!
-						last_unclipped_base = match_length + insert_length + clip_length;
+		else if(alignOp.getType() == AlignOp.Type.SoftClip) {
+		    if(!alignOpIt.hasNext()) // this is the final clipping!
+			last_unclipped_base = match_length + insert_length + clip_length;
+		    else // this is the first clipping!
+			read_clip_offset = alignOp.getLen();
 
-					clip_length += alignOp.getLen();
-				}
+		    clip_length += alignOp.getLen();
 		}
+	    }
    	}
 
 	for (MdOp mdOp: mdOps) {
-		if (mdOp.getType() == MdOp.Type.Match || mdOp.getType() == MdOp.Type.Mismatch) {
-			md_length += mdOp.getLen();
-		}
+	    if (mdOp.getType() == MdOp.Type.Match || mdOp.getType() == MdOp.Type.Mismatch) {
+		md_length += mdOp.getLen();
+	    }
 
 	}
 
 	if(last_unclipped_base == 0)
-		last_unclipped_base = match_length + insert_length + clip_length;
+	    last_unclipped_base = match_length + insert_length + clip_length;
+
+	read_length = match_length + insert_length;
 
 	return ((match_length == md_length) && (match_length + insert_length + clip_length == sequence.length()));
     }
 
+    private void setFields(Tuple tpl, int refpos, String refbase, int basepos, String readbase, int basequal) {
+        tpl.set(0, chromosome);
+	tpl.set(1, refpos);
+        tpl.set(2, refbase);
+	tpl.set(3, name);
+	tpl.set(4, read_length);
+	tpl.set(5, mapqual);
+	tpl.set(6, flags);
+	tpl.set(7, basepos);
+	tpl.set(8, readbase);
+	tpl.set(9, basequal);
+    }
+
+    private int getBaseQuality(int baseindex) {
+    	return (int)(basequal.substring(baseindex, baseindex+1).charAt(0));
+    }
+
+
     @Override 
-    public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
+	public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
 	if (input == null || input.size() == 0)
 	    return null;
-	//try {
-	    // first load the mapping and do some error checks
 	    
-	    String basequal = (String)input.get(5);
+	//   name
+	//   start
+	//   sequence
+	//   cigar
+	//   base qualities
+	//   flags
+	//   map quality
+	//   refindex
+	//   refname
+	//   MD tag
 
-	    mapping.clear();
+	name = (String)input.get(0);
+	start = ((Integer)input.get(1)).intValue();
+	sequence = (String)input.get(2);
+	basequal = (String)input.get(4);
+	flags = ((Integer)input.get(5)).intValue();
+	mapqual = ((Integer)input.get(6).intValue();
+		   chromosome = (String)input.get(8);
 
-            sequence = (String)input.get(0);
-            mapping.setSequence(sequence);
-            mapping.setFlag(((Integer)input.get(1)).intValue());
+		   mapping.clear();
+		   mapping.setSequence(sequence);
+		   mapping.setFlag(flags);
 
-	    if (!mapping.isMapped() || input.get(2)==null) {
-	    	warn("encountered unmapped read or empty chromosome/contig id!", PigWarning.UDF_WARNING_4);
-		return null;
-            }
+		   if (!mapping.isMapped() || input.get(8)==null) {
+		       warn("encountered unmapped read or empty chromosome/contig id!", PigWarning.UDF_WARNING_4);
+		       return null;
+		   }
 
-	    mapping.setContig((String)input.get(2));
-            mapping.set5Position(((Integer)input.get(3)).intValue());
+		   mapping.set5Position(((Integer)input.get(1)).intValue());
+		   mapping.setContig((String)input.get(8));
 
-	   // note: the following tries to mimic samtools mpileup
-	   if( //((Integer)input.get(7)).intValue() == 255 ||
-		((Integer)input.get(7)).intValue() < 0 || ((Integer)input.get(7)).intValue() >= 93) {// mapping quality not available or otherwise weird
-		mapping_quality = "~";
-	   } else
-            	mapping_quality = new String(new byte[]{(byte)(((Integer)input.get(7)).intValue()+33)}, "US-ASCII");
+		   try {
+		       mapping.setAlignment(AlignOp.scanCigar((String)input.get(3)));
+		       alignment = mapping.getAlignment();
+		   } catch(FormatException e) {
+		       warn("errors parsing CIGAR string (input: " + (String)input.get(3) + "), silently IGNORING read, exception: "+e.toString(), PigWarning.UDF_WARNING_2);
+		       return null;
+		   }
 
-            try {
-                mapping.setAlignment(AlignOp.scanCigar((String)input.get(4)));
-                alignment = mapping.getAlignment();
-            } catch(FormatException e) {
-                warn("errors parsing CIGAR string (input: " + (String)input.get(4) + "), silently IGNORING read, exception: "+e.toString(), PigWarning.UDF_WARNING_2);
-		return null;
-            }
+		   try {
+		       mapping.setTag("MD", AbstractTaggedMapping.TagDataType.String, ((String)input.get(9)).toUpperCase());
+		       mdOps = MdOp.scanMdTag(((String)input.get(9)).toUpperCase());
+		   } catch(FormatException e) {
+		       warn("errors parsing MD string (input: " + (String)input.get(9) + "), silently IGNORING read, exception: "+e.toString(), PigWarning.UDF_WARNING_3);
+		       return null;
+		   }
 
-            try {
-            	mapping.setTag("MD", AbstractTaggedMapping.TagDataType.String, ((String)input.get(6)).toUpperCase());
-           	mdOps = MdOp.scanMdTag(((String)input.get(6)).toUpperCase());
-            } catch(FormatException e) {
-            	warn("errors parsing MD string (input: " + (String)input.get(6) + "), silently IGNORING read, exception: "+e.toString(), PigWarning.UDF_WARNING_3);
-		return null;
-            }
+		   DataBag output = mBagFactory.newDefaultBag();
 
-	    DataBag output = mBagFactory.newDefaultBag();
+		   // NOTE: code based on copy&paste from Seal AbstractTaggedMapping::calculateReferenceMatches
 
-	    // NOTE: code based on copy&paste from Seal AbstractTaggedMapping::calculateReferenceMatches
+		   if (mdOps.isEmpty()) {
+		       warn("no MD operators extracted from tag! (tag: " + (String)input.get(9) + "), silently IGNORING read", PigWarning.UDF_WARNING_3);
+		       return null;
+		   }
 
-	    if (mdOps.isEmpty()) {
-		//throw new IOException("no MD operators extracted from tag! (tag: " + (String)input.get(6) + ")");
-	    	warn("no MD operators extracted from tag! (tag: " + (String)input.get(6) + "), silently IGNORING read", PigWarning.UDF_WARNING_3);
-		return null;
-            }
-
-	    if (!compareAndSetLengthCigarMd()) {
-		warn("CIGAR, MD and sequence lengths do not match! ignoring read! (CIGAR: " + (String)input.get(4) + " MD: " + (String)input.get(6) + " seq: " + sequence + ")", PigWarning.UDF_WARNING_1);
-		return null;
-	    }
+		   if (!compareAndSetLengthCigarMd()) {
+		       warn("CIGAR, MD and sequence lengths do not match! ignoring read! (CIGAR: " + (String)input.get(3) + " MD: " + (String)input.get(9) + " seq: " + sequence + ")", PigWarning.UDF_WARNING_1);
+		       return null;
+		   }
 		
-	    Iterator<MdOp> mdIt = mdOps.iterator();
+		   Iterator<MdOp> mdIt = mdOps.iterator();
 
-	    MdOp mdOp = mdIt.next();
-	    int mdOpConsumed = 0; // the number of positions within the current mdOp that have been consumed.
-	    int seqpos = 0;
-	    int refpos = (((Integer)input.get(3)).intValue());
-	    String pileuppref = ("^" + mapping_quality);
-	    String pileuppof = "";
+		   MdOp mdOp = mdIt.next();
+		   int mdOpConsumed = 0; // the number of positions within the current mdOp that have been consumed.
+		   int seqpos = 0;
+		   int refpos = start;
 
-	    Tuple prev_tpl = null; // used for insertions and deletions to join their records; always set to last created tuple!
+		   Tuple prev_tpl = null; // used for insertions and deletions to join their records; always set to last created tuple!
 		
-	    for (AlignOp alignOp: alignment) {
-		if (alignOp.getType() == AlignOp.Type.Match) {
+		   for (AlignOp alignOp: alignment) {
+		       if (alignOp.getType() == AlignOp.Type.Match) {
 
-		    int positionsToCover = alignOp.getLen();
+			   int positionsToCover = alignOp.getLen();
 
-		    while (positionsToCover > 0 && mdOp != null) {
-			if (mdOp.getType() == MdOp.Type.Delete) {
+			   while (positionsToCover > 0 && mdOp != null) {
+			       if (mdOp.getType() == MdOp.Type.Delete) {
 
-			    throw new IOException("BUG or bad data?? found MD deletion while parsing CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);
+				   throw new IOException("BUG or bad data?? found MD deletion while parsing CIGAR match! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(9) + "; read: " + sequence + "; seqpos: "+seqpos+"; mdOpConsumed: "+mdOpConsumed+"; positionsToCover: "+positionsToCover);
 
-			} else {
+			       } else {
 
-			    if(prev_tpl != null) {
-                        	output.add(prev_tpl);
-                        	prev_tpl = null;
-                    	    }
+				   if(prev_tpl != null) {
+				       output.add(prev_tpl);
+				       prev_tpl = null;
+				   }
 
-			    // must be a match or a mismatch
-			    boolean match = mdOp.getType() == MdOp.Type.Match;
-			    int consumed = Math.min(mdOp.getLen() - mdOpConsumed, positionsToCover);
+				   // must be a match or a mismatch
+				   boolean match = mdOp.getType() == MdOp.Type.Match;
+				   int consumed = Math.min(mdOp.getLen() - mdOpConsumed, positionsToCover);
 
-			    if(!deletionTuples.isEmpty()) {
-			    	for (Tuple tpl: deletionTuples) {
-					tpl.set(4, basequal.substring(seqpos, seqpos+1));
-					output.add(tpl);
-				}
-				deletionTuples.clear();
-			    }
+				   for (int i = 0; i < consumed; i++) {
 
-			    for (int i = 0; i < consumed; i++) {
+				       String refbase, readbase;
+				       int basequal;
 
-				Tuple tpl = TupleFactory.getInstance().newTuple(5);
-				tpl.set(0, (String)input.get(2));
-				tpl.set(1, refpos++); //refPositions.get(seqpos));
+				       Tuple tpl = TupleFactory.getInstance().newTuple(10);
 
-				if(match) { // reference and read have matching bases
-				    tpl.set(2, sequence.substring(seqpos, seqpos+1));
+				       if(!mapping.isOnReverse())
+					   readbase = sequence.substring(seqpos, seqpos+1);
+				       else
+					   readbase = sequence.substring(seqpos, seqpos+1).toLowerCase();
 
-				    if(!mapping.isOnReverse()) // matching on forward strand
-					pileuppref += ".";
-				    else
-					pileuppref += ","; // matching on reverse strand
-				} else {
-				    tpl.set(2, mdOp.getSeq().substring(i, i+1));
+				       if(match) // reference and read have matching bases
+					   refbase = sequence.substring(seqpos, seqpos+1);
+				       else
+					   refbase = mdOp.getSeq().substring(i, i+1);
 
-				    if(!mapping.isOnReverse()) // mismatch on forward strand
-					pileuppref += sequence.substring(seqpos, seqpos+1);
-				    else
-					pileuppref += sequence.substring(seqpos, seqpos+1).toLowerCase(); // mismatch on reverse strand
-				}
+				       basequal = getBaseQuality(seqpos);
 
-				if(seqpos == last_unclipped_base-1)
-				    pileuppof = "$";
-				else pileuppof = "";
-
-				tpl.set(3, pileuppref+pileuppof);
-				tpl.set(4, basequal.substring(seqpos, seqpos+1));
-
-				/*if(qual_threshold > 0 && (int)(basequal.substring(seqpos, seqpos+1).charAt(0)) - 33 < qual_threshold) {
-					return null;
-				}*/
+				       setFields(tpl, refpos++, refbase, seqpos-read_clip_offset, readbase, basequal);
 				
-				if(i < consumed-1)
-				    output.add(tpl);
-				else
-				    prev_tpl = tpl;
+				       if(i == consumed-1)
+					   prev_tpl = tpl;
 
-				seqpos++;
-				pileuppref = "";
-			    }
+				       output.add(tpl);
+				       seqpos++;
+				   }
 
-			    positionsToCover -= consumed;
-			    mdOpConsumed += consumed;
-			    if (mdOpConsumed >= mdOp.getLen()) { // operator consumed.  Advance to next
-				mdOpConsumed = 0;
-				if (mdIt.hasNext())
-				    mdOp = mdIt.next();
-				else
-				    mdOp = null;
-			    }
-			}
-		    }
+				   positionsToCover -= consumed;
+				   mdOpConsumed += consumed;
+				   if (mdOpConsumed >= mdOp.getLen()) { // operator consumed.  Advance to next
+				       mdOpConsumed = 0;
+				       if (mdIt.hasNext())
+					   mdOp = mdIt.next();
+				       else
+					   mdOp = null;
+				   }
+			       }
+			   }
 
-		    if (positionsToCover > 0 && mdOp == null)
-			throw new IOException("BUG or bad data?? Found more read positions than was covered by the MD tag. CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence);
-		}
+			   if (positionsToCover > 0 && mdOp == null)
+			       throw new IOException("BUG or bad data?? Found more read positions than was covered by the MD tag. CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(9) + "; read: " + sequence);
+		       }
 
-		else if(alignOp.getType() == AlignOp.Type.Insert) {
+		       else if(alignOp.getType() == AlignOp.Type.Insert) {
 
-		    // NOTE!!! for now we ignore leading insertions!!!
-		    if(seqpos == 0 || (prev_tpl == null && deletionTuples.isEmpty())) { // the second part is to detect clipped bases followed by an insertions which are skipped by samtools mpilep
-			seqpos += alignOp.getLen();
-			continue;
-		    }
+			   // NOTE!!! for now we ignore leading insertions!!!
+			   if(seqpos < read_clip_offset) {
+			       seqpos += alignOp.getLen();
+			       continue;
+			   }
 
-		    Tuple tpl = null;
+			   String refbase, readbases;
 
-		    if(prev_tpl == null) {
+			   if(prev_tpl != null)
+			       refbase = (String)prev_tpl.get(2);
+			   else
+			       refbase = null;
 
-			if(!deletionTuples.isEmpty()) {
-				int ctr = 1;
-                        	for (Tuple t: deletionTuples) {
-                                        t.set(4, basequal.substring(seqpos, seqpos+1));
-                                        
-					if(ctr != deletionTuples.size())
-						output.add(t);
-					else tpl = t;
-					
-					ctr++;
-                                }
-                                deletionTuples.clear();
-				pileuppref = (String)tpl.get(3);
-                        } else
-				tpl = TupleFactory.getInstance().newTuple(5);
+			   prev_tpl = null;
 
-			tpl.set(0, (String)input.get(2));
-			tpl.set(1, refpos-1);
-			//tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
-			//tpl.set(4, null); // note: it seems samtools silently drops base qualities of inserted bases
-		    } else {
-			tpl = prev_tpl;
-			pileuppref = (String)tpl.get(3);
-		    }
+			   if(mapping.isOnReverse())
+			       readbases = sequence.substring(seqpos,seqpos+alignOp.getLen()).toLowerCase();
+			   else
+			       readbases = sequence.substring(seqpos,seqpos+alignOp.getLen());
 
-		    if(seqpos + alignOp.getLen() == last_unclipped_base)
-			pileuppof = "$";
-		    else
-			pileuppof = "";
+			   for(int i=0;i<alignOp.getLen();i++) {
+			       String readbase = readbases.substring(i,i+1);
+			       int basequal = getBaseQuality(seqpos);
 
-	            if(mapping.isOnReverse())
-		    	tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen()).toLowerCase()+pileuppof);
-		    else
-			tpl.set(3, pileuppref+"+"+alignOp.getLen()+sequence.substring(seqpos,seqpos+alignOp.getLen())+pileuppof);
-			
-		    seqpos += alignOp.getLen();
+			       Tuple tpl = TupleFactory.getInstance().newTuple(10);
 
-		    output.add(tpl);
-		    prev_tpl = null;
+			       setFields(tpl, refpos, refbase, seqpos-read_clip_offset, readbase, basequal);	
+			       seqpos++;
 
-		    pileuppref = "";
+			       output.add(tpl);
+			   }
 
-		}  else if(alignOp.getType() == AlignOp.Type.Delete) {
+		       }  else if(alignOp.getType() == AlignOp.Type.Delete) {
 
-		    if(mdOp == null || mdOp.getType() != MdOp.Type.Delete || mdOp.getLen() != alignOp.getLen()) {
-			throw new IOException("BUG or bad data?? Could not find matching MD deletion after finding CIGAR deletion! CIGAR: " + AlignOp.cigarStr(alignment) + "; MD: " + (String)input.get(6) + "; read: " + sequence+ "; MdOp: "+(mdOp==null?"null":mdOp.toString()));
-		    }
-	
-		    Tuple tpl ;
+			   if (mdIt.hasNext())
+			       mdOp = mdIt.next();
+			   else
+			       mdOp = null;
 
-		    if(prev_tpl == null) {
-			tpl = TupleFactory.getInstance().newTuple(5);
+		       } else if(alignOp.getType() == AlignOp.Type.SoftClip) {
 
-			tpl.set(0, (String)input.get(2));
-			tpl.set(1, refpos-1);
-			tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
-			tpl.set(4, null);
-		    } else {
-			tpl = prev_tpl;
-			pileuppref = (String)tpl.get(3);
-		    }
+			   seqpos += alignOp.getLen();
 
-		    String deleted_bases = mdOp.getSeq();
+		       }
+		   }
 
-		    if(mapping.isOnReverse())
-			deleted_bases = deleted_bases.toLowerCase();
-		    else
-			deleted_bases = deleted_bases.toUpperCase();
+		   return output;
+		   }
 
-		    tpl.set(3, pileuppref+"-"+alignOp.getLen()+deleted_bases+pileuppof);
+	    @Override
+	    public Schema outputSchema(Schema input) {
+	    try{
+		Schema bagSchema = new Schema();
+		bagSchema.add(new Schema.FieldSchema("chr", DataType.CHARARRAY));
+		bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
+		bagSchema.add(new Schema.FieldSchema("refbase", DataType.CHARARRAY));
+		bagSchema.add(new Schema.FieldSchema("readname", DataType.CHARARRAY));
+		bagSchema.add(new Schema.FieldSchema("readlength", DataType.INTEGER));
+		bagSchema.add(new Schema.FieldSchema("mapqual", DataType.INTEGER));
+		bagSchema.add(new Schema.FieldSchema("flags", DataType.INTEGER));
+		bagSchema.add(new Schema.FieldSchema("basepos", DataType.INTEGER));
+		bagSchema.add(new Schema.FieldSchema("readbase", DataType.CHARARRAY));
+		bagSchema.add(new Schema.FieldSchema("basequal", DataType.INTEGER));
 
-		    output.add(tpl);
-		    prev_tpl = null;
-
-		    for(int i=0;i<mdOp.getLen();i++) {
-			Tuple dtpl = TupleFactory.getInstance().newTuple(5);
-			dtpl.set(0, (String)input.get(2));
-			dtpl.set(1, refpos++); //start_deletion+i+1);
-			dtpl.set(2, deleted_bases.substring(i,i+1).toUpperCase());
-			dtpl.set(3, "*");
-			deletionTuples.add(dtpl);
-		    }
-
-		    pileuppref = "";
-
-		    if (mdIt.hasNext())
-                      mdOp = mdIt.next();
-                    else
-                      mdOp = null;
-
-		} else if(alignOp.getType() == AlignOp.Type.SoftClip) {
-
-		    Tuple tpl = null;
-
-		    if(prev_tpl != null) {
-			tpl = prev_tpl;
-			output.add(tpl);
-
-			prev_tpl = null;
-		    }
-
-
-		    seqpos += alignOp.getLen();
-		    pileuppref = ("^" + mapping_quality);
-	          }
+		return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
+	    }catch (Exception e){
+		return null;
 	    }
-
-
-	    if(prev_tpl != null)
-		output.add(prev_tpl);
-
-	    return output;
-
-    }
-
-    @Override
-    public Schema outputSchema(Schema input) {
-	try{
-	    Schema bagSchema = new Schema();
-	    bagSchema.add(new Schema.FieldSchema("chr", DataType.CHARARRAY));
-	    bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
-	    bagSchema.add(new Schema.FieldSchema("refbase", DataType.CHARARRAY));
-	    bagSchema.add(new Schema.FieldSchema("readname", DataType.CHARARRAY));
-	    bagSchema.add(new Schema.FieldSchema("mapqual", DataType.INTEGER));
-	    bagSchema.add(new Schema.FieldSchema("flags", DataType.INTEGER));
-	    bagSchema.add(new Schema.FieldSchema("baseindex", DataType.INTEGER));
-	    bagSchema.add(new Schema.FieldSchema("readbase", DataType.CHARARRAY));
-	    bagSchema.add(new Schema.FieldSchema("basequal", DataType.INTEGER));
-
-	    return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
-	}catch (Exception e){
-	    return null;
 	}
     }
-}
