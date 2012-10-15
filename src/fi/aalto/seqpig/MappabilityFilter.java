@@ -78,7 +78,7 @@ import org.apache.commons.codec.binary.Base64;
 
 public class MappabilityFilter extends FilterFunc {
 
-    class RegionEntry {
+    class RegionEntry implements Comparable<RegionEntry> {
 	public int index=-1;
 	public int start=-1;
 	public int end=-1;
@@ -93,11 +93,23 @@ public class MappabilityFilter extends FilterFunc {
 		String ret = "region: ("+index+","+start+","+end+")";
 		return ret;
 	}
+
+	public int compareTo( RegionEntry other) {
+	    if(this.index == other.index) {
+		if(this.start == other.start)
+		    return (this.end - other.end);
+		else
+		    return (this.start - other.start);
+	    } else
+		return (this.index - other.index);
+	}
     }
 
     protected String samfileheader = null;
     protected SAMFileHeader samfileheader_decoded = null;
     protected TreeMap<RegionEntry,Boolean> regions = null;
+
+    protected int region_size = -1;
 
     public MappabilityFilter() {
 	decodeSAMFileHeader();
@@ -166,7 +178,7 @@ public class MappabilityFilter extends FilterFunc {
 		    else {
 			String[] region_data = str.split("\t");
 			
-			if(region_data[0] == null || region_data[1] == null || region_data[2] == null || region_data[3] == null) {
+			if(region_data[0] == null || region_data[1] == null || region_data[2] == null || region_data[3] == null || region_data[2]  < region_data[1]  || region_data[3] < 0) {
 			    int errCode = 0;
 			    String errMsg = "MappabilityFilter: Error while reading region file input";
 			    
@@ -175,6 +187,9 @@ public class MappabilityFilter extends FilterFunc {
 			
 			if(Double.parseDouble(region_data[3]) >= mappability_threshold) {
 			    
+			    if(region_size < 0)
+				region_size = region_data[2] - region_data[1];
+
 			    SAMSequenceRecord ref = samfileheader_decoded.getSequence(region_data[0]);
 			    
 			    if (ref == null)
@@ -253,6 +268,11 @@ public class MappabilityFilter extends FilterFunc {
 	ObjectInputStream ostream = new ObjectInputStream(bstream);
 	
 	this.regions = (TreeMap)ostream.readObject();
+
+	RegionEntry firstk = regions.firstKey();
+
+	if(region_size < 0)
+	    region_size = firstk.end - firstk.start;
     }
 
     private SAMFileHeader getSAMFileHeader() {
@@ -285,9 +305,20 @@ public class MappabilityFilter extends FilterFunc {
 	    int start_pos = ((Integer)input.get(1)).intValue();
 	    int end_pos = ((Integer)input.get(2)).intValue();
 	    
-	    for(RegionEntry entry : regions) {
-		if(entry.index == chrom && entry.start <= start_pos && entry.end >= end_pos)
-			return true;
+	    int start_region_index = Math.floor((double)start_pos/((double)region_size));
+	    int end_region_index = Math.floor((double)end_pos/((double)region_size));
+
+	    if(start_region_index == end_region_index) {
+		RegionEntry entry = new RegionEntry(chrom, start_region_index*region_size, (start_region_index+1)*region_size);
+
+		return (regions.get(entry) != null);
+	    } else {
+		// now start and end fall into different regions
+
+		RegionEntry start_entry = new RegionEntry(chrom, start_region_index*region_size, (start_region_index+1)*region_size);
+		RegionEntry end_entry = new RegionEntry(chrom, end_region_index*region_size, (end_region_index+1)*region_size);
+
+		return ((regions.get(start_entry) != null) && (regions.get(end_entry) != null));
 	    }
 
 	    return false;
