@@ -111,12 +111,12 @@ public class MappabilityFilter extends FilterFunc {
 
     protected int region_size = -1;
 
-    public MappabilityFilter() {
+    public MappabilityFilter() throws Exception {
 	decodeSAMFileHeader();
 	decodeRegions();
     }
 
-    public MappabilityFilter(String samfileheaderfilename, String regionfilename, double mappability_threshold) throws  ExecException {
+    public MappabilityFilter(String samfileheaderfilename, String regionfilename, double mappability_threshold) throws  Exception {
 
 	Configuration conf = UDFContext.getUDFContext().getJobConf();
 	    
@@ -147,7 +147,7 @@ public class MappabilityFilter extends FilterFunc {
 		BufferedReader headerin = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(samfileheaderfilename)))));
 		
 		while(true) {
-		    str = headerin.readLine();
+		    String str = headerin.readLine();
 		    
 		    if(str == null) break;
 		    else
@@ -172,39 +172,49 @@ public class MappabilityFilter extends FilterFunc {
 		regionin.readLine(); // throw away first line that describes colums 
 
 		while(true) {
-		    str = regionin.readLine();
+		    String str = regionin.readLine();
 		    
 		    if(str == null) break;
 		    else {
 			String[] region_data = str.split("\t");
-			
-			if(region_data[0] == null || region_data[1] == null || region_data[2] == null || region_data[3] == null || region_data[2]  < region_data[1]  || region_data[3] < 0) {
+
+			if(region_data[0] == null || region_data[1] == null || region_data[2] == null || region_data[3] == null) {
 			    int errCode = 0;
 			    String errMsg = "MappabilityFilter: Error while reading region file input";
 			    
-			    throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT, e);
+			    throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT);
 			}
 			
 			if(Double.parseDouble(region_data[3]) >= mappability_threshold) {
 			    
+			    int start = parseCoordinate(region_data[1]);
+			    int end = parseCoordinate(region_data[2]);
+
+			    if(end < start) {
+                            	int errCode = 0;
+                            	String errMsg = "MappabilityFilter: Error while reading region file input";
+
+                            	throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT);
+                            }
+
 			    if(region_size < 0)
-				region_size = region_data[2] - region_data[1];
+				region_size = end - start;
 
 			    SAMSequenceRecord ref = samfileheader_decoded.getSequence(region_data[0]);
 			    
 			    if (ref == null)
 				try {
-				    ref = samfileheader_decoded.getSequence(Integer.parseInt(refStr));
+				    ref = samfileheader_decoded.getSequence(Integer.parseInt(region_data[0]));
 				} catch (NumberFormatException e) {}
 			    
 			    if (ref == null) {
 				int errCode = 0;
 				String errMsg = "MappabilityFilter: Unable find sequence record for region: "+str;
 				
-				throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT, e);
+				throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT);
 			    }
 			    
-			    RegionEntry e = new RegionEntry(ref.getSequenceIndex(), parseCoordinate(region_data[1]), parseCoordinate(region_data[2]));
+			    RegionEntry e = new RegionEntry(ref.getSequenceIndex(), start, end);
 			    regions.put(e, new Boolean(true));
 			}
 		    }
@@ -305,8 +315,8 @@ public class MappabilityFilter extends FilterFunc {
 	    int start_pos = ((Integer)input.get(1)).intValue();
 	    int end_pos = ((Integer)input.get(2)).intValue();
 	    
-	    int start_region_index = Math.floor((double)start_pos/((double)region_size));
-	    int end_region_index = Math.floor((double)end_pos/((double)region_size));
+	    int start_region_index = (int)Math.floor((double)start_pos/((double)region_size));
+	    int end_region_index = (int)Math.floor((double)end_pos/((double)region_size));
 
 	    if(start_region_index == end_region_index) {
 		RegionEntry entry = new RegionEntry(chrom, start_region_index*region_size, (start_region_index+1)*region_size);
@@ -320,8 +330,6 @@ public class MappabilityFilter extends FilterFunc {
 
 		return ((regions.get(start_entry) != null) && (regions.get(end_entry) != null));
 	    }
-
-	    return false;
 
         } catch (ExecException ee) {
             throw ee;
