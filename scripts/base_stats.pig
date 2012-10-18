@@ -14,7 +14,7 @@ base_stats_grouped = GROUP base_stats_data BY (refbase, basepos, readbase);
 base_stats_grouped_count = FOREACH base_stats_grouped GENERATE group.$0 AS refbase, group.$1 AS basepos, group.$2 as readbase, COUNT($1) AS bcount;
 base_stats_grouped = GROUP base_stats_grouped_count by (refbase, basepos);
 base_stats = FOREACH base_stats_grouped {
-	TMP = ORDER base_stats_grouped_count BY bcount;
+	TMP = ORDER base_stats_grouped_count BY bcount desc;
 	GENERATE TMP;
 }
 STORE base_stats into '$outputfile';

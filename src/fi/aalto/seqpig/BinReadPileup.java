@@ -46,7 +46,7 @@ import java.util.Collections;
 /* UDF ReadPileup 
    
  * takes a single read (created via input format from SAMRecord) and produces pileup data
-    for each reference position
+ for each reference position
 */
 
 public class BinReadPileup extends EvalFunc<DataBag>
@@ -61,9 +61,9 @@ public class BinReadPileup extends EvalFunc<DataBag>
     private BagFactory mBagFactory = BagFactory.getInstance();
 
     private int qual_threshold = 0; // base quality threshold:
-	// in any base has base quality smaller this value the
-	// read is discarded for the purpose of pileup (as samtools
-	// does it)
+    // in any base has base quality smaller this value the
+    // read is discarded for the purpose of pileup (as samtools
+    // does it)
 
     private int left_readindex = 0; // the index of the left-most read in the bucked that still needs to be processed; forms the left end of the processing frame
     private int right_readindex = 0; // the index of the current read; forms the right end of the processing frame
@@ -87,43 +87,43 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	public int flags, mapqual;
 
         public String getPileupString(Tuple ct, Tuple pt) throws ExecException {
-		String retval = "chrom: ";
+	    String retval = "chrom: ";
 
-		if(ct.get(0) == null)
-			retval += "?";
-		else retval += (String)ct.get(0);
+	    if(ct.get(0) == null)
+		retval += "?";
+	    else retval += (String)ct.get(0);
 
-		retval += " pos: ";
+	    retval += " pos: ";
 
-		if(ct.get(1) == null)
-			retval += "?";
-		else {
-			int val =  ((Integer)ct.get(1)).intValue();
-			retval += val;
-		}
+	    if(ct.get(1) == null)
+		retval += "?";
+	    else {
+		int val =  ((Integer)ct.get(1)).intValue();
+		retval += val;
+	    }
 
-		retval += " refbase: ";
+	    retval += " refbase: ";
 
-		if(pt.get(0) == null)
-                        retval += "?";
-                else
-                        retval += (String)pt.get(0);
+	    if(pt.get(0) == null)
+		retval += "?";
+	    else
+		retval += (String)pt.get(0);
 		
-		retval += " pileup: ";
+	    retval += " pileup: ";
 
-		if(pt.get(1) == null)
-                        retval += "?";
-                else
-                        retval += (String)pt.get(1);
+	    if(pt.get(1) == null)
+		retval += "?";
+	    else
+		retval += (String)pt.get(1);
 
-		retval += " qual: ";
+	    retval += " qual: ";
 
-                if(pt.get(2) == null)
-                        retval += "?";
-                else
-                        retval += (String)pt.get(2);
+	    if(pt.get(2) == null)
+		retval += "?";
+	    else
+		retval += (String)pt.get(2);
 
-		return retval;
+	    return retval;
         }
 
 	public ReadPileupEntry(Tuple read) throws ExecException, IOException {
@@ -155,14 +155,14 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		    ArrayList<Object> pileup_tuple = new ArrayList<Object>();
 
 		    if(debug) {
-		    ArrayList<Object> coordinates_tuple = new ArrayList<Object>();
+			ArrayList<Object> coordinates_tuple = new ArrayList<Object>();
 
-	            // chrom, pos
-                    coordinates_tuple.add(piledup.get(0));
-                    coordinates_tuple.add(piledup.get(1));
+			// chrom, pos
+			coordinates_tuple.add(piledup.get(0));
+			coordinates_tuple.add(piledup.get(1));
 
-		    Tuple ct =  mTupleFactory.newTupleNoCopy(coordinates_tuple);
-                    coordinates.add(ct);
+			Tuple ct =  mTupleFactory.newTupleNoCopy(coordinates_tuple);
+			coordinates.add(ct);
 		    }
 
 		    // refbase, pileup, qual
@@ -180,16 +180,16 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		    }
 
 		    if(debug) {
-		    if(((Integer)piledup.get(1)).intValue() - start_pos != size) {
+			if(((Integer)piledup.get(1)).intValue() - start_pos != size) {
 
-			if(size > 0)
+			    if(size > 0)
 				throw new IOException("two records for the same position!? "+(((Integer)piledup.get(1)).intValue()-start_pos) +" vs "+size
-			+ " " + getPileupString(coordinates.get(size-1), pileup.get(size-1))
-			+ " " + getPileupString(coordinates.get(size), pileup.get(size)));
-			else
+						      + " " + getPileupString(coordinates.get(size-1), pileup.get(size-1))
+						      + " " + getPileupString(coordinates.get(size), pileup.get(size)));
+			    else
 				throw new IOException("start position of first pileup entry does not match read start position!!");
 
-		    }
+			}
 		    }
 
 		    size++;
@@ -197,32 +197,32 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    }
 	}
 
-    // NOTE: comparison code mostly taken over from Samtools/Picard SAMRecordCoordinateComparator
-    // notable difference: no tie-breaking based on read mate available currently, which may lead to
-    // a different sorting order, depending on bam file
-    private int compareInts(int i1, int i2) {
-        if (i1 < i2) return -1;
-        else if (i1 > i2) return 1;
-        else return 0;
-    }
+	// NOTE: comparison code mostly taken over from Samtools/Picard SAMRecordCoordinateComparator
+	// notable difference: no tie-breaking based on read mate available currently, which may lead to
+	// a different sorting order, depending on bam file
+	private int compareInts(int i1, int i2) {
+	    if (i1 < i2) return -1;
+	    else if (i1 > i2) return 1;
+	    else return 0;
+	}
 
-    // Note1: we assume that refname (chrom) are already the same!!!! (this is a local sort after all
-    // and both reads are expected to fall into the same bin)
-    public int compareTo( ReadPileupEntry other) {
+	// Note1: we assume that refname (chrom) are already the same!!!! (this is a local sort after all
+	// and both reads are expected to fall into the same bin)
+	public int compareTo( ReadPileupEntry other) {
 	    if (start_pos == other.start_pos) {
 		if(reverse_strand == other.reverse_strand) {
-			int cmp = name.compareTo(other.name);
-			if(cmp != 0) return cmp;
-			cmp = compareInts(flags, other.flags);
-			if(cmp != 0) return cmp;
-			cmp = compareInts(mapqual, other.mapqual);
-			if(cmp != 0) return cmp;
-			// note: here should be also broken ties by: MateReferenceIndex, MateAlignmentStart and InferredInsertSize (currently not passed over to UDF)		 
-			return 0;
+		    int cmp = name.compareTo(other.name);
+		    if(cmp != 0) return cmp;
+		    cmp = compareInts(flags, other.flags);
+		    if(cmp != 0) return cmp;
+		    cmp = compareInts(mapqual, other.mapqual);
+		    if(cmp != 0) return cmp;
+		    // note: here should be also broken ties by: MateReferenceIndex, MateAlignmentStart and InferredInsertSize (currently not passed over to UDF)		 
+		    return 0;
 		}
 		else return (reverse_strand? 1: -1);
 	    } else return compareInts(start_pos, other.start_pos);
-    }
+	}
     }
 
     public BinReadPileup() {
@@ -259,68 +259,68 @@ public class BinReadPileup extends EvalFunc<DataBag>
     // 	PigWarning.UDF_WARNING_4 :	other problem
 
     @Override 
-    public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
+	public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
 	if (input == null || input.size() == 0)
 	    return null;
 	//try {
-	    // first load the mapping and do some error checks
+	// first load the mapping and do some error checks
 	    
-	    DataBag bag = (DataBag)input.get(0);
-	    Iterator it = bag.iterator();
-	    DataBag output = mBagFactory.newDefaultBag();
+	DataBag bag = (DataBag)input.get(0);
+	Iterator it = bag.iterator();
+	DataBag output = mBagFactory.newDefaultBag();
 
-	    left_readindex = 0;
-	    right_readindex = 0;
-	    left_end_pos = ((Integer)input.get(1)).intValue();
-	    left_pos = -1;
-	    right_end_pos = ((Integer)input.get(2)).intValue();
+	left_readindex = 0;
+	right_readindex = 0;
+	left_end_pos = ((Integer)input.get(1)).intValue();
+	left_pos = -1;
+	right_end_pos = ((Integer)input.get(2)).intValue();
 
-	    max_read_rightpos = 0;
+	max_read_rightpos = 0;
 
-            readPileups.clear();
+	readPileups.clear();
 
-	    boolean first_read = true;
+	boolean first_read = true;
 
-	    while (it.hasNext()) {
-	        Tuple t = (Tuple)it.next();
+	while (it.hasNext()) {
+	    Tuple t = (Tuple)it.next();
 
-		if(first_read) {
-			first_read = false;
-			chrom = (String)t.get(2);
-	  	}
-
-		ReadPileupEntry entry = new ReadPileupEntry(t);
-
-		if(entry.pileup != null)
-		    readPileups.add(entry);
+	    if(first_read) {
+		first_read = false;
+		chrom = (String)t.get(2);
 	    }
 
-	    // sort by start position
-	    Collections.sort(readPileups);
+	    ReadPileupEntry entry = new ReadPileupEntry(t);
 
-	    Iterator<ReadPileupEntry> readit = readPileups.iterator();
+	    if(entry.pileup != null)
+		readPileups.add(entry);
+	}
+
+	// sort by start position
+	Collections.sort(readPileups);
+
+	Iterator<ReadPileupEntry> readit = readPileups.iterator();
 	    
-	    while(readit.hasNext()) {
-		ReadPileupEntry cur_entry = readit.next();
+	while(readit.hasNext()) {
+	    ReadPileupEntry cur_entry = readit.next();
 
-		if(left_pos == -1) {// i.e., if this is the first read of the bin
-		    left_pos = cur_entry.start_pos;
-		} 
+	    if(left_pos == -1) {// i.e., if this is the first read of the bin
+		left_pos = cur_entry.start_pos;
+	    } 
 
-		boolean final_read = !(readit.hasNext());
+	    boolean final_read = !(readit.hasNext());
 
-		if(cur_entry.start_pos + cur_entry.size > max_read_rightpos)
-			max_read_rightpos = cur_entry.start_pos + cur_entry.size; 
+	    if(cur_entry.start_pos + cur_entry.size > max_read_rightpos)
+		max_read_rightpos = cur_entry.start_pos + cur_entry.size; 
 		    
-		produce_pileup(output, final_read);
+	    produce_pileup(output, final_read);
 		
-		right_readindex++;
-	    }
+	    right_readindex++;
+	}
 
-	    return output;
+	return output;
 
 	//} catch(Exception e) {
-	  //  throw new IOException("Caught exception processing input row " + e.toString());
+	//  throw new IOException("Caught exception processing input row " + e.toString());
 	//}
     }
 
@@ -340,7 +340,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
             right_pos = max_read_rightpos;
 
 	if(right_pos > right_end_pos)
-		right_pos = right_end_pos;
+	    right_pos = right_end_pos;
 
 	if(left_pos < left_end_pos)
 	    left_pos = left_end_pos;
@@ -367,8 +367,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		    }
 		   
 		    if(debug) { 
-		    if(t.get(0) != null && !refbase.equals((String)t.get(0)))
-			throw new IOException("mismatching rebases: "+refbase+ " and "+(String)t.get(0)+" for "+i+" in ["+left_readindex+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+cur_entry.cur_index+"/"+cur_entry.size+" read: "+cur_entry.name);
+			if(t.get(0) != null && !refbase.equals((String)t.get(0)))
+			    throw new IOException("mismatching rebases: "+refbase+ " and "+(String)t.get(0)+" for "+i+" in ["+left_readindex+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+cur_entry.cur_index+"/"+cur_entry.size+" read: "+cur_entry.name);
 		    }
 
 		    this_output.add(t);
@@ -383,18 +383,18 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    left_readindex = min_non_empty_read;
 
 	    if(left_pos >= right_entry.start_pos && right_entry.cur_index < right_entry.size) {
-		    // note that left_pos >= right_entry.start_pos implies final_read is true!!
+		// note that left_pos >= right_entry.start_pos implies final_read is true!!
 
-		    Tuple t =  right_entry.pileup.get(right_entry.cur_index);
+		Tuple t =  right_entry.pileup.get(right_entry.cur_index);
 
-	            if(debug) {
+		if(debug) {
 		    if(t.get(0) != null && refbase != null)
 			if(!refbase.equals((String)t.get(0)))
-                        	throw new IOException("mismatching rebases (final read): "+refbase+ " and "+(String)t.get(0)+" for "+right_readindex+" in ["+left_readindex+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+right_entry.cur_index+"/"+right_entry.size+" read: "+right_entry.name);
-		    }
+			    throw new IOException("mismatching rebases (final read): "+refbase+ " and "+(String)t.get(0)+" for "+right_readindex+" in ["+left_readindex+","+right_readindex+"] "+" pos: "+left_pos+" read pos: "+right_entry.cur_index+"/"+right_entry.size+" read: "+right_entry.name);
+		}
 
-		    this_output.add(t);
-		    right_entry.cur_index++;
+		this_output.add(t);
+		right_entry.cur_index++;
 	    }
 
 	    PileupOutputFormatting pileupOutputFormatting = new PileupOutputFormatting();
@@ -419,11 +419,11 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    	output.add(mTupleFactory.newTupleNoCopy(tuple_output));
 
 	    	// TODO: add call to format output!!!!
-	     } else {
+	    } else {
 		left_pos = right_entry.start_pos-1; // -1 because directly afterwards it is incremented!
-             }
+	    }
 
-	     left_pos++;
+	    left_pos++;
 	}
 
 	//if(final_read && left_readindex != right_readindex)
@@ -431,7 +431,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
     }
 
     @Override
-    public Schema outputSchema(Schema input) {
+	public Schema outputSchema(Schema input) {
 	try{
 	    Schema bagSchema = new Schema();
 	    bagSchema.add(new Schema.FieldSchema("chr", DataType.CHARARRAY));
