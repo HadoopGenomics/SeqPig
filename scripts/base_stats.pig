@@ -14,6 +14,6 @@ base_stats_grouped_count = FOREACH base_stats_grouped GENERATE group.$0 AS refba
 base_stats_grouped = GROUP base_stats_grouped_count by (refbase, basepos);
 base_stats = FOREACH base_stats_grouped {
 	TMP = ORDER base_stats_grouped_count BY bcount;
-	FOREACH TMP GENERATE refbase, basepos, readbase, bcount;
+	GENERATE TMP;
 }
 STORE base_stats into '${inputfile}_basestats.txt';
