@@ -112,6 +112,7 @@ public class ReadSplit extends EvalFunc<DataBag>
 	Iterator<AlignOp> alignOpIt = alignment.iterator();
 
 	last_unclipped_base = 0;
+	read_clip_offset = 0;
 
 	while(alignOpIt.hasNext()) {
 	    AlignOp alignOp = alignOpIt.next();	
