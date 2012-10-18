@@ -1,10 +1,22 @@
+--   base_stats.pig: compute per-base statistics for given bam file
+--
 %default min_map_qual 0
-%default min_base_qual 0
 %default pparallel 1
+--
+--   macro definitions
+--
+--   filter reads based on flags (unmapped or duplicates) and mapping quality
+--
+DEFINE filter_reads_unmapdupl(A, min_map_qual) RETURNS B {
+        $B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual;
+};
+--
+--   start of script
+--
 --   import BAM file
 A = load '$inputfile' using BamUDFLoader('yes');
 --   filter reads based on flags (unmapped or duplicates) and mapping quality
-B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual;
+B = filter_reads_unmapdupl(A, $min_map_qual);
 --   split reads into entries for each base
 C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
 D = FOREACH C GENERATE FLATTEN($0);
