@@ -125,9 +125,9 @@ public class MappabilityFilter extends FilterFunc {
 	    return;
 	}
 
-	FileSystem fs;
+	FileSystem fs = FileSystem.getLocal(new Configuration());
 	
-	try {
+	/*try {
 	    if(FileSystem.getDefaultUri(conf) == null
 	       || FileSystem.getDefaultUri(conf).toString() == "")
 		fs = FileSystem.get(new URI("hdfs://"), conf);
@@ -137,15 +137,19 @@ public class MappabilityFilter extends FilterFunc {
 	    fs = FileSystem.get(new URI("hdfs://"), conf);
 	    System.out.println("MappabilityFilter: ERROR: problems with filesystem config?");
 	    System.out.println("exception was: "+e.toString());
-	}
+	    }*/
 	    
 	if(samfileheader == null) {
 
 	    this.samfileheader = "";
 
 	    try {
-		BufferedReader headerin = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(samfileheaderfilename)))));
-		
+		//BufferedReader headerin = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(samfileheaderfilename)))));
+
+		Path[] localFile= new Path[1];
+		localFile = DistributedCache.getLocalCacheFiles(conf);
+		BufferedReader headerin = new BufferedReader(new InputStreamReader(fs.open( localFile[0] )));
+
 		while(true) {
 		    String str = headerin.readLine();
 		    
@@ -162,7 +166,7 @@ public class MappabilityFilter extends FilterFunc {
 	    }
 	}
 
-	if(regions == null) {
+	/*if(regions == null) {
 
 	    regions = new TreeMap<RegionEntry,Boolean>();
 
@@ -226,7 +230,7 @@ public class MappabilityFilter extends FilterFunc {
 		System.out.println("ERROR: could not read BAM header from file "+samfileheaderfilename);
 		System.out.println("exception was: "+e.toString());
 	    }
-	}
+	    }*/
 	    
 	try {
 	    Base64 codec = new Base64();
