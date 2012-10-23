@@ -279,7 +279,7 @@ public class MappabilityFilter extends FilterFunc {
 		
 			regionin.close();
 
-			String msg = "successfully read region file";
+			String msg = "successfully read region file with "+regions.size()+" regions";
 			warn(msg, PigWarning.UDF_WARNING_1);
 		//}
 		
@@ -382,15 +382,18 @@ public class MappabilityFilter extends FilterFunc {
 	    int start_region_index = (int)Math.floor((double)start_pos/((double)region_size));
 	    int end_region_index = (int)Math.floor((double)end_pos/((double)region_size));
 
+	    System.out.println("#regions: "+regions.size());
+	    System.out.println("current: "+chrom+" "+start_region_index*region_size+" "+end_region_index*region_size);
+
 	    if(start_region_index == end_region_index) {
-		RegionEntry entry = new RegionEntry(chrom, start_region_index*region_size, (start_region_index+1)*region_size);
+		RegionEntry entry = new RegionEntry(chrom, (start_region_index*region_size)+1, (start_region_index+1)*region_size);
 
 		return (regions.get(entry) != null);
 	    } else {
 		// now start and end fall into different regions
 
-		RegionEntry start_entry = new RegionEntry(chrom, start_region_index*region_size, (start_region_index+1)*region_size);
-		RegionEntry end_entry = new RegionEntry(chrom, end_region_index*region_size, (end_region_index+1)*region_size);
+		RegionEntry start_entry = new RegionEntry(chrom, (start_region_index*region_size)+1, (start_region_index+1)*region_size);
+		RegionEntry end_entry = new RegionEntry(chrom, (end_region_index*region_size)+1, (end_region_index+1)*region_size);
 
 		return ((regions.get(start_entry) != null) && (regions.get(end_entry) != null));
 	    }
