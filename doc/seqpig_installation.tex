@@ -56,7 +56,7 @@ be installed.
 \begin{enumerate}
 \item Set {\tt HADOOP\_HOME} and {\tt PIG\_HOME} to the installation
 directories of Hadoop and Pig, respectively, and {\tt SEQPIG\_HOME} to
-the installtion directory of SeqPig. On a Cloudera Hadoop installation
+the installation directory of SeqPig. On a Cloudera Hadoop installation
 with a local installation of the most recent Pig release, this would be
 done for example by
 \begin{lstlisting} 
@@ -93,7 +93,7 @@ alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-b
 hadoop-bam release to this location:
 %
 \begin{lstlisting} 
-    seal.jar	hadoop-bam-5.0.jar	sam-1.76.jar	picard-1.76.jar
+    seal.jar     hadoop-bam-5.0.jar     sam-1.76.jar     picard-1.76.jar
 \end{lstlisting}
 %
 Note: the Picard and Sam jar files are contained in the hadoop-bam release
@@ -118,9 +118,9 @@ pig
 %
 \subsubsection{Starting scripts from the command line for non-interactive use}
 Alternatively to using the Pig grunt shell (which can lead to delays due to
-Hadoop queuing and exectution delays), users can write scripts that are
-then submitted to Pig/Hadoop for execution. This type of exectution has
+Hadoop queuing and execution delays), users can write scripts that are
+then submitted to Pig/Hadoop for execution. This type of execution has
 the advantage of being able to handle parameters, for example for input
-and oputput files. See /scripts inside the seqpig directory and the
+and output files. See /scripts inside the seqpig directory and the
 examples ind the doc/ directory.
 \end{document}
