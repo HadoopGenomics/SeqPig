@@ -1,4 +1,13 @@
-*.{pdf,dvi,css,aux,html}
+*.pdf
 *.log
 *\#
 *\~
+*.4tc
+*.aux
+*.dvi
+*.css
+*.html
+*.lg
+*.tmp
+*.xref
+*.4ct
