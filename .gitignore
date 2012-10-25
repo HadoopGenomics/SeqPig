@@ -1,0 +1,4 @@
+*.{pdf,dvi,css,aux,html}
+*.log
+*\#
+*\~

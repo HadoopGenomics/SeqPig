@@ -1,0 +1,126 @@
+\documentclass[a4paper,10pt,bibtotoc,abstracton,oneside,noindent,DIV15]{scrartcl}
+\usepackage{listings,url}
+\usepackage{pslatex,color}
+\usepackage[OT1]{fontenc}
+
+\definecolor{lightlightgray}{gray}{0.9}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+
+%\usepackage{tex4ht}
+\newcommand{\Css}[1]{}
+
+\begin{document}
+
+\lstset{
+language=C,                             % Code langugage
+basicstyle=\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+commentstyle=\color{gray},              % Comments font
+%numbers=left,                           % Line nums position
+%numberstyle=\tiny,                      % Line-numbers fonts
+%stepnumber=1,                           % Step between two line-numbers
+%numbersep=5pt,                          % How far are line-numbers from code
+backgroundcolor=\color{lightlightgray}, % Choose background color
+frame=none,                             % A frame around the code
+tabsize=2,                              % Default tab size
+captionpos=b,                           % Caption-position = bottom
+breaklines=true,                        % Automatic line breaking?
+breakatwhitespace=false,                % Automatic breaks only at whitespace?
+showspaces=false,                       % Dont make spaces visible
+showtabs=false,                         % Dont make tabls visible
+columns=flexible,                       % Column format
+morekeywords={__global__, __device__},  % CUDA specific keywords
+}
+
+\lstset{breaklines=true}
+
+\Css{div.lstlisting{font-family: monospace;
+    white-space: nowrap; margin-top:0.5em;
+    margin-bottom:0.5em;
+    color: blue;}}
+
+\Css{ol li { padding: 0; margin: 0.5em; }}
+
+%\Configure{enumerate}{}\Css{li ol{margin-top:5em; margin-bottom:5em;}}
+
+%\lstset{language=Java,captionpos=b,tabsize=3,frame=lines,keywordstyle=\color{blue},commentstyle=\color{darkgreen},stringstyle=\color{red},numbers=left,numberstyle=\tiny,numbersep=5pt,breaklines=true,showstringspaces=false,basicstyle=\footnotesize,emph={label}}
+
+\section{Setup instructions}
+
+\subsection{Dependencies}
+Install Hadoop (tested with Hadoop 0.20.2) and Pig. Note that some of the
+example scripts require the latest release of Pig (currently 0.10.0) to
+be installed.
+
+\subsection{Environment variables}
+\begin{enumerate}
+\item Set {\tt HADOOP\_HOME} and {\tt PIG\_HOME} to the installation
+directories of Hadoop and Pig, respectively, and {\tt SEQPIG\_HOME} to
+the installtion directory of SeqPig. On a Cloudera Hadoop installation
+with a local installation of the most recent Pig release, this would be
+done for example by
+\begin{lstlisting} 
+export HADOOP_HOME=/usr/lib/hadoop
+export PIG_HOME=/root/pig-0.10.0
+export SEQPIG_HOME=/root/seqpig 
+\end{lstlisting}
+%
+\item To make life simpler also add the shell script directory to your path PATH:
+%
+\begin{lstlisting} 
+export PATH=${PATH}:${SEQPIG_HOME}/bin
+\end{lstlisting}
+%
+\item Finally, for convenience add the following line to your {\tt .bashrc}:
+%
+\begin{lstlisting} 
+alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dudf.import.list=fi.aalto.seqpig' 
+\end{lstlisting}
+%
+\end{enumerate}
+
+\subsection{Instructions for building SeqPig.jar}
+
+\begin{enumerate}
+\item Download hadoop-bam-5.0 from \url{https://sourceforge.net/projects/hadoop-bam/}.
+
+\item Download and compile the latest biodoop/seal git master version from
+ \url{http://biodoop-seal.sourceforge.net/}. Note that this requires
+ setting {\tt HADOOP\_BAM} to the installation directory of hadoop-bam.
+
+\item Inside the cloned git repository ({\tt \$SEQPIG\_HOME}), create a
+{\tt lib/} subdirectory and copy the following jar files contained in the
+hadoop-bam release to this location:
+%
+\begin{lstlisting} 
+    seal.jar	hadoop-bam-5.0.jar	sam-1.76.jar	picard-1.76.jar
+\end{lstlisting}
+%
+Note: the Picard and Sam jar files are contained in the hadoop-bam release
+for convenience.
+
+\item Run {\tt ant} to build {\tt SeqPig.jar}.
+%\begin{enumerate}
+%\item test
+%\item test2
+%\end{enumerate}
+\end{enumerate}
+
+\subsection{Usage}
+
+\subsubsection{Pig grunt shell for interactive operations}
+Assuming that all the environment variables have been set correctly, it suffices
+to start the grunt shell via
+%
+\begin{lstlisting}
+pig
+\end{lstlisting}
+%
+\subsubsection{Starting scripts from the command line for non-interactive use}
+Alternatively to using the Pig grunt shell (which can lead to delays due to
+Hadoop queuing and exectution delays), users can write scripts that are
+then submitted to Pig/Hadoop for execution. This type of exectution has
+the advantage of being able to handle parameters, for example for input
+and oputput files. See /scripts inside the seqpig directory and the
+examples ind the doc/ directory.
+\end{document}
