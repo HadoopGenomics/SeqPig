@@ -26,9 +26,18 @@ import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.PigException;
-import org.apache.pig.Schema;
+import org.apache.pig.EvalFunc;
+import org.apache.pig.LoadMetadata;
+import org.apache.pig.Expression;
+import org.apache.pig.impl.logicalLayer.schema.Schema;
+import org.apache.pig.impl.util.UDFContext;
+import org.apache.pig.ResourceStatistics;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.Job;
 
 import java.util.StringTokenizer;
+import java.io.IOException;
 
 import fi.tkk.ics.hadoop.bam.FormatConstants.BaseQualityEncoding;
 import fi.tkk.ics.hadoop.bam.FastqInputFormat;
@@ -74,26 +83,43 @@ public class BaseFilter extends EvalFunc<Tuple> {
     }
 
     @Override 
-    public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
+    public Tuple exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
         if (input == null || input.size() == 0)
             return null;
 
-        String sequence = (String).tuple.get(11);
-	String quality = (String).tuple.get(12);
+        String sequence = (String)input.get(11);
+	String new_sequence = "";
+	String quality = (String)input.get(12);
 
 	if(sequence == null || quality == null || sequence.length() != quality.length())
 	    return null;
 	
+	Tuple tpl = TupleFactory.getInstance().newTuple(13);
 
+	for(int i=0;i<11;i++)
+	    tpl.set(i, input.get(i));
+	
+	tpl.set(12,quality);
+	
 	StringTokenizer seq_st = new StringTokenizer(sequence);
 	StringTokenizer qual_st = new StringTokenizer(quality);
-
-     while (st.hasMoreTokens()) {
-         String base = seq_st.nextToken();
-	 String qual = qual_st.nextToken();
-	 // go on here
-     }
 	
+	while (seq_st.hasMoreTokens()) {
+	    String base = seq_st.nextToken();
+	    String qual = qual_st.nextToken();
+	    
+	    int qual_val = (int)qual.charAt(0);
+	    
+	    if(qual_val > threshold)
+		base = "N";
+	    
+	    new_sequence = new_sequence + base;
+	}
+	
+	tpl.set(11, new_sequence);
+
+	return tpl;
+     }
 
     @Override
     public Schema outputSchema(Schema input) {
