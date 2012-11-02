@@ -1,0 +1,350 @@
+\documentclass[a4paper,10pt,bibtotoc,abstracton,oneside,noindent,DIV15]{scrartcl}
+\usepackage{listings,url}
+\usepackage{pslatex,color}
+\usepackage[OT1]{fontenc}
+
+\definecolor{lightlightgray}{gray}{0.9}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+
+\addtolength{\textwidth}{0.5cm}
+
+%\usepackage{tex4ht}
+\newcommand{\Css}[1]{}
+
+\begin{document}
+
+\stepcounter{section}
+
+\lstset{
+language=C,                             % Code langugage
+basicstyle=\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+commentstyle=\color{gray},              % Comments font
+%numbers=left,                           % Line nums position
+%numberstyle=\tiny,                      % Line-numbers fonts
+%stepnumber=1,                           % Step between two line-numbers
+%numbersep=5pt,                          % How far are line-numbers from code
+backgroundcolor=\color{lightlightgray}, % Choose background color
+frame=none,                             % A frame around the code
+tabsize=2,                              % Default tab size
+captionpos=b,                           % Caption-position = bottom
+breaklines=true,                        % Automatic line breaking?
+breakatwhitespace=false,                % Automatic breaks only at whitespace?
+showspaces=false,                       % Dont make spaces visible
+showtabs=false,                         % Dont make tabls visible
+columns=flexible,                       % Column format
+morekeywords={__global__, __device__},  % CUDA specific keywords
+}
+
+
+\lstset{breaklines=true}
+
+\Css{div.lstlisting{font-family: monospace;
+    white-space: nowrap; margin-top:0.5em;
+    margin-bottom:0.5em;
+    color: blue;}}
+
+\Css{ol li { padding: 0; margin: 0.5em; }}
+
+\section{Example applications}
+
+\subsection{Operations on BAM files:}
+
+All examples assume that an input BAM file is initially imported to HDFS via
+\begin{lstlisting} 
+prepareBamInput.sh input.bam
+\end{lstlisting} 
+and then loaded in the grunt shell via
+\begin{lstlisting} 
+grunt> A = load 'input.bam' using BamUDFLoader('yes');
+\end{lstlisting} 
+(the 'yes' chooses read attributes to be loaded; choose 'no' whenever these
+are not required).
+
+Once some operations have been performed, the resulting (modified) read
+data can then be stored into a new BAM file via
+\begin{lstlisting}
+grunt> store A into 'output.bam' using BamUDFStorer('input.bam.asciiheader');
+\end{lstlisting}
+and can also be exported from HDFS to the local filesystem via
+\begin{lstlisting}
+prepareBamOutput.sh output.bam
+\end{lstlisting}
+(note: the Pig store operation requires a valid header for the BAM output file,
+for example the header of the source file used to generate it, which is
+generated automatically by the prepareBamInput.sh script used to import it)
+
+Note that dumping the BAM data to the screen (similarly to samtools view)
+can be done simply by
+\begin{lstlisting}
+grunt> dump A;
+\end{lstlisting}
+Another very useful Pig command is describe, which returns the schema that Pig
+uses for a given data bag. Example:
+\begin{lstlisting}
+grunt> describe A;
+\end{lstlisting}
+which returns for BAM data
+\begin{lstlisting}  
+  A: {name: chararray,start: int,end: int,read: chararray,cigar: chararray,
+   basequal: chararray,flags: int,insertsize: int,mapqual:int,matestart: int,
+   materefindex: int,refindex: int,refname: chararray,attributes: map[]}
+\end{lstlisting}
+Note that all fields except the attributes are standard data types (strings
+or integers). Specific attributes can be accessed via attributes\#'name', for
+example
+\begin{lstlisting} 
+grunt> B = FOREACH A GENERATE name, attributes#'MD';
+grunt> dump B;
+\end{lstlisting}
+will output all read names and their corresponding MD tag.
+Other useful commands are LIMIT and SAMPLE, which can be used for example for obtaining
+a subset of reads from a BAM/SAM file which can be useful for debugging.
+\begin{lstlisting} 
+grunt> B = LIMIT A 20;
+\end{lstlisting}
+will assign the first 20 records of A to B, while
+\begin{lstlisting}
+grunt> B = SAMPLE A 0.01;
+\end{lstlisting}
+will sample from A with sampling probability 0.01.
+
+\subsubsection{Filtering out unmapped reads and PCR or optical duplicates}
+\begin{lstlisting}
+grunt> A = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
+\end{lstlisting}
+
+\subsubsection{Filtering out reads with low mapping quality}
+\begin{lstlisting}
+grunt> A = FILTER A BY mapqual > 19;
+\end{lstlisting}
+ \subsubsection{Filtering by regions (samtools syntax)}
+\begin{lstlisting}
+ grunt> DEFINE myFilter CoordinateFilter('input.bam.asciiheader','20:0-44350673');
+ grunt> B = FILTER A BY myFilter(refindex,start,end);
+\end{lstlisting}
+Note that filtering by regions requires a valid ascii header for mapping
+sequence names to sequence indices.
+
+ \subsubsection{Sorting BAM files}
+Sorting an input bam file by chromosome, reference start coordinate, strand
+and readname (in this hierarchical order):
+\begin{lstlisting}
+grunt> A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
+mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
+grunt> A = ORDER A BY refname, start, $14, name;
+\end{lstlisting}
+NOTE: this is roughly equivalent to executing from the command line:
+\begin{lstlisting}
+pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
+\end{lstlisting}
+
+ \subsubsection{Computing read coverage}
+Computing read coverage over reference-coordinate bins of a fixed size,
+for example:
+\begin{lstlisting}
+grunt> B = GROUP A BY start/200;
+grunt> C = FOREACH B GENERATE group, COUNT(A);
+grunt> dump C; 
+\end{lstlisting}
+will output the number of reads that lie in any non-overlapping bin of size 200 base pairs.
+
+ \subsubsection{Computing base frequencies (counts) for each reference coordinate}
+\begin{lstlisting}
+grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
+grunt> A = FILTER A BY (flags/4)%2==0;
+grunt> RefPos = FOREACH A GENERATE ReadRefPositions(read, flags, refname, start, cigar, basequal), mapqual;
+grunt> flatset = FOREACH RefPos GENERATE flatten($0), mapqual;
+grunt> grouped = GROUP flatset BY ($0, $1, $2);
+grunt> base_counts = FOREACH grouped GENERATE group.chr, group.pos, group.base, COUNT(flatset);
+grunt> base_counts = ORDER base_counts BY chr,pos;
+grunt> store base_counts into 'input.basecounts';
+\end{lstlisting}
+NOTE: this is roughly equivalent to executing from the command line:
+\begin{lstlisting}
+$ pig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
+\end{lstlisting}
+
+\subsubsection{Pileup}
+Generating samtools compatible pileup (for a correctly sorted BAM file
+with MD tags aligned to the same reference, should produce the same output as
+samtools mpileup -A -f ref.fasta -B input.bam):
+\begin{lstlisting}
+grunt> A = load 'input.bam' using BamUDFLoader('yes');
+grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+grunt> C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
+      basequal, attributes#'MD', mapqual), start, flags, name;
+grunt> C = FILTER C BY $0 is not null;
+grunt> D = FOREACH C GENERATE flatten($0), start, flags, name;
+grunt> E = GROUP D BY (chr, pos);
+grunt> F = FOREACH E { G = FOREACH D GENERATE refbase, pileup, qual, start,
+      (flags/16)\%2, name; G = ORDER G BY start, $4, name; GENERATE group.chr,
+      group.pos, PileupOutputFormatting(G, group.pos); }
+grunt> F = ORDER F BY chr, pos;
+grunt> G = FOREACH F GENERATE chr, pos, flatten($2);
+grunt> store G into 'input.pileup' using PigStorage('\t');
+\end{lstlisting}
+NOTE: this is equivalent to executing from the command line:
+\begin{lstlisting}
+$ pig -param inputfile=input.bam -param outputfile=input.pileup -param pparallel=1
+    ${SEQPIG_HOME}/scripts/pileup.pig
+\end{lstlisting}
+There are two optional parameters for pileup.pig: {\tt min\_map\_qual} and
+{\tt min\_base\_qual} (both with default value 0) that filter out reads with
+either insufficient map quality or base qualities. Their values can
+be set the same way as the other parameters above.
+
+\subsubsection{Collecting read-mapping-quality statistics}
+In order to evalulate the output of an aligner, it may be useful to
+consider the distribution of the mapping quality over the collection of
+reads. Due to Pig's GROUP operator this is fairly easy.
+\begin{lstlisting}
+grunt> A = load 'input.bam' using BamUDFLoader('yes');
+grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+grunt> read_stats_data = FOREACH B GENERATE mapqual;
+grunt> read_stats_grouped = GROUP read_stats_data BY mapqual;
+grunt> read_stats = FOREACH read_stats_grouped GENERATE group, COUNT($1);
+grunt> read_stats = ORDER read_stats BY group;
+grunt> STORE read_stats into 'mapqual_dist.txt';
+\end{lstlisting}
+NOTE: this is equivalent to executing from the command line:
+\begin{lstlisting}
+$ pig -param inputfile=input.bam -param outputfile=mapqual_dist.txt ${SEQPIG_HOME}/scripts/read_stats.pig
+\end{lstlisting}
+
+\subsubsection{Collecting per-base statistics of reads}
+Sometimes it may be useful to analyze a given set of reads for a bias
+towards certain bases being called at certain positions inside the
+read. The following simple script generates for each reference base and
+each position inside a read the distribution of the number of read bases
+that were called.
+\begin{lstlisting}
+grunt> A = load 'input.bam' using BamUDFLoader('yes');
+grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+grunt> C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
+grunt> D = FOREACH C GENERATE FLATTEN($0);
+grunt> base_stats_data = FOREACH D GENERATE refbase, basepos, UPPER(readbase) AS readbase;
+grunt> base_stats_grouped = GROUP base_stats_data BY (refbase, basepos, readbase);
+grunt> base_stats_grouped_count = FOREACH base_stats_grouped GENERATE group.$0 AS refbase, group.$1 AS basepos, group.$2 as readbase, COUNT($1) AS bcount;
+grunt> base_stats_grouped = GROUP base_stats_grouped_count by (refbase, basepos);
+grunt> base_stats = FOREACH base_stats_grouped {
+        TMP1 = FOREACH base_stats_grouped_count GENERATE readbase, bcount;
+        TMP2 = ORDER TMP1 BY bcount desc;
+        GENERATE group.$0, group.$1, TMP2;
+   }
+grunt> STORE base_stats into 'outputfile_readstats.txt';
+\end{lstlisting}
+A possible output has the form (for a BAM file with 50 reads):
+\begin{lstlisting}
+A       0       {(A,19),(G,2)}
+A       1       {(A,10)}
+A       2       {(A,18)}
+A       3       {(A,16)}
+A       4       {(A,14)}
+A       5       {(A,15)}
+A       6       {(A,16),(G,2)}
+...
+A       98      {(A,7)}
+A       99      {(A,14)}
+C       0       {(C,6)}
+C       1       {(C,11)}
+C       2       {(C,9)}
+...
+\end{lstlisting}
+NOTE: this example script is equivalent to executing from the command line:
+\begin{lstlisting}
+$ pig -param inputfile=input.bam -param outputfile=outputfile_readstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
+\end{lstlisting}
+
+\subsubsection{Collecting per-base statistics of basequalities for reads}
+Similarly as previously for the read bases themselves, we can also collect
+frequencies for base-qualities depending on the position of the base inside
+the reads. If these fall off too quickly for later positions, it may
+indicate some quality issues with the run. The resulting script is actually
+fairly similarly as the previous one with the difference of not grouping
+over the reference bases.
+\begin{lstlisting}
+grunt> A = load 'input.bam' using BamUDFLoader('yes');
+grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+grunt> C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
+grunt> D = FOREACH C GENERATE FLATTEN($0);
+grunt> base_stats_data = FOREACH D GENERATE basepos, basequal;
+grunt> base_stats_grouped = GROUP base_stats_data BY (basepos, basequal);
+grunt> base_stats_grouped_count = FOREACH base_stats_grouped GENERATE group.$0 as basepos, group.$1 AS basequal, COUNT($1) AS qcount;
+grunt> base_stats_grouped = GROUP base_stats_grouped_count BY basepos;
+grunt> base_stats = FOREACH base_stats_grouped {
+        TMP1 = FOREACH base_stats_grouped_count GENERATE basequal, qcount;
+        TMP2 = ORDER TMP1 BY basequal;
+        GENERATE group, TMP2;
+}
+grunt> STORE base_stats into 'outputfile_basequalstats.txt';
+\end{lstlisting}
+A possible output has the form (for a BAM file with 50 reads):
+\begin{lstlisting}
+0       {(37,10),(42,1),(51,20),(52,1),(59,1),(61,1),(62,1),(67,2),(68,2),(70,2),(71,4),(72,3),(73,1),(75,2)}
+1       {(53,1),(56,1),(61,1),(63,1),(64,1),(65,2),(67,4),(68,3),(69,2),(70,7),(71,3),(72,3),(73,1),(74,4),(75,2),(76,5),(77,6),(78,2),(80,1)}
+2       {(45,1),(46,1),(51,2),(57,1),(61,1),(65,2),(66,3),(67,2),(69,3),(71,4),(72,2),(73,6),(74,7),(75,1),(76,8),(77,2),(78,3),(80,1)}
+3       {(58,1),(59,1),(60,1),(61,1),(62,1),(64,1),(65,2),(67,2),(68,1),(69,5),(70,1),(71,3),(72,7),(73,2),(74,4),(75,6),(76,2),(77,4),(78,3),(79,1),(81,1)}
+4       {(55,1),(60,1),(61,1),(62,1),(64,1),(66,1),(67,3),(68,2),(69,1),(70,7),(71,2),(72,1),(73,4),(74,2),(75,2),(76,2),(77,2),(78,3),(79,7),(80,4),(81,2)}
+5       {(51,1),(52,2),(54,1),(58,2),(62,2),(63,1),(66,3),(68,4),(70,1),(71,1),(72,2),(73,3),(74,1),(75,8),(76,1),(77,5),(78,1),(79,6),(80,3),(81,3)}
+...
+\end{lstlisting}
+NOTE: this example script is equivalent to executing from the command line:
+\begin{lstlisting}
+$ pig -param inputfile=input.bam -param outputfile=outputfile_basequalstats.txt' $SEQPIG_HOME/scripts/basequal_stats.pig
+\end{lstlisting}
+
+\subsubsection{Filtering reads by mappability threshold}
+The script {\tt filter\_mappability.pig} filters reads in a given BAM file based on a given
+mappability threshold. Both, input BAM and mappability file need to reside inside HDFS
+\begin{lstlisting}
+$ pig -param inputfile=/user/hadoop/input.bam -param outputfile=/user/hadoop/output.bam -param regionfile=/user/hadoop/mappability.100kbp.txt -param threshold=90 $SEQPIG_HOME/scripts/filter_mappability.pig
+\end{lstlisting}
+Note that since the script relies on distributing the bam file header and the mappability file via Hadoop's distributed cache,
+it is not possible to run it in Pig's local mode.
+
+\subsection{Processing Qseq and Fastq data}
+
+SeqPig supports the import and export of non-aligned reads stored in Qseq and
+Fastq data. Due to Pig's philosophy that all records correspond to tuples, which
+form bags, reads can be processed in very much the same way independent
+on for example whether they are stored in Qseq or Fastq.
+
+\subsubsection{Converting Qseq to Fastq and vice versa}
+
+The following two lines simply convert an input Qseq into Fastq.
+\begin{lstlisting}
+grunt> reads = load 'input.qseq' using QseqUDFLoader();
+grunt> STORE reads INTO 'output.fastq' using FastqUDFStorer(); 
+\end{lstlisting}
+
+\subsection{Other supported file formats}
+
+Besides BAM files, SeqPig also supports the uncompressed file format SAM for
+aligned sequence data. For raw read data SeqPig supports both FastQ and Qseq
+input and output. Loading and storing data follows along the same lines as
+for BAM.
+
+\subsection{Optimizations}
+
+For performance reasons it is typically advisable to enable compression of
+Hadoop map (and possible reduce) output, as well as temporary data generated
+by Pig. The details depend on which compression codecs are used, but it can
+be enabled by passing parameters along the lines of
+\begin{lstlisting}
+  -Djava.library.path=/opt/hadoopgpl/native/Linux-amd64-64
+  -Dpig.tmpfilecompression=true -Dpig.tmpfilecompression.codec=lzo
+  -Dmapred.output.compress=true
+  -Dmapred.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec
+\end{lstlisting}
+
+ to the pig command. Note that currently not all Hadoop compression codecs are
+ supported by Pig.
+
+For more examples see also the wiki of two past COST hackathons:\\
+\url{http://seqahead.cs.tu-dortmund.de/meetings:fastqpigscripting}\\
+\url{http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:pileuptask}\\
+\url{http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:seqpig_life_savers_page}
+
+\end{document}
+
