@@ -62,9 +62,13 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
     private int qual_threshold = 0; // base quality threshold:
     // in any base has base quality smaller this value the
-    // read is discarded for the purpose of pileup (as samtools
-    // does it)
+    //     // read is discarded for the purpose of pileup (as samtools
+    //         // does it)
+  
 
+    private int reads_cutoff = -1; // max number of read coverage to be taken into account
+    // trying to solve memory issues for large inputs
+    
     private int left_readindex = 0; // the index of the left-most read in the bucked that still needs to be processed; forms the left end of the processing frame
     private int right_readindex = 0; // the index of the current read; forms the right end of the processing frame
     private int left_pos = 0; // the ref-position that is currently processed
@@ -229,8 +233,9 @@ public class BinReadPileup extends EvalFunc<DataBag>
         qual_threshold = 0;
     }
 
-    public BinReadPileup(String min_quality) {
+    public BinReadPileup(String min_quality, String read_cutoff_s) {
 	qual_threshold = Integer.parseInt(min_quality);	
+	reads_cutoff = Integer.parseInt(read_cutoff_s);
     }
 
     // tuple input format:
@@ -277,11 +282,13 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 	max_read_rightpos = 0;
 
+        int read_counter = 0;
+
 	readPileups.clear();
 
 	boolean first_read = true;
 
-	while (it.hasNext()) {
+	while (it.hasNext() && (reads_cutoff < 0 || read_counter < reads_cutoff)) {
 	    Tuple t = (Tuple)it.next();
 
 	    if(first_read) {
@@ -291,8 +298,10 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
 	    ReadPileupEntry entry = new ReadPileupEntry(t);
 
-	    if(entry.pileup != null)
+	    if(entry.pileup != null) {
 		readPileups.add(entry);
+		read_counter++;
+	    }
 	}
 
 	// sort by start position
