@@ -1,0 +1,9 @@
+pig_*.log
+runtime_*
+*.bam
+build/
+lib/
+start_pig
+run_pileup*
+100copy.qseq
+release_commands.txt
