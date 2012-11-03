@@ -156,7 +156,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		while(it.hasNext()) {
 
 	            Tuple piledup = (Tuple)it.next();
-		    ArrayList<Object> pileup_tuple = new ArrayList<Object>();
+		    //ArrayList<Object> pileup_tuple = new ArrayList<Object>();
+		    Tuple pileup_tuple = mTupleFactory.newTuple(3);
 
 		    if(debug) {
 			ArrayList<Object> coordinates_tuple = new ArrayList<Object>();
@@ -170,12 +171,13 @@ public class BinReadPileup extends EvalFunc<DataBag>
 		    }
 
 		    // refbase, pileup, qual
-                    pileup_tuple.add(piledup.get(2));
-                    pileup_tuple.add(piledup.get(3));
-                    pileup_tuple.add(piledup.get(4));
+                    pileup_tuple.set(0, piledup.get(2));
+                    pileup_tuple.set(1, piledup.get(3));
+                    pileup_tuple.set(2, piledup.get(4));
 
-                    Tuple pt =  mTupleFactory.newTupleNoCopy(pileup_tuple);
-                    pileup.add(pt);
+                    //Tuple pt =  mTupleFactory.newTupleNoCopy(pileup_tuple);
+                    //pileup.add(pt);
+                    pileup.add(pileup_tuple);
 
 		    if(size==0 && start_pos != ((Integer)piledup.get(1)).intValue()) {
 			start_pos = ((Integer)piledup.get(1)).intValue();
