@@ -270,19 +270,35 @@ The following two lines simply convert an input Qseq into Fastq.
 grunt> reads = load 'input.qseq' using QseqUDFLoader();
 grunt> STORE reads INTO 'output.fastq' using FastqUDFStorer(); 
 \end{lstlisting}
+The other direction works analogously.
 
+\subsubsection{Clipping bases and basequalities}
 
+\label{sect:read_clipping}
 
-\subsection{Other supported file formats}
+Assuming there were some problems in certain cycles of the sequencer, it
+may be useful to clip bases from reads. This example removes the last 3
+bases and their qualities and stores the data under a new filename. Note
+that here we rely on the SUBSTRING and LENGTH string functions, which is
+part of the PiggyBank (see Section~\ref{sect:install_env}).
 
-Besides BAM files, SeqPig also supports the uncompressed file format SAM for
-aligned sequence data. For raw read data SeqPig supports both FastQ and Qseq
-input and output. Loading and storing data follows along the same lines as
-for BAM.
+\begin{lstlisting}
+grunt> DEFINE SUBSTRING org.apache.pig.piggybank.evaluation.string.SUBSTRING();
+grunt> DEFINE LENGTH org.apache.pig.piggybank.evaluation.string.LENGTH();
+grunt> reads = load 'input.qseq' using QseqUDFLoader();
+grunt> B = FOREACH A GENERATE instrument, run_number, flow_cell_id, lane, tile, xpos, ypos, read, qc_passed, control_number, index_sequence, SUBSTRING(sequence, 0, LENGTH(sequence) - 3) AS sequence, SUBSTRING(quality, 0, LENGTH(quality) - 3) AS quality;
+grunt> store B into 'output.qseq' using QseqUDFStorer();
+\end{lstlisting}
+NOTE: this example script is equivalent to executing from the command line:
+\begin{lstlisting}
+$ pig -param inputfile=input.qseq -param outputfile=output.qseq -param backclip=3 $SEQPIG_HOME/scripts/clip_reads.pig
+\end{lstlisting}
 
-\subsection{Optimizations}
+\section{Further information}
 
-For performance reasons it is typically advisable to enable compression of
+\subsection{Compression}
+
+For performance reasons it can be advisable to enable compression of
 Hadoop map (and possible reduce) output, as well as temporary data generated
 by Pig. The details depend on which compression codecs are used, but it can
 be enabled by passing parameters along the lines of
