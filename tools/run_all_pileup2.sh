@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# runs pileup2.pig for a certain number of repetitions for a
+# single input file and given memory settings
+
 REPETITIONS=1
 BASENAME=batch_pileup2_experiment2
 INPUTFILE=input7.bam
