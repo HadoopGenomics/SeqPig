@@ -1,7 +1,7 @@
 %default min_map_qual 0
 %default min_base_qual '0'
 %default pparallel 1
-%default binsize 500
+%default binsize 180
 %default reads_cutoff 8000
 DEFINE filteredReadPileup BinReadPileup('$min_base_qual', '$reads_cutoff');
 --

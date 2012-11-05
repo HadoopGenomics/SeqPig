@@ -56,7 +56,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
     private ArrayList<ReadPileupEntry> readPileups = new ArrayList();
    
-
+    private ReadPileup readPileup = null;
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private BagFactory mBagFactory = BagFactory.getInstance();
 
@@ -82,7 +82,7 @@ public class BinReadPileup extends EvalFunc<DataBag>
     class ReadPileupEntry implements Comparable<ReadPileupEntry> {
 	//public DataBag pileup;
 	public ArrayList<Tuple> pileup; 
-	public ArrayList<Tuple> coordinates;
+	public ArrayList<Tuple> coordinates = null;
 	public int start_pos=-1;
 	public int cur_index=-1; // used for iterating through reads in bucket
 	public int size=0;
@@ -143,15 +143,16 @@ public class BinReadPileup extends EvalFunc<DataBag>
 	    else
 	 	cur_index = 0;
 
-	    ReadPileup readPileup = new ReadPileup(qual_threshold);
+	    //ReadPileup readPileup = new ReadPileup(qual_threshold);
 	    DataBag pileup_bag = readPileup.exec(read);
 
 	    if(pileup_bag == null)
 		pileup = null;
 	    else {
 		Iterator it = pileup_bag.iterator();
-		pileup = new ArrayList<Tuple>();
-		coordinates = new ArrayList<Tuple>();
+		pileup = new ArrayList<Tuple>((int)pileup_bag.size());
+
+		if(debug) coordinates = new ArrayList<Tuple>();
 
 		while(it.hasNext()) {
 
@@ -233,11 +234,13 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
     public BinReadPileup() {
         qual_threshold = 0;
+	readPileup = new ReadPileup(qual_threshold);
     }
 
     public BinReadPileup(String min_quality, String read_cutoff_s) {
 	qual_threshold = Integer.parseInt(min_quality);	
 	reads_cutoff = Integer.parseInt(read_cutoff_s);
+	readPileup = new ReadPileup(qual_threshold);
     }
 
     // tuple input format:
