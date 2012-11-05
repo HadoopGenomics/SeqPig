@@ -1,5 +1,5 @@
 library(rgl)
-z = matrix(scan("basequal_stats.txt"),nrow=100, ncol=47, byrow=TRUE)
+z = 0.0001 * matrix(scan("basequal_stats.txt"),nrow=100, ncol=51, byrow=TRUE)
 x <- (1:nrow(z)) # 10 meter spacing (S to N)
 y <- (1:ncol(z)) # 10 meter spacing (E to W)
 zlim <- range(z)

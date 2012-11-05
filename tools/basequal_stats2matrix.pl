@@ -19,28 +19,30 @@ if(@ARGV != 2) {
 
 	while(<INPUTF>) {
 		chomp($_);
+
+		my @topfields = split('\t', $_);
+		$max_read_length = $topfields[0]
+			if($topfields[0] > $max_read_length);
+		$_ = $topfields[1];
+
 		s/[\{\}]//g;
 
 		my @line_record;
 		my $base_counter = 0;
 
-		while(/\,{0,1}(\(\d+\,\d+\,\d+\))/g) {
+		while(/\,{0,1}(\(\d+\,\d+\))/g) {
         		my $record = $1;
 			$record =~ s/[\(\)]//g;
-			print "record: $record\n";
 			my @fields = split(',', $record);
 
-			$max_read_length = $fields[0]
-				if($fields[0] > $max_read_length);
+			$max_qual_value = $fields[0]
+				if($fields[0] > $max_qual_value);			
+			$min_qual_value = $fields[0]
+                                if($fields[0] < $min_qual_value);
 
-			$max_qual_value = $fields[1]
-				if($fields[1] > $max_qual_value);			
-			$min_qual_value = $fields[1]
-                                if($fields[1] < $min_qual_value);
-
-			$base_counter += $fields[2];
+			$base_counter += $fields[1];
 	
-			push @line_record, [$fields[1], $fields[2]];	
+			push @line_record, [$fields[0], $fields[1]];	
     		}
 
 		print "found $base_counter bases\n";
