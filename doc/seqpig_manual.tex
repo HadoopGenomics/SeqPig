@@ -1,0 +1,65 @@
+\documentclass[a4paper,10pt,bibtotoc,abstracton,oneside,noindent,DIV15]{scrartcl}
+\usepackage{listings,url}
+\usepackage{pslatex,color,hyperref}
+\usepackage[OT1]{fontenc}
+
+\definecolor{lightlightgray}{gray}{0.9}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+
+%\usepackage{tex4ht}
+\newcommand{\Css}[1]{}
+
+\lstset{
+language=C,                             % Code langugage
+basicstyle=\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+commentstyle=\color{gray},              % Comments font
+%numbers=left,                           % Line nums position
+%numberstyle=\tiny,                      % Line-numbers fonts
+%stepnumber=1,                           % Step between two line-numbers
+%numbersep=5pt,                          % How far are line-numbers from code
+backgroundcolor=\color{lightlightgray}, % Choose background color
+frame=none,                             % A frame around the code
+tabsize=2,                              % Default tab size
+captionpos=b,                           % Caption-position = bottom
+breaklines=true,                        % Automatic line breaking?
+breakatwhitespace=false,                % Automatic breaks only at whitespace?
+showspaces=false,                       % Dont make spaces visible
+showtabs=false,                         % Dont make tabls visible
+columns=flexible,                       % Column format
+morekeywords={__global__, __device__},  % CUDA specific keywords
+}
+
+\lstset{breaklines=true}
+
+\Css{div.lstlisting{font-family: monospace;
+    white-space: nowrap; margin-top:0.5em;
+    margin-bottom:0.5em;
+    color: blue;}}
+
+\Css{ol li { padding: 0; margin: 0.5em; }}
+
+\begin{document}
+
+\tableofcontents
+
+\section{Introduction}
+
+SeqPig is a library of import and export functions for file formats
+commonly used in bioinformatics for Apache Pig. Additionally, it provides a
+collection of Pig user-defined functions (UDF's) that allow for processing
+of aligned and unaligned sequence data. Currently SeqPig supports BAM/SAM,
+FastQ and Qseq input and output. It is built on top of the Hadoop-BAM
+library. Note that this document refers to the latest version inside the MASTER git branch.
+
+\noindent Releases of SeqPig come bundled with Picard/Samtools, which were
+developed at the Wellcome Trust Sanger Institute, and Biodoop/Seal, which
+were developed
+at the Center for Advanced Studies, Research and Development in Sardinia. See\\
+\url{http://samtools.sourceforge.net/}\\
+\url{http://biodoop-seal.sourceforge.net/}
+
+\input{seqpig_installation}
+\input{seqpig_examples}
+
+\end{document}

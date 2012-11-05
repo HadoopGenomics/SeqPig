@@ -7,7 +7,6 @@ start_pig
 run_pileup*
 100copy.qseq
 release_commands.txt
-*.pdf
 *.log
 *\#
 *\~
