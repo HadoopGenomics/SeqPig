@@ -33,8 +33,8 @@ public class SAMFlagsFilter  extends FilterFunc {
     public enum FlagTypes {
 	    HasMultipleSegments,
 	    IsProperlyAligned,
-	    HasSegmentUnapped,
-	    NextSegmentUnapped,
+	    HasSegmentUnmapped,
+	    NextSegmentUnmapped,
 	    IsReverseComplemented,
 	    NextSegmentReversed,
 	    IsFirstSegment,
@@ -118,9 +118,9 @@ public class SAMFlagsFilter  extends FilterFunc {
 		return hasMultipleSegments(flags);
 	    case IsProperlyAligned:
 		return isProperlyAligned(flags);
-	    case HasSegmentUnapped:
+	    case HasSegmentUnmapped:
 		return hasSegmentUnmapped(flags);
-	    case NextSegmentUnapped:
+	    case NextSegmentUnmapped:
 		return nextSegmentUnmapped(flags);
 	    case  IsReverseComplemented:
 		return isReverseComplemented(flags);
