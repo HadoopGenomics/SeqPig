@@ -63,8 +63,17 @@ grunt> B = SAMPLE A 0.01;
 will sample from A with sampling probability 0.01.
 
 \subsubsection{Filtering out unmapped reads and PCR or optical duplicates}
+Since the {\tt flags} field of a SAM record is exposed to Pig, one can simply
+use it to filter out all tuples (i.e., SAM records) that do not have the
+corresponding bit set.
 \begin{lstlisting}
 grunt> A = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
+\end{lstlisting}
+For convenience SeqPig provides a set of filters that allow a direct access
+to the relevant fields. The previous example is equivalent to
+\begin{lstlisting}
+grunt> run scripts/filter_defs.pig
+grunt> A = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 \end{lstlisting}
 
 \subsubsection{Filtering out reads with low mapping quality}
@@ -74,7 +83,7 @@ grunt> A = FILTER A BY mapqual > 19;
  \subsubsection{Filtering by regions (samtools syntax)}
 \begin{lstlisting}
  grunt> DEFINE myFilter CoordinateFilter('input.bam.asciiheader','20:0-44350673');
- grunt> B = FILTER A BY myFilter(refindex,start,end);
+ grunt> A = FILTER A BY myFilter(refindex,start,end);
 \end{lstlisting}
 Note that filtering by regions requires a valid ascii header for mapping
 sequence names to sequence indices.
