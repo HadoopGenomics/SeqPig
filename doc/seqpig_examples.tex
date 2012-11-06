@@ -113,7 +113,7 @@ will output the number of reads that lie in any non-overlapping bin of size 200 
 
  \subsubsection{Computing base frequencies (counts) for each reference coordinate}
 \begin{lstlisting}
-grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
+grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, basequal, mapqual;
 grunt> A = FILTER A BY (flags/4)%2==0;
 grunt> RefPos = FOREACH A GENERATE ReadRefPositions(read, flags, refname, start, cigar, basequal), mapqual;
 grunt> flatset = FOREACH RefPos GENERATE flatten($0), mapqual;

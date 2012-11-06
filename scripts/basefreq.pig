@@ -4,7 +4,7 @@
 --   import BAM file
 A = load '$inputfile' using BamUDFLoader('yes');
 --   following good Pig practice, we try to project early and get rid of fields we do not need
-A = FOREACH A GENERATE read, flags, refname, start, cigar, mapqual;
+A = FOREACH A GENERATE read, flags, refname, start, cigar, basequal, mapqual;
 --   filter out unmapped reads
 A = FILTER A BY (flags/4)%2==0;
 --   generate reference positions for each read and all its bases
