@@ -16,3 +16,6 @@ if [ "$CLASSPATH" = "" ]; then
         CLASSPATH="${CLASSPATH}:${i}";
         done
 fi
+
+SAM_VERSION=1.76
+HADOOP_BAM_VERSION=5.0

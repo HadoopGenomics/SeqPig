@@ -10,13 +10,14 @@ fi
 
 source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
 
-bamoutputfilename="$1";
+bamoutputfilename=$(readlink -f $1);
+baminputfilename=$(basename $1);
 
 rm -f $bamoutputfilename
 
-${HADOOP} fs -getmerge ${1} ${1}
+${HADOOP} jar ${SEQPIG_HOME}/lib/hadoop-bam-${HADOOP_BAM_VERSION}.jar -libjars ${SEQPIG_HOME}/lib/picard-${SAM_VERSION}.jar,${SEQPIG_HOME}/lib/sam-${SAM_VERSION}.jar cat "file://${bamoutputfilename}" "hdfs:///user/${USER}/$baminputfilename/part-r-*"
 
-if [ -e "./$bamoutputfilename" ]
+if [ -e "$bamoutputfilename" ]
 then
         echo "writing to file $bamoutputfilename";
 
@@ -28,11 +29,11 @@ then
                 echo "error: cannot find bgzf-terminator.bin"
         fi
 else
-        echo "error: could not find $bamoutputfilename in HDFS!";
+        echo "error: could not find $bamoutputfilename!";
 fi
 
-if [ -e ".${bamoutputfilename}.crc" ]
+if [ -e ".${baminputfilename}.crc" ]
 then
         echo "removing (now incorrect) hadoop checksum to allow later import";
-        rm -f .${bamoutputfilename}.crc
+        rm -f .${baminputfilename}.crc
 fi

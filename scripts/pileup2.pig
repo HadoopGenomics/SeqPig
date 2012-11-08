@@ -1,8 +1,8 @@
 %default min_map_qual 0
 %default min_base_qual '0'
 %default pparallel 1
-%default binsize 300
-%default reads_cutoff 8000
+%default binsize 250
+%default reads_cutoff '20000'
 DEFINE filteredReadPileup BinReadPileup('$min_base_qual', '$reads_cutoff');
 --
 -- start of script: generate samtools-like pileup for given set of reads
@@ -10,7 +10,7 @@ DEFINE filteredReadPileup BinReadPileup('$min_base_qual', '$reads_cutoff');
 --   import BAM file
 A = load '$inputfile' using BamUDFLoader('yes');
 --   filter reads based on flags (unmapped or duplicates), mapping quality and MD tag
-B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual and attributes#'MD' is not null;
+B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual and attributes#'MD' is not null and name is not null;
 --   generate pileup data for each read (one record per position)
 C = FILTER B BY start/$binsize!=end/$binsize;
 --
@@ -20,7 +20,7 @@ E = FOREACH B GENERATE read, flags, refname, start, cigar, basequal, attributes#
 F = UNION D, E;
 G = GROUP F BY (refname, $9) PARALLEL $pparallel;
 --
-H = FOREACH G GENERATE BinReadPileup(F,group.$1*$binsize,(group.$1+1)*$binsize);
+H = FOREACH G GENERATE filteredReadPileup(F,group.$1*$binsize,(group.$1+1)*$binsize);
 I = FILTER H BY $0 is not null;
 --
 J = FOREACH I GENERATE flatten($0);
