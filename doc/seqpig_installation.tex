@@ -30,13 +30,13 @@ export SEQPIG_HOME=/root/seqpig
 \item To make life simpler also add the shell script directory to your {\tt PATH}:
 %
 \begin{lstlisting} 
-export PATH=${PATH}:${SEQPIG_HOME}/bin
+$ export PATH=${PATH}:${SEQPIG_HOME}/bin
 \end{lstlisting}
 %
 \item Finally, for convenience add the following line to your {\tt .bashrc}:
 %
 \begin{lstlisting} 
-alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dudf.import.list=fi.aalto.seqpig' 
+$ alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dudf.import.list=fi.aalto.seqpig' 
 \end{lstlisting}
 %
 Note that some of the example scripts below (e.g.,
@@ -48,7 +48,7 @@ For more details see
 make use of these you should also add {\tt piggybank.jar} to the library path, which
 means the statement above becomes
 \begin{lstlisting} 
-alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar:${PIG_HOME}/contrib/piggybank/java/piggybank.jar -Dudf.import.list=fi.aalto.seqpig' 
+$ alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar:${PIG_HOME}/contrib/piggybank/java/piggybank.jar -Dudf.import.list=fi.aalto.seqpig' 
 \end{lstlisting}
 \end{enumerate}
 
@@ -82,7 +82,7 @@ Assuming that all the environment variables have been set correctly, it suffices
 to start the grunt shell via
 %
 \begin{lstlisting}
-pig
+$ pig
 \end{lstlisting}
 %
 \subsubsection{Starting scripts from the command line for non-interactive use}
@@ -90,5 +90,5 @@ Alternatively to using the Pig grunt shell (which can lead to delays due to
 Hadoop queuing and execution delays), users can write scripts that are
 then submitted to Pig/Hadoop for execution. This type of execution has
 the advantage of being able to handle parameters, for example for input
-and output files. See /scripts inside the seqpig directory and the
+and output files. See {\tt /scripts} inside the seqpig directory and the
 examples below.

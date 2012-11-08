@@ -1,6 +1,12 @@
 
 \section{Examples}
 
+SeqPig is based on Hadoop-BAM, which among other things provides IO access
+to BAM files from within Hadoop. Hadoop-BAM provides access to the data
+on the bases of SAMRecords (see \url{http://picard.sourceforge.net/javadoc/net/sf/samtools/SAMRecord.html}),
+which is the Picard type for a (typically aligned) read. As such, all fields and
+optional attributes become accessible from within Pig.
+
 \subsection{Operations on BAM files:}
 
 All examples assume that an input BAM file is initially imported to HDFS via
@@ -25,7 +31,7 @@ prepareBamOutput.sh output.bam
 \end{lstlisting}
 (note: the Pig store operation requires a valid header for the BAM output file,
 for example the header of the source file used to generate it, which is
-generated automatically by the prepareBamInput.sh script used to import it)
+generated automatically by the {\tt prepareBamInput.sh} script used to import it)
 
 Note that dumping the BAM data to the screen (similarly to samtools view)
 can be done simply by
@@ -75,30 +81,40 @@ to the relevant fields. The previous example is equivalent to
 grunt> run scripts/filter_defs.pig
 grunt> A = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 \end{lstlisting}
+For more details on available filters consider looking at file {\tt scripts/filter\_defs.pig}.
 
 \subsubsection{Filtering out reads with low mapping quality}
+
+Other fields can also be used for filtering, for example the read
+mapping quality value as shown below.
 \begin{lstlisting}
 grunt> A = FILTER A BY mapqual > 19;
 \end{lstlisting}
+
  \subsubsection{Filtering by regions (samtools syntax)}
+
+SeqPig also supports filtering by samtools \emph{region} syntax.
+The following examples selects base positions 1 to 44350673
+of chromosome 20.
 \begin{lstlisting}
- grunt> DEFINE myFilter CoordinateFilter('input.bam.asciiheader','20:0-44350673');
+ grunt> DEFINE myFilter CoordinateFilter('input.bam.asciiheader','20:1-44350673');
  grunt> A = FILTER A BY myFilter(refindex,start,end);
 \end{lstlisting}
-Note that filtering by regions requires a valid ascii header for mapping
-sequence names to sequence indices.
+Note that filtering by regions requires a valid SAM header for mapping
+sequence names to sequence indices. This file is generated automatically
+when BAM files are imported via the {\tt prepareBamInput.sh} script.
 
  \subsubsection{Sorting BAM files}
-Sorting an input bam file by chromosome, reference start coordinate, strand
+Sorting an input BAM file by chromosome, reference start coordinate, strand
 and readname (in this hierarchical order):
 \begin{lstlisting}
 grunt> A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
 mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
 grunt> A = ORDER A BY refname, start, $14, name;
 \end{lstlisting}
-NOTE: this is roughly equivalent to executing from the command line:
+{\bf NOTE}: this is roughly equivalent to executing from the command line:
 \begin{lstlisting}
-pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
+$ pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 \end{lstlisting}
 
  \subsubsection{Computing read coverage}
@@ -122,7 +138,7 @@ grunt> base_counts = FOREACH grouped GENERATE group.chr, group.pos, group.base, 
 grunt> base_counts = ORDER base_counts BY chr,pos;
 grunt> store base_counts into 'input.basecounts';
 \end{lstlisting}
-NOTE: this is roughly equivalent to executing from the command line:
+{\bf NOTE}: this is roughly equivalent to executing from the command line:
 \begin{lstlisting}
 $ pig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
 \end{lstlisting}
@@ -130,7 +146,7 @@ $ pig -param inputfile=input.bam -param outputfile=input.basecounts -param ppara
 \subsubsection{Pileup}
 Generating samtools compatible pileup (for a correctly sorted BAM file
 with MD tags aligned to the same reference, should produce the same output as
-samtools mpileup -A -f ref.fasta -B input.bam):
+{\tt samtools mpileup -A -f ref.fasta -B input.bam}):
 \begin{lstlisting}
 grunt> A = load 'input.bam' using BamUDFLoader('yes');
 grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
@@ -142,19 +158,45 @@ grunt> E = GROUP D BY (chr, pos);
 grunt> F = FOREACH E { G = FOREACH D GENERATE refbase, pileup, qual, start,
       (flags/16)\%2, name; G = ORDER G BY start, $4, name; GENERATE group.chr,
       group.pos, PileupOutputFormatting(G, group.pos); }
-grunt> F = ORDER F BY chr, pos;
-grunt> G = FOREACH F GENERATE chr, pos, flatten($2);
-grunt> store G into 'input.pileup' using PigStorage('\t');
+grunt> G = ORDER F BY chr, pos;
+grunt> H = FOREACH G GENERATE chr, pos, flatten($2);
+grunt> store H into 'input.pileup' using PigStorage('\t');
 \end{lstlisting}
-NOTE: this is equivalent to executing from the command line:
+{\bf NOTE}: this is equivalent to executing from the command line:
 \begin{lstlisting}
 $ pig -param inputfile=input.bam -param outputfile=input.pileup -param pparallel=1
     ${SEQPIG_HOME}/scripts/pileup.pig
 \end{lstlisting}
+The script essentially does the following:
+\begin{enumerate}
+\item Import BAM file and filter out unmapped or duplicate reads ({\tt A, B})
+\item Break up each read and produce per-base pileup output ({\tt C, D})
+\item Group all thus generated pileup output based on a (chromosome, position)
+coordinate system ({\tt E})
+\item For each of the groups, sort its elements by their position, strand and name;
+then format the output according to samtools ({\tt F})
+\item Sort the final output again by (chromosome, position) and perform
+some Pig operation by unnesting tuples ({\tt G, H})
+\item Store the output to a directory inside HDFS (last line)
+\end{enumerate}
 There are two optional parameters for pileup.pig: {\tt min\_map\_qual} and
 {\tt min\_base\_qual} (both with default value 0) that filter out reads with
 either insufficient map quality or base qualities. Their values can
 be set the same way as the other parameters above.
+
+There is an alternative pileup script which typically performs better but
+is more sensitive to additional parameters. This second script, {\tt
+  pileup2.pig}, is based on a \emph{binning} of the reads according to
+intervals on the reference sequence. The pileup output is then generated on
+a by-bin level and not on a by-position level. This script can be invoked
+with the same paramters as {\tt pileup2.pig}. However, it has tunable
+parameters that determien the size of the bins ({\tt binsize}) and the
+maximum number of reads considered per bin ({\tt reads\_cutoff}), wich is
+similar to the maximum depth parameter that samtools accepts. Note,
+however, since it is set on a per-bin level you may chose it dependent on
+the read length and bin size, as well as the amount of memory available to
+the nodes.
+
 
 \subsubsection{Collecting read-mapping-quality statistics}
 In order to evaluate the output of an aligner, it may be useful to
@@ -169,7 +211,7 @@ grunt> read_stats = FOREACH read_stats_grouped GENERATE group, COUNT($1);
 grunt> read_stats = ORDER read_stats BY group;
 grunt> STORE read_stats into 'mapqual_dist.txt';
 \end{lstlisting}
-NOTE: this is equivalent to executing from the command line:
+{\bf NOTE}: this is equivalent to executing from the command line:
 \begin{lstlisting}
 $ pig -param inputfile=input.bam -param outputfile=mapqual_dist.txt ${SEQPIG_HOME}/scripts/read_stats.pig
 \end{lstlisting}
@@ -213,7 +255,7 @@ C       1       {(C,11)}
 C       2       {(C,9)}
 ...
 \end{lstlisting}
-NOTE: this example script is equivalent to executing from the command line:
+{\bf NOTE}: this example script is equivalent to executing from the command line:
 \begin{lstlisting}
 $ pig -param inputfile=input.bam -param outputfile=outputfile_readstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
 \end{lstlisting}
@@ -237,7 +279,7 @@ Similarly as previously for the read bases themselves, we can also collect
 frequencies for base-qualities depending on the position of the base inside
 the reads. If these fall off too quickly for later positions, it may
 indicate some quality issues with the run. The resulting script is actually
-fairly similarly as the previous one with the difference of not grouping
+fairly similar to the previous one with the difference of not grouping
 over the reference bases.
 \begin{lstlisting}
 grunt> A = load 'input.bam' using BamUDFLoader('yes');
@@ -265,14 +307,14 @@ A possible output has the form (for a BAM file with 50 reads):
 5       {(51,1),(52,2),(54,1),(58,2),(62,2),(63,1),(66,3),(68,4),(70,1),(71,1),(72,2),(73,3),(74,1),(75,8),(76,1),(77,5),(78,1),(79,6),(80,3),(81,3)}
 ...
 \end{lstlisting}
-NOTE: this example script is equivalent to executing from the command line:
+{\bf NOTE}: this example script is equivalent to executing from the command line:
 \begin{lstlisting}
 $ pig -param inputfile=input.bam -param outputfile=outputfile_basequalstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
 \end{lstlisting}
 
 \subsubsection{Filtering reads by mappability threshold}
 The script {\tt filter\_mappability.pig} filters reads in a given BAM file based on a given
-mappability threshold. Both, input BAM and mappability file need to reside inside HDFS
+mappability threshold. Both input BAM and mappability file need to reside inside HDFS
 \begin{lstlisting}
 $ pig -param inputfile=/user/hadoop/input.bam -param outputfile=/user/hadoop/output.bam -param regionfile=/user/hadoop/mappability.100kbp.txt -param threshold=90 $SEQPIG_HOME/scripts/filter_mappability.pig
 \end{lstlisting}
@@ -312,12 +354,31 @@ grunt> reads = load 'input.qseq' using QseqUDFLoader();
 grunt> B = FOREACH A GENERATE instrument, run_number, flow_cell_id, lane, tile, xpos, ypos, read, qc_passed, control_number, index_sequence, SUBSTRING(sequence, 0, LENGTH(sequence) - 3) AS sequence, SUBSTRING(quality, 0, LENGTH(quality) - 3) AS quality;
 grunt> store B into 'output.qseq' using QseqUDFStorer();
 \end{lstlisting}
-NOTE: this example script is equivalent to executing from the command line:
+{\bf NOTE}: this example script is equivalent to executing from the command line:
 \begin{lstlisting}
 $ pig -param inputfile=input.qseq -param outputfile=output.qseq -param backclip=3 $SEQPIG_HOME/scripts/clip_reads.pig
 \end{lstlisting}
 
 \section{Further information}
+
+\subsection{Hadoop parameters}
+
+Some scripts (such as {\tt pileup2.pig}) require an amount of memory that
+depends on the choice of command line parameters. If you are in need for
+performance tuning, consider the following Hadoop specific parameters in {\tt mapred-site.xml}:
+\begin{itemize}
+\item {\tt mapred.tasktracker.map.tasks.maximum}: \\the maximum number of mappers per worker node
+\item {\tt mapred.tasktracker.reduce.tasks.maximum}:\\ the maximum number of reducers per worker node
+\item {\tt mapred.child.java.opts}:\\ Java options passed to child virtual machines at the worker nodes; this may contain for example {\tt -Xmx1000M}
+for setting the maximum Heap size to 1GB, depending on the cluster resources
+\end{itemize}
+Aditionally, it is possible to pass command line parameters (such as mapper and reducer memory limits) along.
+Consider for example the pig call (see {\tt tools/tun\_all\_pileup2.sh})
+\begin{lstlisting}
+${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dmapred.job.map.memory.mb=${MAP_MEMORY} -Dmapred.job.reduce.memory.mb=${REDUCE_MEMORY} -Dmapred.child.java.opts=-Xmx${CHILD_MEMORY}M -Dudf.import.list=fi.aalto.seqpig -param inputfile=$INPUTFILE -param outputfile=$OUTPUTFILE -param pparallel=${REDUCESLOTS} ${SEQPIG_HOME}/scripts/pileup2.pig
+\end{lstlisting}
+By setting appropriate values for {\tt MAP\_MEMORY, REDUCE\_MEMORY, CHILD\_MEMORY} and for the number of available reduce slots {\tt REDUCESLOTS} different performance
+can be achieved.
 
 \subsection{Compression}
 
@@ -331,12 +392,6 @@ be enabled by passing parameters along the lines of
   -Dmapred.output.compress=true
   -Dmapred.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec
 \end{lstlisting}
-
  to the pig command. Note that currently not all Hadoop compression codecs are
  supported by Pig.
-
-For more examples see also the wiki of two past COST hackathons:\\
-\url{http://seqahead.cs.tu-dortmund.de/meetings:fastqpigscripting}\\
-\url{http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:pileuptask}\\
-\url{http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:seqpig_life_savers_page}
 
