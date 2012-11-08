@@ -123,43 +123,22 @@ public class MappabilityFilter extends FilterFunc {
         double mappability_threshold = Double.parseDouble(mappability_threshold_s);
 
 	Configuration conf = UDFContext.getUDFContext().getJobConf();
-	    
-	if(conf == null) {
-	    //decodeSAMFileHeader();
-	    return;
-	}
-
-	/*try {
-	    if(FileSystem.getDefaultUri(conf) == null
-	       || FileSystem.getDefaultUri(conf).toString() == "")
-		fs = FileSystem.get(new URI("hdfs://"), conf);
-	    else 
-		fs = FileSystem.get(conf);
-	} catch (Exception e) {
-	    fs = FileSystem.get(new URI("hdfs://"), conf);
-	    System.out.println("MappabilityFilter: ERROR: problems with filesystem config?");
-	    System.out.println("exception was: "+e.toString());
-	    }*/
-	    
+	   
+        // see https://issues.apache.org/jira/browse/PIG-2576
+        if(conf == null || conf.get("mapred.task.id") == null) {
+       	    // we are running on the frontend
+            //decodeSAMFileHeader();
+            return;
+        }
+ 
 	if(samfileheader == null) {
 
 	    this.samfileheader = "";
 
 	    try {
-		//BufferedReader headerin = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(samfileheaderfilename)))));
 
 	        FileSystem fs = FileSystem.getLocal(conf);
 		
-		/*Path[] cacheFiles = DistributedCache.getLocalCacheFiles(conf); 
-		
-		for (Path cachePath : cacheFiles) {
-		    String msg = "found cache file: "+cachePath.getName();
-                    warn(msg, PigWarning.UDF_WARNING_1);
-
-
-		    if (cachePath.getName().equals("input_asciiheader")) {
-			BufferedReader headerin = new BufferedReader(new InputStreamReader(fs.open( cachePath )));*/
-
 		        BufferedReader headerin = new BufferedReader(new InputStreamReader(fs.open( new Path("input_asciiheader"))));
 			
 			while(true) {
