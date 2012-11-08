@@ -3,15 +3,15 @@
 # runs pileup2.pig for a certain number of repetitions for a
 # single input file and given memory settings
 
-REPETITIONS=1
-BASENAME=batch_pileup2_experiment2
-INPUTFILE=input7.bam
-REDUCESLOTS=84
+REPETITIONS=20
+BASENAME=batch_pileup2_experiment2_6red_new
+INPUTFILE=input8.bam
+REDUCESLOTS=252
 SEQPIG_HOME=/root/seqpig
 PIG_HOME=/root/pig-0.10.0
-REDUCE_MEMORY=3000
+REDUCE_MEMORY=1000
 MAP_MEMORY=500
-CHILD_MEMORY=3000
+CHILD_MEMORY=1000
 
 for i in `seq 1 $REPETITIONS`; do
 	OUTPUTFILE=${INPUTFILE}_${BASENAME}_${i}_out;
