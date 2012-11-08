@@ -64,7 +64,7 @@ import org.apache.commons.codec.binary.Base64;
 
 public class QseqUDFStorer extends StoreFunc {
     protected RecordWriter writer = null;
-    protected HashMap<String,Integer> allFastqFieldNames = null;
+    protected HashMap<String,Integer> allQseqFieldNames = null;
 
     // tuple format:
     //
@@ -87,18 +87,18 @@ public class QseqUDFStorer extends StoreFunc {
     @Override
     public void putNext(Tuple f) throws IOException {
 
-	if(allFastqFieldNames == null) {
+	if(allQseqFieldNames == null) {
 	    try {
 		//BASE64Decoder decode = new BASE64Decoder();
 		Base64 codec = new Base64();
 		Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-		String datastr = p.getProperty("allFastqFieldNames");
+		String datastr = p.getProperty("allQseqFieldNames");
 		//byte[] buffer = decode.decodeBuffer(datastr);
 		byte[] buffer = codec.decodeBase64(datastr);
 		ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
 		ObjectInputStream ostream = new ObjectInputStream(bstream);
 		
-		allFastqFieldNames =
+		allQseqFieldNames =
 		    (HashMap<String,Integer>)ostream.readObject();
 	    } catch (ClassNotFoundException e) {
 		throw new IOException(e);
@@ -108,67 +108,67 @@ public class QseqUDFStorer extends StoreFunc {
 	SequencedFragment fastqrec = new SequencedFragment();
 	int index;
 
-	index = getFieldIndex("instrument", allFastqFieldNames);
+	index = getFieldIndex("instrument", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    fastqrec.setInstrument((String)f.get(index));
 	}
 
-	index = getFieldIndex("run_number", allFastqFieldNames);
+	index = getFieldIndex("run_number", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    fastqrec.setRunNumber(((Integer)f.get(index)));
 	}
 
-	index = getFieldIndex("flow_cell_id", allFastqFieldNames);
+	index = getFieldIndex("flow_cell_id", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    fastqrec.setFlowcellId((String)f.get(index));
 	}
 
-	index = getFieldIndex("lane", allFastqFieldNames);
+	index = getFieldIndex("lane", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    fastqrec.setLane(((Integer)f.get(index)));
 	}
 
-	index = getFieldIndex("tile", allFastqFieldNames);
+	index = getFieldIndex("tile", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    fastqrec.setTile(((Integer)f.get(index)));
 	}
 
-	index = getFieldIndex("xpos", allFastqFieldNames);
+	index = getFieldIndex("xpos", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    fastqrec.setXpos(((Integer)f.get(index)));
 	}
 	
-	index = getFieldIndex("ypos", allFastqFieldNames);
+	index = getFieldIndex("ypos", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    fastqrec.setYpos(((Integer)f.get(index)));
 	}
 	
-	index = getFieldIndex("read", allFastqFieldNames);
+	index = getFieldIndex("read", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    fastqrec.setRead(((Integer)f.get(index)));
 	}
 
-	index = getFieldIndex("qc_passed", allFastqFieldNames);
+	index = getFieldIndex("qc_passed", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.BOOLEAN) {
 	    fastqrec.setFilterPassed(((Boolean)f.get(index)));
 	}
 
-	index = getFieldIndex("control_number", allFastqFieldNames);
+	index = getFieldIndex("control_number", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    fastqrec.setControlNumber(((Integer)f.get(index)));
 	}
 
-	index = getFieldIndex("index_sequence", allFastqFieldNames);
+	index = getFieldIndex("index_sequence", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    fastqrec.setIndexSequence((String)f.get(index));
 	}
 
-	index = getFieldIndex("sequence", allFastqFieldNames);
+	index = getFieldIndex("sequence", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    fastqrec.setSequence(new Text((String)f.get(index)));
 	}
 
-	index = getFieldIndex("quality", allFastqFieldNames);
+	index = getFieldIndex("quality", allQseqFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
 	    fastqrec.setQuality(new Text((String)f.get(index)));
 	}
@@ -192,28 +192,28 @@ public class QseqUDFStorer extends StoreFunc {
     @Override
     public void checkSchema(ResourceSchema s) throws IOException {
 
-	allFastqFieldNames = new HashMap<String,Integer>();
+	allQseqFieldNames = new HashMap<String,Integer>();
 	String[] fieldNames = s.fieldNames();
 
 	for(int i=0;i<fieldNames.length;i++) {
 	    //System.out.println("field: "+fieldNames[i]);
-	    allFastqFieldNames.put(fieldNames[i], new Integer(i));
+	    allQseqFieldNames.put(fieldNames[i], new Integer(i));
 	}
 
-	if(!( /*allFastqFieldNames.containsKey("instrument")
-	      && allFastqFieldNames.containsKey("run_number")
-	      && allFastqFieldNames.containsKey("flow_cell_id")
-	      && allFastqFieldNames.containsKey("lane")
-	      && allFastqFieldNames.containsKey("tile")
-	      && allFastqFieldNames.containsKey("xpos")
-	      && allFastqFieldNames.containsKey("ypos")
-	      && allFastqFieldNames.containsKey("read")
-	      && allFastqFieldNames.containsKey("filter")
-	      && allFastqFieldNames.containsKey("control_number")
-	      && allFastqFieldNames.containsKey("index_sequence")*/
-	      allFastqFieldNames.containsKey("sequence")
-	      && allFastqFieldNames.containsKey("quality")))
-	    throw new IOException("Error: Incorrect Fastq tuple-field name or compulsory field missing");
+	if(!( /*allQseqFieldNames.containsKey("instrument")
+	      && allQseqFieldNames.containsKey("run_number")
+	      && allQseqFieldNames.containsKey("flow_cell_id")
+	      && allQseqFieldNames.containsKey("lane")
+	      && allQseqFieldNames.containsKey("tile")
+	      && allQseqFieldNames.containsKey("xpos")
+	      && allQseqFieldNames.containsKey("ypos")
+	      && allQseqFieldNames.containsKey("read")
+	      && allQseqFieldNames.containsKey("filter")
+	      && allQseqFieldNames.containsKey("control_number")
+	      && allQseqFieldNames.containsKey("index_sequence")*/
+	      allQseqFieldNames.containsKey("sequence")
+	      && allQseqFieldNames.containsKey("quality")))
+	    throw new IOException("Error: Incorrect Qseq tuple-field name or compulsory field missing");
 
 	//BASE64Encoder encode = new BASE64Encoder();
 	Base64 codec = new Base64();
@@ -223,11 +223,11 @@ public class QseqUDFStorer extends StoreFunc {
 
 	ByteArrayOutputStream bstream = new ByteArrayOutputStream();
 	ObjectOutputStream ostream = new ObjectOutputStream(bstream);
-	ostream.writeObject(allFastqFieldNames);
+	ostream.writeObject(allQseqFieldNames);
 	ostream.close();
 	//datastr = encode.encode(bstream.toByteArray());
 	datastr = codec.encodeBase64String(bstream.toByteArray());
-	p.setProperty("allFastqFieldNames", datastr); //new String(bstream.toByteArray(), "UTF8"));
+	p.setProperty("allQseqFieldNames", datastr); //new String(bstream.toByteArray(), "UTF8"));
     }
 
     @Override

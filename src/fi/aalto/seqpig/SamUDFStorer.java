@@ -95,10 +95,12 @@ public class SamUDFStorer extends StoreFunc {
 	try {
 	    Configuration conf = UDFContext.getUDFContext().getJobConf();
 	    
-	    if(conf == null) {
-		decodeSAMFileHeader();
-		return;
-	    }
+	    // see https://issues.apache.org/jira/browse/PIG-2576
+            if(conf == null || conf.get("mapred.task.id") == null) {
+                // we are running on the frontend
+                decodeSAMFileHeader();
+                return;
+            }
 
             FileSystem fs;
 	    
