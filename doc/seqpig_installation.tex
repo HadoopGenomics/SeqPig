@@ -27,7 +27,7 @@ export PIG_HOME=/root/pig-0.10.0
 export SEQPIG_HOME=/root/seqpig 
 \end{lstlisting}
 %
-\item To make life simpler also add the shell script directory to your path PATH:
+\item To make life simpler also add the shell script directory to your {\tt PATH}:
 %
 \begin{lstlisting} 
 export PATH=${PATH}:${SEQPIG_HOME}/bin
@@ -55,7 +55,7 @@ alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-b
 \subsection{Instructions for building SeqPig.jar}
 
 \begin{enumerate}
-\item Download hadoop-bam-5.0 from \url{https://sourceforge.net/projects/hadoop-bam/}.
+\item Download hadoop-bam from \url{https://sourceforge.net/projects/hadoop-bam/}.
 
 \item Download and compile the latest biodoop/seal git master version from
  \url{http://biodoop-seal.sourceforge.net/}. Note that this requires
@@ -66,7 +66,7 @@ alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-b
 hadoop-bam release to this location:
 %
 \begin{lstlisting} 
-    seal.jar     hadoop-bam-5.0.jar     sam-1.76.jar     picard-1.76.jar
+    seal.jar     hadoop-bam-${HADOOP_BAM_VERSION}.jar     sam-${SAM_VERSION}.jar     picard-${SAM_VERSION}.jar
 \end{lstlisting}
 %
 Note: the Picard and Sam jar files are contained in the hadoop-bam release
