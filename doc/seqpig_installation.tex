@@ -9,65 +9,44 @@
 \Css{ol li { padding: 0; margin: 0.5em; }}
 
 \subsection{Dependencies}
-Install Hadoop (tested with Hadoop 0.20.2) and Pig. Note that some of the
-example scripts require the latest release of Pig (currently 0.10.0) to
-be installed.
+
+\begin{enumerate}
+	\item A Hadoop cluster (we have tested with Hadoop 0.20.2)
+	\item Pig (at least version 0.10)
+	\item Hadoop-BAM (\url{https://sourceforge.net/projects/hadoop-bam/})
+	\item Seal (\url{http://biodoop-seal.sourceforge.net/})
+\end{enumerate}
 
 \subsection{Environment variables}
 \label{sect:install_env}
 \begin{enumerate}
-\item Set {\tt HADOOP\_HOME} and {\tt PIG\_HOME} to the installation
-directories of Hadoop and Pig, respectively, and {\tt SEQPIG\_HOME} to
-the installation directory of SeqPig. On a Cloudera Hadoop installation
-with a local installation of the most recent Pig release, this would be
-done for example by
-\begin{lstlisting} 
-export HADOOP_HOME=/usr/lib/hadoop
-export PIG_HOME=/root/pig-0.10.0
-export SEQPIG_HOME=/root/seqpig 
-\end{lstlisting}
-%
-\item To make life simpler also add the shell script directory to your {\tt PATH}:
-%
-\begin{lstlisting} 
-$ export PATH=${PATH}:${SEQPIG_HOME}/bin
-\end{lstlisting}
-%
-\item Finally, for convenience add the following line to your {\tt .bashrc}:
-%
-\begin{lstlisting} 
-$ alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dudf.import.list=fi.aalto.seqpig' 
-\end{lstlisting}
-%
-Note that some of the example scripts below (e.g.,
-Section~\ref{sect:read_clipping}) require functions from \emph{PiggyBank},
-which is a collection of publicly available User-Defined Functions (UDF's)
-that are distributed with Pig but need to be built separately.
-For more details see
-\url{https://cwiki.apache.org/confluence/display/PIG/PiggyBank}. If you would like to
-make use of these you should also add {\tt piggybank.jar} to the library path, which
-means the statement above becomes
-\begin{lstlisting} 
-$ alias pig='${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar:${PIG_HOME}/contrib/piggybank/java/piggybank.jar -Dudf.import.list=fi.aalto.seqpig' 
-\end{lstlisting}
+\item Set Hadoop-related variables (e.g., {\tt HADOOP\_HOME}) for your
+	installation
+\item Set {\tt PIG\_HOME} to point to your Pig installation
 \end{enumerate}
 
-\subsection{Instructions for building SeqPig.jar}
+On a Cloudera Hadoop installation with Pig a suitable environment configuration would be:
+\begin{lstlisting} 
+export HADOOP_HOME=/usr/lib/hadoop
+export PIG_HOME=/usr/lib/pig
+\end{lstlisting}
+
+\subsection{Instructions for building SeqPig}
 
 \begin{enumerate}
 \item Download hadoop-bam from \url{https://sourceforge.net/projects/hadoop-bam/}.
 
-\item Download and compile the latest biodoop/seal git master version from
- \url{http://biodoop-seal.sourceforge.net/}. Note that this requires
- setting {\tt HADOOP\_BAM} to the installation directory of hadoop-bam.
+\item Download and build the latest Seal git master version from
+ \url{http://biodoop-seal.sourceforge.net/}. Note that this requires setting
+ {\tt HADOOP\_BAM} to the installation directory of hadoop-bam.
 
-\item Inside the cloned git repository ({\tt \$SEQPIG\_HOME}), create a
-{\tt lib/} subdirectory and copy the following jar files contained in the
-hadoop-bam release to this location:
-%
-\begin{lstlisting} 
-    seal.jar     hadoop-bam-${HADOOP_BAM_VERSION}.jar     sam-${SAM_VERSION}.jar     picard-${SAM_VERSION}.jar
-\end{lstlisting}
+\item Inside the cloned SeqPig git repository create a
+{\tt lib/} subdirectory and copy (or link) the jar files
+from hadoop-bam and Seal to this new directory.  The files should be:
+\begin{enumerate}
+	\item \verb@${HADOOP_BAM}/*.jar@
+	\item from the Seal directory, run \verb@ find build/ -name seal.jar@
+\end{enumerate}
 %
 Note: the Picard and Sam jar files are contained in the hadoop-bam release
 for convenience.
@@ -75,20 +54,60 @@ for convenience.
 \item Run {\tt ant} to build {\tt SeqPig.jar}.
 \end{enumerate}
 
+Once you've built SeqPig, you can move the directory to a location of your
+preference (if on a shared system, perhaps {\tt /usr/local/java/seqpig}, else
+even your home directory could be fine).
+
+
+Set the environment variable {\tt SEQPIG\_HOME} to point to the installation
+directory of SeqPig; e.g.,
+%
+\begin{lstlisting} 
+export SEQPIG_HOME=/usr/local/java/seqpig 
+\end{lstlisting}
+%
+
+For your convenience, you can add the bin directory to your {\tt PATH}:
+%
+\begin{lstlisting} 
+$ export PATH=${PATH}:${SEQPIG_HOME}/bin
+\end{lstlisting}
+%
+This way, you'll be able to start a SeqPig-enabled Pig shell by running the {\tt
+seqpig} command.
+
+\subsubsection{Note}
+\label{sect:piggybank_note}
+
+Some of the example scripts in this manual (e.g.,
+Section~\ref{sect:read_clipping}) require functions from \emph{PiggyBank},
+which is a collection of publicly available User-Defined Functions (UDF's)
+that are distributed with Pig but may need to be built separately, depending on
+your Pig distribution.
+For more details see
+\url{https://cwiki.apache.org/confluence/display/PIG/PiggyBank}. Verify that
+PiggyBank has been compiled by looking for the file {\tt piggybank.jar} under
+{\tt \$PIG\_HOME}:
+\begin{lstlisting} 
+$ find $PIG_HOME -name piggybank.jar
+\end{lstlisting}
+If PiggyBank hasn't been compiled, go into {\tt
+\$PIG\_HOME/contrib/piggybank/java} and run {\tt ant}.
+
+
 \subsection{Usage}
 
 \subsubsection{Pig grunt shell for interactive operations}
-Assuming that all the environment variables have been set correctly, it suffices
-to start the grunt shell via
+Assuming that all the environment variables have been set as described in the
+previous sections, you can start the SeqPig-enabled ``grunt'' shell by running
 %
 \begin{lstlisting}
-$ pig
+$ seqpig
 \end{lstlisting}
 %
 \subsubsection{Starting scripts from the command line for non-interactive use}
-Alternatively to using the Pig grunt shell (which can lead to delays due to
-Hadoop queuing and execution delays), users can write scripts that are
-then submitted to Pig/Hadoop for execution. This type of execution has
-the advantage of being able to handle parameters, for example for input
-and output files. See {\tt /scripts} inside the seqpig directory and the
-examples below.
+Alternatively to using the interactive Pig grunt shell, users can write scripts
+that are then submitted to Pig/Hadoop for automated execution. This type of
+execution has the advantage of being able to handle parameters; for instance,
+one can parametrize input and output files. See the {\tt /scripts} directory
+inside the SeqPig distribution and Section \ref{sect:examples} for examples.

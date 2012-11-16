@@ -54,25 +54,33 @@ morekeywords={__global__, __device__},  % CUDA specific keywords
 
 \section{Introduction}
 
-SeqPig is a bioinformatics library for the Apache Pig language for
-distributed analysis of large datasets. It provides import and export
-functions for file formats commonly used in bioinformatics, as well as a
-collection of Pig user-defined-functions (UDF's) that allow for processing
-of aligned and unaligned sequence data. Currently SeqPig supports BAM/SAM,
-FastQ and Qseq input and output. It is built on top of the Hadoop-BAM
-library. Note that this document refers to the latest version inside the
-MASTER git branch.
-This document can also be found under \url{http://seqpig.sourceforge.net/}.\\
-Contact information: \url{mailto:seqpig-users@lists.sourceforge.net}
+SeqPig is a library for Apache Pig \url{http://pig.apache.org/} for the
+distributed analysis of large sequencing datasets on Hadoop clusters.  With
+SeqPig one can easily take advantage of the advanced high-level features of Pig
+to manipulate and analyze sequencing data, thus writing simple scripts that
+automatically run as scalable distributed programs on potentially very large
+Hadoop clusters.
 
-Releases of SeqPig come bundled with Picard/Samtools, which were
-developed at the Wellcome Trust Sanger Institute, and Biodoop/Seal, which
-were developed
-at the Center for Advanced Studies, Research and Development in Sardinia. See\\
+SeqPig provides a number of features and functionalities.  It provides import
+and export functions for file formats commonly used in bioinformatics, as well
+as a collection of Pig user-defined-functions (UDF's) that add to Pig
+functionality specifically designed for processing aligned and unaligned
+sequencing data. Currently SeqPig supports BAM, SAM, FastQ and Qseq input and
+output, thanks in part to the functionality provided by the Hadoop-BAM library.
+
+This document can also be found under
+\url{http://seqpig.sourceforge.net/}.\\ Contact information:
+\url{mailto:seqpig-users@lists.sourceforge.net}
+
+Releases of SeqPig come bundled with Picard/Samtools, which is
+developed at the Wellcome Trust Sanger Institute, and Seal, which
+is developed
+at CRS4. See\\
 \url{http://samtools.sourceforge.net/} and 
 \url{http://biodoop-seal.sourceforge.net/}
+for more details.
 
-For more examples of SepPig scripts see also the wiki of two past COST hackathons:\\
+For more examples of SepPig scripts see also the wiki of two past SEQAHEAD COST hackathons:\\
 \url{http://seqahead.cs.tu-dortmund.de/meetings:fastqpigscripting}\\
 \url{http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:pileuptask}\\
 \url{http://seqahead.cs.tu-dortmund.de/meetings:2012-05-hackathon:seqpig_life_savers_page}
