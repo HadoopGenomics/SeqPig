@@ -23,7 +23,7 @@ prepareBamInput.sh input.bam
 \end{lstlisting} 
 and then loaded in the grunt shell via
 \begin{lstlisting} 
-grunt> A = load 'input.bam' using BamUDFLoader('yes');
+A = load 'input.bam' using BamUDFLoader('yes');
 \end{lstlisting} 
 The 'yes' parameter to {\tt BamUDFLoader} chooses read attributes to be loaded; choose 'no' whenever these
 are not required).
@@ -31,7 +31,7 @@ are not required).
 Once some operations have been performed, the resulting (modified) read
 data can then be stored into a new BAM file via
 \begin{lstlisting}
-grunt> store A into 'output.bam' using BamUDFStorer('input.bam.asciiheader');
+store A into 'output.bam' using BamUDFStorer('input.bam.asciiheader');
 \end{lstlisting}
 and can also be exported from HDFS to the local filesystem via
 \begin{lstlisting}
@@ -46,13 +46,13 @@ generated automatically by the {\tt prepareBamInput.sh} script used to import it
 Writing the BAM data to the screen (similarly to samtools view)
 can be done simply by
 \begin{lstlisting}
-grunt> dump A;
+dump A;
 \end{lstlisting}
 Another very useful Pig command is {\tt describe}, which returns the schema that Pig
 uses for a given data bag. Example:
 \begin{lstlisting}
-grunt> A = load 'input.bam' using BamUDFLoader('yes');
-grunt> describe A;
+A = load 'input.bam' using BamUDFLoader('yes');
+describe A;
 \end{lstlisting}
 returns
 \begin{lstlisting}  
@@ -64,18 +64,18 @@ Notice that all fields except the attributes are standard data types (strings
 or integers). Specific attributes can be accessed via {\tt attributes\#'name'}. For
 example,
 \begin{lstlisting} 
-grunt> B = FOREACH A GENERATE name, attributes#'MD';
-grunt> dump B;
+B = FOREACH A GENERATE name, attributes#'MD';
+dump B;
 \end{lstlisting}
 will output all read names and their corresponding MD tag.
 Other useful commands are {\tt LIMIT} and {\tt SAMPLE}, which can be used to
 select a subset of reads from a BAM/SAM file.
 \begin{lstlisting} 
-grunt> B = LIMIT A 20;
+B = LIMIT A 20;
 \end{lstlisting}
 will assign the first 20 records of A to B, while
 \begin{lstlisting}
-grunt> B = SAMPLE A 0.01;
+B = SAMPLE A 0.01;
 \end{lstlisting}
 will sample from A with sampling probability 0.01.
 
@@ -84,13 +84,13 @@ Since the {\tt flags} field of a SAM record is exposed to Pig, one can simply
 use it to filter out all tuples (i.e., SAM records) that do not have the
 corresponding bit set.
 \begin{lstlisting}
-grunt> A = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
+A = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 \end{lstlisting}
 For convenience SeqPig provides a set of filters that allow a direct access
 to the relevant fields. The previous example is equivalent to
 \begin{lstlisting}
-grunt> run scripts/filter_defs.pig
-grunt> A = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
+run scripts/filter_defs.pig
+A = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 \end{lstlisting}
 For of a full list of the available filters look at the file {\tt scripts/filter\_defs.pig}.
 
@@ -99,7 +99,7 @@ For of a full list of the available filters look at the file {\tt scripts/filter
 Other fields can also be used for filtering, for example the read
 mapping quality value as shown below.
 \begin{lstlisting}
-grunt> A = FILTER A BY mapqual > 19;
+A = FILTER A BY mapqual > 19;
 \end{lstlisting}
 
 \subsubsection{Filtering by regions (samtools syntax)}
@@ -108,8 +108,8 @@ SeqPig also supports filtering by samtools \emph{region} syntax.
 The following examples selects base positions 1 to 44350673
 of chromosome 20.
 \begin{lstlisting}
- grunt> DEFINE myFilter CoordinateFilter('input.bam.asciiheader','20:1-44350673');
- grunt> A = FILTER A BY myFilter(refindex,start,end);
+ DEFINE myFilter CoordinateFilter('input.bam.asciiheader','20:1-44350673');
+ A = FILTER A BY myFilter(refindex,start,end);
 \end{lstlisting}
 Note that filtering by regions requires a valid SAM header for mapping
 sequence names to sequence indices. This file is generated automatically
@@ -119,9 +119,9 @@ when BAM files are imported via the {\tt prepareBamInput.sh} script.
 Sorting an input BAM file by chromosome, reference start coordinate, strand
 and readname (in this hierarchical order):
 \begin{lstlisting}
-grunt> A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
+A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
 mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
-grunt> A = ORDER A BY refname, start, $14, name;
+A = ORDER A BY refname, start, $14, name;
 \end{lstlisting}
 \begin{description}
 	\item[Note] This is roughly equivalent to executing from the command line
@@ -134,22 +134,22 @@ $ pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOM
 Computing read coverage over reference-coordinate bins of a fixed size,
 for example:
 \begin{lstlisting}
-grunt> B = GROUP A BY start/200;
-grunt> C = FOREACH B GENERATE group, COUNT(A);
-grunt> dump C; 
+B = GROUP A BY start/200;
+C = FOREACH B GENERATE group, COUNT(A);
+dump C; 
 \end{lstlisting}
 will output the number of reads that lie in any non-overlapping bin of size 200 base pairs.
 
  \subsubsection{Computing base frequencies (counts) for each reference coordinate}
 \begin{lstlisting}
-grunt> A = FOREACH A GENERATE read, flags, refname, start, cigar, basequal, mapqual;
-grunt> A = FILTER A BY (flags/4)%2==0;
-grunt> RefPos = FOREACH A GENERATE ReadRefPositions(read, flags, refname, start, cigar, basequal), mapqual;
-grunt> flatset = FOREACH RefPos GENERATE flatten($0), mapqual;
-grunt> grouped = GROUP flatset BY ($0, $1, $2);
-grunt> base_counts = FOREACH grouped GENERATE group.chr, group.pos, group.base, COUNT(flatset);
-grunt> base_counts = ORDER base_counts BY chr,pos;
-grunt> store base_counts into 'input.basecounts';
+A = FOREACH A GENERATE read, flags, refname, start, cigar, basequal, mapqual;
+A = FILTER A BY (flags/4)%2==0;
+RefPos = FOREACH A GENERATE ReadRefPositions(read, flags, refname, start, cigar, basequal), mapqual;
+flatset = FOREACH RefPos GENERATE flatten($0), mapqual;
+grouped = GROUP flatset BY ($0, $1, $2);
+base_counts = FOREACH grouped GENERATE group.chr, group.pos, group.base, COUNT(flatset);
+base_counts = ORDER base_counts BY chr,pos;
+store base_counts into 'input.basecounts';
 \end{lstlisting}
 \begin{description}
 	\item[Note] This is roughly equivalent to executing from the command line
@@ -163,19 +163,19 @@ Generating samtools compatible pileup (for a correctly sorted BAM file
 with MD tags aligned to the same reference, should produce the same output as
 {\tt samtools mpileup -A -f ref.fasta -B input.bam}):
 \begin{lstlisting}
-grunt> A = load 'input.bam' using BamUDFLoader('yes');
-grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
-grunt> C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
+A = load 'input.bam' using BamUDFLoader('yes');
+B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
       basequal, attributes#'MD', mapqual), start, flags, name;
-grunt> C = FILTER C BY $0 is not null;
-grunt> D = FOREACH C GENERATE flatten($0), start, flags, name;
-grunt> E = GROUP D BY (chr, pos);
-grunt> F = FOREACH E { G = FOREACH D GENERATE refbase, pileup, qual, start,
+C = FILTER C BY $0 is not null;
+D = FOREACH C GENERATE flatten($0), start, flags, name;
+E = GROUP D BY (chr, pos);
+F = FOREACH E { G = FOREACH D GENERATE refbase, pileup, qual, start,
       (flags/16)\%2, name; G = ORDER G BY start, $4, name; GENERATE group.chr,
       group.pos, PileupOutputFormatting(G, group.pos); }
-grunt> G = ORDER F BY chr, pos;
-grunt> H = FOREACH G GENERATE chr, pos, flatten($2);
-grunt> store H into 'input.pileup' using PigStorage('\t');
+G = ORDER F BY chr, pos;
+H = FOREACH G GENERATE chr, pos, flatten($2);
+store H into 'input.pileup' using PigStorage('\t');
 \end{lstlisting}
 \begin{description}
 	\item[Note] This is equivalent to executing from the command line
@@ -220,13 +220,13 @@ In order to evaluate the output of an aligner, it may be useful to
 consider the distribution of the mapping quality over the collection of
 reads. Thanks to Pig's {\tt GROUP} operator this is fairly easy.
 \begin{lstlisting}
-grunt> A = load 'input.bam' using BamUDFLoader('yes');
-grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
-grunt> read_stats_data = FOREACH B GENERATE mapqual;
-grunt> read_stats_grouped = GROUP read_stats_data BY mapqual;
-grunt> read_stats = FOREACH read_stats_grouped GENERATE group, COUNT($1);
-grunt> read_stats = ORDER read_stats BY group;
-grunt> STORE read_stats into 'mapqual_dist.txt';
+A = load 'input.bam' using BamUDFLoader('yes');
+B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+read_stats_data = FOREACH B GENERATE mapqual;
+read_stats_grouped = GROUP read_stats_data BY mapqual;
+read_stats = FOREACH read_stats_grouped GENERATE group, COUNT($1);
+read_stats = ORDER read_stats BY group;
+STORE read_stats into 'mapqual_dist.txt';
 \end{lstlisting}
 \begin{description}
 	\item[Note] This is equivalent to executing from the command line
@@ -242,20 +242,20 @@ read. The following simple script generates for each reference base and
 each position inside a read the distribution of the number of read bases
 that were called.
 \begin{lstlisting}
-grunt> A = load 'input.bam' using BamUDFLoader('yes');
-grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
-grunt> C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
-grunt> D = FOREACH C GENERATE FLATTEN($0);
-grunt> base_stats_data = FOREACH D GENERATE refbase, basepos, UPPER(readbase) AS readbase;
-grunt> base_stats_grouped = GROUP base_stats_data BY (refbase, basepos, readbase);
-grunt> base_stats_grouped_count = FOREACH base_stats_grouped GENERATE group.$0 AS refbase, group.$1 AS basepos, group.$2 as readbase, COUNT($1) AS bcount;
-grunt> base_stats_grouped = GROUP base_stats_grouped_count by (refbase, basepos);
-grunt> base_stats = FOREACH base_stats_grouped {
+A = load 'input.bam' using BamUDFLoader('yes');
+B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
+D = FOREACH C GENERATE FLATTEN($0);
+base_stats_data = FOREACH D GENERATE refbase, basepos, UPPER(readbase) AS readbase;
+base_stats_grouped = GROUP base_stats_data BY (refbase, basepos, readbase);
+base_stats_grouped_count = FOREACH base_stats_grouped GENERATE group.$0 AS refbase, group.$1 AS basepos, group.$2 as readbase, COUNT($1) AS bcount;
+base_stats_grouped = GROUP base_stats_grouped_count by (refbase, basepos);
+base_stats = FOREACH base_stats_grouped {
         TMP1 = FOREACH base_stats_grouped_count GENERATE readbase, bcount;
         TMP2 = ORDER TMP1 BY bcount desc;
         GENERATE group.$0, group.$1, TMP2;
    }
-grunt> STORE base_stats into 'outputfile_readstats.txt';
+STORE base_stats into 'outputfile_readstats.txt';
 \end{lstlisting}
 Here is an example output (for a BAM file with 50 reads):
 \begin{lstlisting}
@@ -303,20 +303,20 @@ indicate some quality issues with the run. The resulting script is actually
 fairly similar to the previous one with the difference of not grouping
 over the reference bases.
 \begin{lstlisting}
-grunt> A = load 'input.bam' using BamUDFLoader('yes');
-grunt> B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
-grunt> C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
-grunt> D = FOREACH C GENERATE FLATTEN($0);
-grunt> base_stats_data = FOREACH D GENERATE basepos, basequal;
-grunt> base_stats_grouped = GROUP base_stats_data BY (basepos, basequal);
-grunt> base_stats_grouped_count = FOREACH base_stats_grouped GENERATE group.$0 as basepos, group.$1 AS basequal, COUNT($1) AS qcount;
-grunt> base_stats_grouped = GROUP base_stats_grouped_count BY basepos;
-grunt> base_stats = FOREACH base_stats_grouped {
+A = load 'input.bam' using BamUDFLoader('yes');
+B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
+D = FOREACH C GENERATE FLATTEN($0);
+base_stats_data = FOREACH D GENERATE basepos, basequal;
+base_stats_grouped = GROUP base_stats_data BY (basepos, basequal);
+base_stats_grouped_count = FOREACH base_stats_grouped GENERATE group.$0 as basepos, group.$1 AS basequal, COUNT($1) AS qcount;
+base_stats_grouped = GROUP base_stats_grouped_count BY basepos;
+base_stats = FOREACH base_stats_grouped {
         TMP1 = FOREACH base_stats_grouped_count GENERATE basequal, qcount;
         TMP2 = ORDER TMP1 BY basequal;
         GENERATE group, TMP2;
 }
-grunt> STORE base_stats into 'outputfile_basequalstats.txt';
+STORE base_stats into 'outputfile_basequalstats.txt';
 \end{lstlisting}
 Here is an example output (for a BAM file with 50 reads):
 \begin{lstlisting}
@@ -356,8 +356,8 @@ on for example whether they are stored in Qseq or Fastq.
 
 The following two lines simply convert an input Qseq into Fastq.
 \begin{lstlisting}
-grunt> reads = load 'input.qseq' using QseqUDFLoader();
-grunt> STORE reads INTO 'output.fastq' using FastqUDFStorer(); 
+reads = load 'input.qseq' using QseqUDFLoader();
+STORE reads INTO 'output.fastq' using FastqUDFStorer(); 
 \end{lstlisting}
 The other direction works analogously.
 
@@ -372,11 +372,11 @@ that here we rely on the {\tt SUBSTRING} and {\tt LENGTH} string functions, whic
 part of the PiggyBank (see Section~\ref{sect:piggybank_note}).
 
 \begin{lstlisting}
-grunt> DEFINE SUBSTRING org.apache.pig.piggybank.evaluation.string.SUBSTRING();
-grunt> DEFINE LENGTH org.apache.pig.piggybank.evaluation.string.LENGTH();
-grunt> reads = load 'input.qseq' using QseqUDFLoader();
-grunt> B = FOREACH A GENERATE instrument, run_number, flow_cell_id, lane, tile, xpos, ypos, read, qc_passed, control_number, index_sequence, SUBSTRING(sequence, 0, LENGTH(sequence) - 3) AS sequence, SUBSTRING(quality, 0, LENGTH(quality) - 3) AS quality;
-grunt> store B into 'output.qseq' using QseqUDFStorer();
+DEFINE SUBSTRING org.apache.pig.piggybank.evaluation.string.SUBSTRING();
+DEFINE LENGTH org.apache.pig.piggybank.evaluation.string.LENGTH();
+reads = load 'input.qseq' using QseqUDFLoader();
+B = FOREACH A GENERATE instrument, run_number, flow_cell_id, lane, tile, xpos, ypos, read, qc_passed, control_number, index_sequence, SUBSTRING(sequence, 0, LENGTH(sequence) - 3) AS sequence, SUBSTRING(quality, 0, LENGTH(quality) - 3) AS quality;
+store B into 'output.qseq' using QseqUDFStorer();
 \end{lstlisting}
 \begin{description}
 	\item[Note] This example script is equivalent to executing from the command line
