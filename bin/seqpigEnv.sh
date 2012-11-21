@@ -1,21 +1,36 @@
 #!/bin/bash
 
-if [ "$HADOOP" = "" ]; then
-        HADOOP="$HADOOP_HOME/bin/hadoop"
-fi
+function missing_var() {
+	var_name=${1}
+	echo "Please set the ${var_name} environment variable to point to the appropriate installation directory" >&2
+	exit 1
+}
 
-if [ "$SEQPIG_HOME" = "" ]; then
-        SEQPIG_HOME=`dirname $0`
+if [ -z "${SEQPIG_HOME}" ]; then
+	SEQPIG_HOME=`dirname $0`
         SEQPIG_HOME="${SEQPIG_HOME}/../"
 fi
 
-if [ "$CLASSPATH" = "" ]; then
-        CLASSPATH="${SEQPIG_HOME}/build/jar/SeqPig.jar"
-
-        for i in ${SEQPIG_HOME}/lib/*.jar; do
-        CLASSPATH="${CLASSPATH}:${i}";
-        done
+if [ -z "${PIG_HOME}" ]; then
+	missing_var PIG_HOME
 fi
+
+if [ -z "${JAVA_HOME}" ]; then
+	missing_var JAVA_HOME
+fi
+
+HADOOP="hadoop"
+
+type -P hadoop &>/dev/null || {
+    echo  "warning! hadoop not in path";
+    if [ -z "${HADOOP_HOME}" ]; then
+	echo "possibly only local mode will work";
+    else
+	HADOOP="${HADOOP_HOME}/bin/hadoop";
+    fi
+}
+
+SEQPIG_JARS=$(find ${SEQPIG_HOME}/lib ${PIG_HOME}/contrib -name '*.jar' -print | tr '\n' :)${SEQPIG_HOME}/build/jar/SeqPig.jar
 
 SAM_VERSION=1.76
 HADOOP_BAM_VERSION=5.0

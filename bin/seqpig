@@ -3,25 +3,16 @@
 # Simple wrapper script to start pig with with SeqPig-related jars and
 # set the udf.import.list property to fi.aalto.seqpig.
 
-
-function missing_var() {
-	var_name=${1}
-	echo "Please set the ${var_name} environment variable to point to the appropriate installation directory" >&2
-	exit 1
-}
-
 if [ -z "${SEQPIG_HOME}" ]; then
-	missing_var SEQPIG_HOME
+	SEQPIG_HOME=`dirname $0`
+        SEQPIG_HOME="${SEQPIG_HOME}/../"
 fi
 
-if [ -z "${PIG_HOME}" ]; then
-	missing_var PIG_HOME
-fi
+source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
 
-additional_jars=$(find ${SEQPIG_HOME}/lib ${PIG_HOME}/contrib -name '*.jar' -print | tr '\n' :)${SEQPIG_HOME}/build/jar/SeqPig.jar
 import_list=fi.aalto.seqpig
 
-echo "pig.additional.jars: ${additional_jars}"
+echo "pig.additional.jars: ${SEQPIG_JARS}"
 echo "udf.import.list: ${import_list}"
-         
-exec "${PIG_HOME}/bin/pig" -Dpig.additional.jars=${additional_jars} -Dudf.import.list=${import_list} "${@}"
+
+exec "${PIG_HOME}/bin/pig" -Dpig.additional.jars=${SEQPIG_JARS} -Dudf.import.list=${import_list} "${@}"
