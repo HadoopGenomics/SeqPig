@@ -8,7 +8,7 @@ function missing_var() {
 
 if [ -z "${SEQPIG_HOME}" ]; then
 	SEQPIG_HOME=`dirname $0`
-        SEQPIG_HOME="${SEQPIG_HOME}/../"
+	SEQPIG_HOME="${SEQPIG_HOME}/../"
 fi
 
 if [ -z "${PIG_HOME}" ]; then
@@ -19,15 +19,15 @@ if [ -z "${JAVA_HOME}" ]; then
 	missing_var JAVA_HOME
 fi
 
-HADOOP="hadoop"
+HADOOP="${HADOOP:-hadoop}"
 
-type -P hadoop &>/dev/null || {
-    echo  "warning! hadoop not in path";
-    if [ -z "${HADOOP_HOME}" ]; then
-	echo "possibly only local mode will work";
-    else
-	HADOOP="${HADOOP_HOME}/bin/hadoop";
-    fi
+type -P "${HADOOP}" &>/dev/null || {
+	echo  "warning! hadoop not found in PATH";
+	if [ -z "${HADOOP_HOME}" ]; then
+		echo "HADOOP_HOME not set.  Pig may not work in distributed mode";
+	else
+		HADOOP="${HADOOP_HOME}/bin/hadoop";
+	fi
 }
 
 SEQPIG_JARS=$(find ${SEQPIG_HOME}/lib ${PIG_HOME}/contrib -name '*.jar' -print | tr '\n' :)${SEQPIG_HOME}/build/jar/SeqPig.jar
