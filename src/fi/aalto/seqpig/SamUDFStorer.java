@@ -133,7 +133,6 @@ public class SamUDFStorer extends StoreFunc {
 	}
 
 	try {
-	    //BASE64Encoder encode = new BASE64Encoder();
 	    Base64 codec = new Base64();
 	    Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 	    
@@ -141,11 +140,10 @@ public class SamUDFStorer extends StoreFunc {
 	    ObjectOutputStream ostream = new ObjectOutputStream(bstream);
 	    ostream.writeObject(this.samfileheader);
 	    ostream.close();
-	    //String datastr = encode.encode(bstream.toByteArray());
+       
 	    String datastr = codec.encodeBase64String(bstream.toByteArray());
 	    p.setProperty("samfileheader", datastr);
 	} catch (Exception e) {
-	    //throw new IOException(e);
 	    System.out.println("ERROR: Unable to store SAMFileHeader in BamUDFStorer!");
 	}
 
@@ -154,13 +152,11 @@ public class SamUDFStorer extends StoreFunc {
 
     protected void decodeSAMFileHeader(){
 	try {
-            //BASE64Decoder decode = new BASE64Decoder();
             Base64 codec = new Base64();
             Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
             String datastr;
 
             datastr = p.getProperty("samfileheader");
-            //byte[] buffer = decode.decodeBuffer(datastr);
             byte[] buffer = codec.decodeBase64(datastr);
             ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
             ObjectInputStream ostream = new ObjectInputStream(bstream);
@@ -177,13 +173,11 @@ public class SamUDFStorer extends StoreFunc {
 
 	if(selectedSAMAttributes == null || allSAMFieldNames == null) {
 	    try {
-		//BASE64Decoder decode = new BASE64Decoder();
 		Base64 codec = new Base64();
 		Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 		String datastr;
 	
 		datastr = p.getProperty("selectedSAMAttributes");
-		//byte[] buffer = decode.decodeBuffer(datastr);
 		byte[] buffer = codec.decodeBase64(datastr);
 		ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
 		ObjectInputStream ostream = new ObjectInputStream(bstream);
@@ -192,7 +186,6 @@ public class SamUDFStorer extends StoreFunc {
 		    (HashMap<String,Integer>)ostream.readObject();
 
 		datastr = p.getProperty("allSAMFieldNames");
-		//buffer = decode.decodeBuffer(datastr);
 		buffer = codec.decodeBase64(datastr);
 		bstream = new ByteArrayInputStream(buffer);
 		ostream = new ObjectInputStream(bstream);
@@ -206,88 +199,6 @@ public class SamUDFStorer extends StoreFunc {
 
 	SAMRecordWritable samrecwrite = new SAMRecordWritable();
 	SAMRecord samrec = new SAMRecord(samfileheader_decoded);
-
-	/*if(f.size() > 0 && DataType.findType(f.get(0)) == DataType.CHARARRAY) {
-	    samrec.setReadName((String)f.get(0));
-	    System.out.println("name: "+(String)f.get(0));
-	}
-
-	if(f.size() > 1 && DataType.findType(f.get(1)) == DataType.INTEGER) {
-	    samrec.setAlignmentStart(((Integer)f.get(1)).intValue());
-	    System.out.println("start: "+((Integer)f.get(1)).intValue());
-	}
-
-	System.out.println("end: "+((Integer)f.get(2)).intValue());
-	// TODO: check why setAlignmentEnd not supported
-
-	if(f.size() > 3 && DataType.findType(f.get(3)) == DataType.CHARARRAY) {
-	    samrec.setReadString((String)f.get(3));
-	    System.out.println("read: "+(String)f.get(3));
-	    
-	}
-
-	if(f.size() > 4 && DataType.findType(f.get(4)) == DataType.CHARARRAY) {
-	    samrec.setCigarString((String)f.get(4));
-	    System.out.println("cigar: "+(String)f.get(4));
-	}
-
-	if(f.size() > 5 && DataType.findType(f.get(5)) == DataType.CHARARRAY) {
-	    samrec.setBaseQualityString((String)f.get(5));
-	    System.out.println("quality: "+(String)f.get(5));
-	}
-
-	if(f.size() > 6 && DataType.findType(f.get(6)) == DataType.INTEGER) {
-	    samrec.setFlags(((Integer)f.get(6)).intValue());
-	    System.out.println("flags: "+((Integer)f.get(6)).intValue());
-	}
-	
-	if(f.size() > 7 && DataType.findType(f.get(7)) == DataType.INTEGER) {
-	    samrec.setInferredInsertSize(((Integer)f.get(7)).intValue());
-	    System.out.println("inferredInsertSize: "+((Integer)f.get(7)).intValue());
-	}
-	
-	if(f.size() > 8 && DataType.findType(f.get(8)) == DataType.INTEGER) {
-	    samrec.setMappingQuality(((Integer)f.get(8)).intValue());
-	    System.out.println("mappingQuality: "+((Integer)f.get(8)).intValue());
-	}
-
-	if(f.size() > 9 && DataType.findType(f.get(9)) == DataType.INTEGER) {
-	    samrec.setMateAlignmentStart(((Integer)f.get(9)).intValue());
-	    System.out.println("mateAlignmentStart: "+((Integer)f.get(9)).intValue());
-	}
-
-	if(f.size() > 10 && DataType.findType(f.get(10)) == DataType.INTEGER) {
-	    samrec.setIndexingBin((Integer)f.get(10));
-	    System.out.println("indexingBin: "+((Integer)f.get(10)).intValue());
-	}
-
-	if(f.size() > 11 && DataType.findType(f.get(11)) == DataType.INTEGER) {
-	    samrec.setMateReferenceIndex(((Integer)f.get(11)).intValue());
-	    System.out.println("mateReferenceIndex: "+((Integer)f.get(11)).intValue());
-	}
-
-	if(f.size() > 12 && DataType.findType(f.get(12)) == DataType.INTEGER) {
-	    samrec.setReferenceIndex(((Integer)f.get(12)).intValue());
-	    System.out.println("referenceIndex: "+((Integer)f.get(12)).intValue());
-	}
-
-	if(f.size() > 13 && DataType.findType(f.get(13)) == DataType.CHARARRAY) {
-	    //samrec.setAttribute("PG", new SAMProgramRecord((String)f.get(13)));
-	    samrec.setAttribute("PG", f.get(13));
-	    System.out.println("programGroup: "+((String)f.get(13)));
-	}
-
-	if(f.size() > 14 && DataType.findType(f.get(14)) == DataType.CHARARRAY) {
-	    //samrec.setAttribute("RG", new SAMReadGroupRecord((String)f.get(14)));
-	    samrec.setAttribute("RG", f.get(14));
-	    System.out.println("readGroup: "+((String)f.get(14)));
-	}
-
-	if(f.size() > 15 && DataType.findType(f.get(15)) == DataType.CHARARRAY) {
-	    //samrec.setAttribute("RG", new SAMReadGroupRecord((String)f.get(14)));
-	    samrec.setAttribute("SM", f.get(15));
-	    System.out.println("sm: "+((String)f.get(15)));
-	    }*/
 
 	int index = getFieldIndex("name", allSAMFieldNames);
 
@@ -334,11 +245,6 @@ public class SamUDFStorer extends StoreFunc {
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
 	    samrec.setMateAlignmentStart(((Integer)f.get(index)).intValue());
 	}
-
-	/*index = getFieldIndex("indexbin", allSAMFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    samrec.setIndexingBin((Integer)f.get(index));
-	}*/
 
 	index = getFieldIndex("materefindex", allSAMFieldNames);
 	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
@@ -438,32 +344,27 @@ public class SamUDFStorer extends StoreFunc {
 	      && allSAMFieldNames.containsKey("insertsize")
 	      && allSAMFieldNames.containsKey("mapqual")
 	      && allSAMFieldNames.containsKey("matestart")
-	      //&& allSAMFieldNames.containsKey("indexbin")
 	      && allSAMFieldNames.containsKey("materefindex")
 	      && allSAMFieldNames.containsKey("refindex")))
 	    throw new IOException("Error: Incorrect SAM tuple-field name or compulsory field missing");
 
-	//BASE64Encoder encode = new BASE64Encoder();
 	Base64 codec = new Base64();
 	Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
 	String datastr;
-	//p.setProperty("someproperty", "value");
 
 	ByteArrayOutputStream bstream = new ByteArrayOutputStream();
 	ObjectOutputStream ostream = new ObjectOutputStream(bstream);
 	ostream.writeObject(selectedSAMAttributes);
 	ostream.close();
-	//datastr = encode.encode(bstream.toByteArray());
 	datastr = codec.encodeBase64String(bstream.toByteArray());
-	p.setProperty("selectedSAMAttributes", datastr); //new String(bstream.toByteArray(), "UTF8"));
+	p.setProperty("selectedSAMAttributes", datastr);
 
 	bstream = new ByteArrayOutputStream();
 	ostream = new ObjectOutputStream(bstream);
 	ostream.writeObject(allSAMFieldNames);
 	ostream.close();
-	//datastr = encode.encode(bstream.toByteArray());
 	datastr = codec.encodeBase64String(bstream.toByteArray());
-	p.setProperty("allSAMFieldNames", datastr); //new String(bstream.toByteArray(), "UTF8"));
+	p.setProperty("allSAMFieldNames", datastr);
     }
 
     private SAMFileHeader getSAMFileHeader() {
@@ -471,113 +372,6 @@ public class SamUDFStorer extends StoreFunc {
 	codec.setValidationStringency(ValidationStringency.SILENT);
 	return codec.decode(new StringLineReader(this.samfileheader), "SAMFileHeader.clone");
     }
-
-    /*@SuppressWarnings("unchecked")
-    private void putField(Object field) throws IOException {
-        //string constants for each delimiter
-        String tupleBeginDelim = "(";
-        String tupleEndDelim = ")";
-        String bagBeginDelim = "{";
-        String bagEndDelim = "}";
-        String mapBeginDelim = "[";
-        String mapEndDelim = "]";
-        String fieldDelim = ",";
-        String mapKeyValueDelim = "#";
-
-        switch (DataType.findType(field)) {
-        case DataType.NULL:
-            break; // just leave it empty
-
-        case DataType.BOOLEAN:
-            mOut.write(((Boolean)field).toString().getBytes());
-            break;
-
-        case DataType.INTEGER:
-            mOut.write(((Integer)field).toString().getBytes());
-            break;
-
-        case DataType.LONG:
-            mOut.write(((Long)field).toString().getBytes());
-            break;
-
-        case DataType.FLOAT:
-            mOut.write(((Float)field).toString().getBytes());
-            break;
-
-        case DataType.DOUBLE:
-            mOut.write(((Double)field).toString().getBytes());
-            break;
-
-        case DataType.BYTEARRAY: {
-            byte[] b = ((DataByteArray)field).get();
-            mOut.write(b, 0, b.length);
-            break;
-                                 }
-
-        case DataType.CHARARRAY:
-            // oddly enough, writeBytes writes a string
-            mOut.write(((String)field).getBytes(UTF8));
-            break;
-
-        case DataType.MAP:
-            boolean mapHasNext = false;
-            Map<String, Object> m = (Map<String, Object>)field;
-            mOut.write(mapBeginDelim.getBytes(UTF8));
-            for(Map.Entry<String, Object> e: m.entrySet()) {
-                if(mapHasNext) {
-                    mOut.write(fieldDelim.getBytes(UTF8));
-                } else {
-                    mapHasNext = true;
-                }
-                putField(e.getKey());
-                mOut.write(mapKeyValueDelim.getBytes(UTF8));
-                putField(e.getValue());
-            }
-            mOut.write(mapEndDelim.getBytes(UTF8));
-            break;
-
-        case DataType.TUPLE:
-            boolean tupleHasNext = false;
-            Tuple t = (Tuple)field;
-            mOut.write(tupleBeginDelim.getBytes(UTF8));
-            for(int i = 0; i < t.size(); ++i) {
-                if(tupleHasNext) {
-                    mOut.write(fieldDelim.getBytes(UTF8));
-                } else {
-                    tupleHasNext = true;
-                }
-                try {
-                    putField(t.get(i));
-                } catch (ExecException ee) {
-                    throw ee;
-                }
-            }
-            mOut.write(tupleEndDelim.getBytes(UTF8));
-            break;
-
-        case DataType.BAG:
-            boolean bagHasNext = false;
-            mOut.write(bagBeginDelim.getBytes(UTF8));
-            Iterator<Tuple> tupleIter = ((DataBag)field).iterator();
-            while(tupleIter.hasNext()) {
-                if(bagHasNext) {
-                    mOut.write(fieldDelim.getBytes(UTF8));
-                } else {
-                    bagHasNext = true;
-                }
-                putField((Object)tupleIter.next());
-            }
-            mOut.write(bagEndDelim.getBytes(UTF8));
-            break;
-
-        default: {
-            int errCode = 2108;
-            String msg = "Could not determine data type of field: " + field;
-            throw new ExecException(msg, errCode, PigException.BUG);
-        }
-
-        }
-	}*/
 
     @Override
     public OutputFormat getOutputFormat() {

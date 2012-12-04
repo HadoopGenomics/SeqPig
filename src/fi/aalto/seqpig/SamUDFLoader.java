@@ -35,7 +35,6 @@ import org.apache.pig.ResourceStatistics;
 import org.apache.pig.data.DataType;
 import org.apache.pig.Expression;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-//import org.apache.pig.builtin.TOMAP;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -106,39 +105,26 @@ public class SamUDFLoader extends LoadFunc implements LoadMetadata {
 	    mProtoTuple.add(new Integer(samrec.getInferredInsertSize()));
 	    mProtoTuple.add(new Integer(samrec.getMappingQuality()));
 	    mProtoTuple.add(new Integer(samrec.getMateAlignmentStart()));
-	    //mProtoTuple.add(new Integer(samrec.getIndexingBin()));
 	    mProtoTuple.add(new Integer(samrec.getMateReferenceIndex()));
 	    mProtoTuple.add(new Integer(samrec.getReferenceIndex()));
 	    mProtoTuple.add(new String(samrec.getReferenceName()));
 	    
 	    if(loadAttributes) {
 		Map attributes = new HashMap<String, Object>();
-		//ArrayList<String> mapProtoTuple = new ArrayList<String>();
 		
 		final List<SAMRecord.SAMTagAndValue> mySAMAttributes = samrec.getAttributes();
 		
 		for (final SAMRecord.SAMTagAndValue tagAndValue : mySAMAttributes) {
 		    
 		    if(tagAndValue.value != null) {
-			
-			//System.out.println("found tag name: "+tagAndValue.tag);
-			
-			//mapProtoTuple.add((String)tagAndValue.tag);
-
 			if(tagAndValue.value.getClass().getName().equals("java.lang.Character"))
-			  //mapProtoTuple.add(tagAndValue.value.toString());
 			  attributes.put(tagAndValue.tag, tagAndValue.value.toString());
 			else
-			   //if(tagAndValue.value.getClass().getName().equals("java.lang.String"))
-			   	//mapProtoTuple.add((String)tagAndValue.value);
 			   attributes.put(tagAndValue.tag, tagAndValue.value);
-			   //attributes.put(tagAndValue.tag, tagAndValue.value.toString().getBytes());
 		    }
 		}
 		
 		mProtoTuple.add(attributes);
-		//TOMAP tomap = new TOMAP();
-		//mProtoTuple.add(tomap.exec(mTupleFactory.newTupleNoCopy(mapProtoTuple)));
 	    }
 	    
             Tuple t =  mTupleFactory.newTupleNoCopy(mProtoTuple);
@@ -196,7 +182,6 @@ public class SamUDFLoader extends LoadFunc implements LoadMetadata {
 	s.add(new Schema.FieldSchema("insertsize", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("mapqual", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("matestart", DataType.INTEGER));
-	//s.add(new Schema.FieldSchema("indexbin", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("materefindex", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("refindex", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("refname", DataType.CHARARRAY));
