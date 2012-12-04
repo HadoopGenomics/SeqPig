@@ -4,8 +4,7 @@
 # set the udf.import.list property to fi.aalto.seqpig.
 
 if [ -z "${SEQPIG_HOME}" ]; then
-	SEQPIG_HOME=`dirname $0`
-        SEQPIG_HOME="${SEQPIG_HOME}/../"
+	SEQPIG_HOME="`dirname $(readlink -f $0)`/../"
 fi
 
 source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
