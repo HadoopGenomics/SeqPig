@@ -95,6 +95,21 @@ If PiggyBank hasn't been compiled, go into {\tt
 \$PIG\_HOME/contrib/piggybank/java} and run {\tt ant}.
 
 
+\subsection{Tests}
+
+After building SeqPig it may be a good idea to run tests to verify that
+the environment has been set up correctly. When inside the SeqPig directory
+execute
+\begin{lstlisting} 
+$ test/test_all.sh 2>&1 | grep TEST
+\end{lstlisting}
+This test requires that Hadoop is set up correctly. It first imports a BAM
+file, sorts the reads by coordinate and converts it to SAM for comparing
+the results. The test should end with the line
+\begin{lstlisting}
+TEST: sorting and BAM to SAM conversion test passed!
+\end{lstlisting}
+
 \subsection{Usage}
 
 \subsubsection{Pig grunt shell for interactive operations}

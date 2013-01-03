@@ -25,7 +25,7 @@ EOF
 	echo TEST: exporting
 	${SEQPIG_HOME}/bin/prepareBamOutput.sh input_sorted.bam
 	if [ ! -f input_sorted.bam ]; then
-    		echo TEST: sorting bam test failed, could not find output file
+    		echo TEST: sorting BAM test failed, could not find output file
 		exit 1
 	fi
 	echo TEST: ok
@@ -35,13 +35,13 @@ EOF
 A = load 'input_sorted.bam' using BamUDFLoader('yes');
 store A into 'output.sam' using SamUDFStorer('input_sorted.bam.asciiheader');
 EOF
-	echo TEST: converting sorted bam to sam
+	echo TEST: converting sorted BAM to SAM
 	$HADOOP fs -rmr output.sam
 	${SEQPIG_HOME}/bin/seqpig /tmp/convert_reads.pig
 	echo TEST: exporting sam
 	${SEQPIG_HOME}/bin/prepareSamOutput.sh output.sam
 	if [ ! -f output.sam ]; then
-                echo TEST: bam to sam conversion failed, could not find output file
+                echo TEST: BAM to SAM conversion failed, could not find output file
                 exit 1
         fi
 	echo TEST: ok
@@ -55,7 +55,7 @@ EOF
     		echo TEST: ok
 	fi
 	rm /tmp/test.reads /tmp/test.reads2 output.sam input_sorted.bam input_sorted.bam.asciiheader
-	echo TEST: sorting and bam to sam conversion test passed!
+	echo TEST: sorting and BAM to SAM conversion test passed!
 }
 
 if [ -z "${SEQPIG_HOME}" ]; then
