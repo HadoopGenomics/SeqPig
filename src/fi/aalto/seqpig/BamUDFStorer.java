@@ -100,9 +100,10 @@ public class BamUDFStorer extends StoreFunc {
 		return;
 	    }
 
-            FileSystem fs;
+	    URI uri = new URI(samfileheaderfilename);
+            FileSystem fs = FileSystem.get(uri, conf);
 	    
-	    try {
+	    /*try {
 		if(FileSystem.getDefaultUri(conf) == null
 		   || FileSystem.getDefaultUri(conf).toString() == "")
 		    fs = FileSystem.get(new URI("hdfs://"), conf);
@@ -112,9 +113,14 @@ public class BamUDFStorer extends StoreFunc {
 		fs = FileSystem.get(new URI("hdfs://"), conf);
             	System.out.println("WARNING: problems with filesystem config?");
             	System.out.println("exception was: "+e.toString());
-	    }
+	    }*/
 	    
-	    BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(samfileheaderfilename)))));
+	    BufferedReader in;
+
+		//if(uri.getScheme() == null || uri.getScheme() == "")
+			//in = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(samfileheaderfilename)))));
+		//else
+			in = new BufferedReader(new InputStreamReader(fs.open(new Path(samfileheaderfilename))));
 	    
 	    while(true) {
 		str = in.readLine();

@@ -59,4 +59,17 @@
   
   <target name="main" depends="clean,run"/>
 
+  <target name="seqpig-with-deps" depends="compile" description="creating single jar bundle" >
+    <jar id="files" jarfile="${jar.dir}/${ant.project.name}_bundle.jar" basedir="${classes.dir}">
+        <manifest>
+          <attribute name="Main-Class" value="${main.class}"/>
+        </manifest>
+
+        <zipfileset src="${lib.dir}/hadoop-bam-5.0.jar" includes="**/*.java **/*.class"/>
+	<zipfileset src="${lib.dir}/picard-1.76.jar" includes="**/*.java **/*.class"/>
+	<zipfileset src="${lib.dir}/sam-1.76.jar" includes="**/*.java **/*.class"/>
+	<zipfileset src="${lib.dir}/seal.jar" includes="**/*.java **/*.class"/>
+    </jar>
+  </target>
+
 </project>

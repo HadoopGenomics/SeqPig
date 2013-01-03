@@ -4,19 +4,15 @@
 %default pparallel 1
 --
 --   macro definitions
---
---   filter reads based on flags (unmapped or duplicates) and mapping quality
---
-DEFINE filter_reads_unmapdupl(A, min_map_qual) RETURNS B {
-        $B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual;
-};
+DEFINE ReadUnmapped fi.aalto.seqpig.SAMFlagsFilter('HasSegmentUnmapped');
+DEFINE IsDuplicate fi.aalto.seqpig.SAMFlagsFilter('IsDuplicate');
 --
 --   start of script
 --
 --   import BAM file
 A = load '$inputfile' using BamUDFLoader('yes');
 --   filter reads based on flags (unmapped or duplicates) and mapping quality
-A = filter_reads_unmapdupl(A, $min_map_qual);
+A = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags) and mapqual>=$min_map_qual;
 --   we want to consider strand information in sorting, so we need to generate the corresponding flag
 B = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize, mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
 --   do the actual sorting
