@@ -8,6 +8,10 @@ then
         exit 0
 fi
 
+if [ -z "${SEQPIG_HOME}" ]; then
+        SEQPIG_HOME="`dirname $(readlink -f $0)`/../"
+fi
+
 source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
 
 bamoutputfilename=$(readlink -f $1);
