@@ -102,21 +102,10 @@ public class SamUDFStorer extends StoreFunc {
                 return;
             }
 
-            FileSystem fs;
+	    URI uri = new URI(samfileheaderfilename);
+            FileSystem fs = FileSystem.get(uri, conf);
 	    
-	    try {
-		if(FileSystem.getDefaultUri(conf) == null
-		   || FileSystem.getDefaultUri(conf).toString() == "")
-		    fs = FileSystem.get(new URI("hdfs://"), conf);
-		else 
-		    fs = FileSystem.get(conf);
-	    } catch (Exception e) {
-		fs = FileSystem.get(new URI("hdfs://"), conf);
-            	System.out.println("WARNING: problems with filesystem config?");
-            	System.out.println("exception was: "+e.toString());
-	    }
-	    
-	    BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(samfileheaderfilename)))));
+	    BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(new Path(samfileheaderfilename))));
 	    
 	    while(true) {
 		str = in.readLine();
