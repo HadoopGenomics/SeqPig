@@ -94,6 +94,23 @@ $ find $PIG_HOME -name piggybank.jar
 If PiggyBank hasn't been compiled, go into {\tt
 \$PIG\_HOME/contrib/piggybank/java} and run {\tt ant}.
 
+\subsection{Running on Amazon Elastic MapReduce}
+
+Assuming you have started an interactive Pig Job Flow (for example via
+the AWS console), you can login into the master node and copy the SeqPig release to the Hadoop
+user home directory. Then set both {\tt SEQPIG\_HOME} and {\tt PIG\_HOME}
+correctly ({\tt HADOOP\_HOME} should be set by default). Note that the
+Pig version installed does not necessarily match the latest Pig release.
+The advantage, however, is the ability to use S3 buckets for input and
+output.
+
+Consider the following example for starting SeqPig on EMR that assumes the SeqPig release was installed
+into {\tt /home/hadoop/seqpig}.
+\begin{lstlisting} 
+$ export SEQPIG_HOME=/home/hadoop/seqpig
+$ export PIG_HOME=/home/hadoop/.versions/pig-0.9.2
+$ /home/hadoop/seqpig/bin/seqpig
+\end{lstlisting}
 
 \subsection{Tests}
 
@@ -101,14 +118,29 @@ After building SeqPig it may be a good idea to run tests to verify that
 the environment has been set up correctly. When inside the SeqPig directory
 execute
 \begin{lstlisting} 
-$ test/test_all.sh 2>&1 | grep TEST
+$ test/test_all.sh
 \end{lstlisting}
 This test requires that Hadoop is set up correctly. It first imports a BAM
 file, sorts the reads by coordinate and converts it to SAM for comparing
 the results. The test should end with the line
 \begin{lstlisting}
-TEST: sorting and BAM to SAM conversion test passed!
+TEST: all tests passed
 \end{lstlisting}
+Alternatively, the same script can execute Pig in local mode, which does not
+require a working Hadoop instance. To run the tests in local mode execute
+\begin{lstlisting} 
+$ test/test_all.sh -l
+\end{lstlisting}
+If you intend to run SeqPig on an Amazon Elastic MapReduce instance, you can
+also test input from S3 by providing an S3 path to the file {\tt data/input.bam}:
+\begin{lstlisting} 
+$ test/test_all.sh -s <s3_path>
+\end{lstlisting}
+for example:
+\begin{lstlisting} 
+$ test/test_all.sh -s seqpig/data/input.bam
+\end{lstlisting}
+where {\tt seqpig} is the name of the S3 bucket.
 
 \subsection{Usage}
 
