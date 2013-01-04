@@ -22,8 +22,8 @@ EOF
 
 function cleanup_tests() {
 	echo TEST: cleaning up
-	echo rm /tmp/test.reads /tmp/test.reads2 output.sam input_sorted.bam input_sorted.bam.asciiheader
-	rm /tmp/test.reads /tmp/test.reads2 output.sam input_sorted.bam input_sorted.bam.asciiheader
+	echo rm -f /tmp/test.reads /tmp/test.reads2 /tmp/convert_reads.pig output.sam input_sorted.bam input_sorted.bam.asciiheader
+	rm -f /tmp/test.reads /tmp/test.reads2 /tmp/convert_reads.pig output.sam input_sorted.bam input_sorted.bam.asciiheader
 }
 
 function cleanup_hdfs() {
@@ -34,6 +34,18 @@ function cleanup_hdfs() {
 	$HADOOP fs -rmr /user/${USER}/input_sorted.bam
 	echo $HADOOP fs -rmr /user/${USER}/output.sam
 	$HADOOP fs -rmr /user/${USER}/output.sam
+}
+
+function cleanup_local() {
+	echo TEST: cleaning up local files
+	echo rm -rf input_sorted.bam
+	rm -rf input_sorted.bam
+	echo rm -rf input_sorted
+	rm -rf input_sorted
+	echo rm -rf output.sam
+	rm -rf output.sam
+	echo rm -rf output
+	rm -rf output
 }
 
 function test_sorting_hdfs() {
@@ -64,6 +76,7 @@ function check_output() {
 	${SEQPIG_HOME}/bin/prepareBamOutput.sh input_sorted.bam
 	if [ ! -f input_sorted.bam ]; then
     		echo TEST: sorting BAM test failed, could not find output file
+		cleanup_hdfs
 		exit 1
 	fi
 	echo TEST: ok
@@ -80,6 +93,7 @@ EOF
 	${SEQPIG_HOME}/bin/prepareSamOutput.sh output.sam
 	if [ ! -f output.sam ]; then
                 echo TEST: BAM to SAM conversion failed, could not find output file
+		cleanup_hdfs
                 exit 1
         fi
 	echo TEST: ok
@@ -88,6 +102,48 @@ EOF
 	cmp -s /tmp/test.reads /tmp/test.reads2 > /dev/null
 	if [ $? -eq 1 ]; then
     		echo TEST: results differ!
+		cleanup_hdfs
+		exit 1
+	else
+    		echo TEST: ok
+	fi
+	echo TEST: sorting and BAM to SAM conversion test passed!
+}
+
+function test_sorting_local() {
+	echo rm -rf input_sorted.bam
+	rm -rf input_sorted.bam
+	echo TEST: starting sorting
+	echo ${SEQPIG_HOME}/bin/seqpig -x local -param inputfile=${SEQPIG_HOME}/data/input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
+	${SEQPIG_HOME}/bin/seqpig -x local -param inputfile=${SEQPIG_HOME}/data/input.bam -param outputfile=input_sorted ${SEQPIG_HOME}/scripts/sort_bam.pig
+	echo ${HADOOP} jar ${SEQPIG_HOME}/lib/hadoop-bam-${HADOOP_BAM_VERSION}.jar -libjars ${SEQPIG_HOME}/lib/picard-${SAM_VERSION}.jar,${SEQPIG_HOME}/lib/sam-${SAM_VERSION}.jar cat "file://$(pwd)/input_sorted.bam" "file://$(pwd)/input_sorted/part-r-*"
+	${HADOOP} jar ${SEQPIG_HOME}/lib/hadoop-bam-${HADOOP_BAM_VERSION}.jar -libjars ${SEQPIG_HOME}/lib/picard-${SAM_VERSION}.jar,${SEQPIG_HOME}/lib/sam-${SAM_VERSION}.jar cat "file://$(pwd)/input_sorted.bam" "file://$(pwd)/input_sorted/part-r-*"
+	if [ ! -f input_sorted.bam ]; then
+    		echo TEST: sorting BAM test failed, could not find output file
+		cleanup_local
+		exit 1
+	fi
+	echo cp -a ${SEQPIG_HOME}/data/input.bam.asciiheader input_sorted.bam.asciiheader
+	cp -a ${SEQPIG_HOME}/data/input.bam.asciiheader input_sorted.bam.asciiheader
+	echo TEST: ok
+	cat > /tmp/convert_reads.pig <<EOF
+A = load '$(pwd)/input_sorted.bam' using BamUDFLoader('yes');
+store A into '$(pwd)/output' using SamUDFStorer('$(pwd)/input_sorted.bam.asciiheader');
+EOF
+	echo TEST: converting sorted BAM to SAM
+	${SEQPIG_HOME}/bin/seqpig -x local /tmp/convert_reads.pig
+	if [ ! -f $(pwd)/output/part-m-00000 ]; then
+                echo TEST: BAM to SAM conversion failed, could not find output file
+		cleanup_local
+                exit 1
+        fi
+	echo TEST: ok
+	echo TEST: comparing output
+	grep ^SRR $(pwd)/output/part-m-00000 > /tmp/test.reads2
+	cmp -s /tmp/test.reads /tmp/test.reads2 > /dev/null
+	if [ $? -eq 1 ]; then
+    		echo TEST: results differ!
+		cleanup_local
 		exit 1
 	else
     		echo TEST: ok
@@ -112,11 +168,9 @@ while getopts ":hs:l" opt; do
       test_chosen=1
       ;;
     l)
-      echo "TEST: starting local tests"
       test_chosen=2
       ;;
     s)
-      echo "TEST: starting S3 tests"
       test_chosen=3
       s3_path="$OPTARG"
       ;;
@@ -131,6 +185,12 @@ if [ "$test_chosen" -eq "1" ]; then
       echo "TEST: starting HDFS tests"
       test_sorting_hdfs
       cleanup_hdfs
+fi
+
+if [ "$test_chosen" -eq "2" ]; then
+      echo "TEST: starting local tests"
+      test_sorting_local
+      cleanup_local
 fi
 
 if [ "$test_chosen" -eq "3" ]; then
