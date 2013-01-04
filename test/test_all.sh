@@ -2,7 +2,8 @@
 
 # testing seqpig scripts to check whether all is set up correctly
 
-function test_sorting() {
+function init_tests() {
+	echo TEST: initializing tests
         cat > /tmp/test.reads <<EOF
 SRR062634.4310012	99	20	59993	37	14S69M17S	=	60062	168	AAGTTAATAGAGAGGTGACTCAGATCCAGAGGTGGAAGAGGAAGGAAGCTTGGAACCCTATAGAGTTGCTGAGGGCCAGGACCAGATCCTGGCCCTAAAC	0ED@FFGFFEFEFDCEEFDFEFEFFEEFEFEEAEEBCEFEDBBEDAFEB>GEFCDBB&B36.6*.:-6,:76*%"017;6A8/:?;7:9:@?<;9B@A><	MD:Z:0N0N0N0N0N0N0N0N51T9	RG:Z:SRR062634	AM:i:37	NM:i:9	SM:i:37	XN:i:8	BQ:Z:@@@@@@@@@@@@@@NPOPMNLKF@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:37	XT:Z:M
 SRR062634.4310012	147	20	60062	37	100M	=	59993	-168	AGATCCTGGCCCTAAACAGGTGGTAAGGAAGGAGAGAGTGAAGGAACTGCCAGGTGACACACTCCCACCATGGACCTCTGGGATCCTAGCTTTAAGAGAT	?6<;>;15;4?/@AACCB@ABBA=CC7ACDBECACACACABCEEDBCDEEECECDECEEECEFEBEAEEEFEECEEFEFEEEEFEEEFEEFDEFFDFDE0	X0:i:1	X1:i:0	MD:Z:100	RG:Z:SRR062634	AM:i:37	NM:i:0	SM:i:37	BQ:Z:@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:37	XT:Z:U
@@ -12,16 +13,43 @@ SRR062634.5869679	147	20	30758670	60	100M	=	30758589	-180	CACACTCTTTTCTAAGGTGGTG
 SRR062634.1465399	99	20	30758672	60	100M	=	30758764	191	CACTCTTTTCTAAAGTGGTGTATCATTTTATGTTACCATCAGCAGTATACAAGAGTGCCAGTTCCTTTACATCCTAATAACACTTGGTATGGTTAATATT	0EBEEFFFFEDCB\$C>@A=@ECEEFFFFFFEEEFECEFEEFEEFEBECFCFGCFEBEEFFFCEEFGGEBBGFCDEFADBCEGEGCFDCAEFCBCACBADA	X0:i:1	X1:i:0	MD:Z:13G86	RG:Z:SRR062634	AM:i:37	NM:i:1	SM:i:37	BQ:Z:@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@FF	MQ:i:60	XT:Z:U
 SRR062634.1465399	147	20	30758764	60	100M	=	30758672	-191	TTAATATTTTTAATTTTAGCCATTCTTACAGGTATATAACATCTTGTGATTTTAATTTCTATTTCCCTAATGACATGTTGCACATCTTTTCATGTGCTTA	EDBECEEDEHGDGHHHGDFGFFGGFGFFEDBDFFCFFGEECDEFFCFCFFFDEFEFFFEFCDFFEECEFEFECEEFCFFEEEEAFEFFFFDEECEEDCE0	X0:i:1	X1:i:0	MD:Z:100	RG:Z:SRR062634	AM:i:37	NM:i:0	SM:i:37	BQ:Z:C@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:60	XT:Z:U
 SRR062634.3234936	163	20	37484140	60	100M	=	37484233	162	ATGACTTTCTTCTCCATTTGCTGCCCACGGACGCCGAAAATAACTTGTTTTCTGGCAAGCTTGGGATGCGATTCCTTATGATTTAATCAGATCCATAATG	0BBAADCABCDBDBCCCDDCCDCCCCDA;DBA2AC;BB@DCC@@CDC?BB>4CB=9@AAA@A5AB>>>'8=.>;4BA?@C2AAB<?@*@?>=<'>??*6@	X0:i:1	X1:i:0	MD:Z:68A31	RG:Z:SRR062634	AM:i:37	NM:i:1	SM:i:37	BQ:Z:@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:60	XT:Z:U
-SRR062634.3234936	83	20	37484233	60	30S70M	=	37484140	-162	GGATGAGATTCCTTATGATTTAATGAGATCCATAATGAAGCTCTCCCAGCTTTCAGGAGAAAACATCCTGAACTGCAGGGCTGGTTAAGGGCAGGGCCCT	###############################>4>:0;=:1;6=?3;;=;9<:;>?>A@=B?=>B>>BA?<B>A?>C>B@AC>C>D<EDEEBEFECA?:>/	X0:i:1	X1:i:0	XC:i:70	MD:Z:70	RG:Z:SRR062634	AM:i:37	NM:i:0	SM:i:37	BQ:Z:@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:60	XT:Z:U
+SRR062634.3234936	83	20	37484233	60	30S70M	=	37484140	-162	GGATGAGATTCCTTATGATTTAATGAGATCCATAATGAAGCTCTCCCAGCTTTCAGGAGAAAACATCCTGAACTGCAGGGCTGGTTAAGGGCAGGGCCCT	###############################>4>:0;=:1;6=?3;;=;9<:;>?>A@=B?=>B>>BA?<B>A?>C>B@AC>C>D<EDEEBEFECA?:>/$OPTARG	X0:i:1	X1:i:0	XC:i:70	MD:Z:70	RG:Z:SRR062634	AM:i:37	NM:i:0	SM:i:37	BQ:Z:@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:60	XT:Z:U
 SRR062634.6381597	99	20	44350574	60	100M	=	44350656	181	AAATAGCACCTGGAATTAAGTAGTACTCTAGGTTATAACTAACCCTGTTACTATTATTATAGTGCTATTGCACTCTTTCTCTTGTGCCATGATTAGTTTC	0EEECEEFCEFEFEFFFFFEEFECFDFEFFEEEFEEFFCFFGDEEFBEGFDFFFFFFGFDFFBCEGFFCECBBDBDCCBDDDDCCCCCDBCBACABB@@@	X0:i:1	X1:i:0	MD:Z:100	RG:Z:SRR062634	AM:i:37	NM:i:0	SM:i:37	BQ:Z:@JG@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:60	XT:Z:U
 SRR062634.6381597	147	20	44350656	60	100M	=	44350574	-181	TGTGCCATGATTAGTTTCTTCTGTGCATAAAAGGTCAAAAAGAGAAAGGAAGAAATCCCTTTTTAATTCCTCGCTCTGATGATTCTACCCTTCATGATTA	B?BAB?ACBCCCFBDDCCDCFCA@FDFBGCCCBACBCGGDFEFAFDFCEFFEFFABEEEFFFFEFEFFEEF=EEFEFEEFEEFFEEAEEEFFDEEDEFE0	X0:i:1	X1:i:0	MD:Z:72A27	RG:Z:SRR062634	AM:i:37	NM:i:1	SM:i:37	BQ:Z:@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:60	XT:Z:U
 SRR062634.6307212	99	20	57951956	60	100M	=	57952073	216	GTAGCTGAGAAACTTGCCTAAGATCACATTGAACATTGTCTGCAAAGGAGATCAGGGGAGCATTCTGTGAATGTCCTCAGTGATGGACGGCCTGGACGCG	0@DDEFEFECFFCEFECEFFFEFFEFDFFFEDFCFEFEEEFEEFFCEFDECBAFCCAFCFEDBCAGBBBE@CBAABCBDCACBBCCBA6?C@BAA@=9A9	X0:i:1	X1:i:0	MD:Z:100	RG:Z:SRR062634	AM:i:37	NM:i:0	SM:i:37	BQ:Z:@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	MQ:i:60	XT:Z:U
 EOF
+}
+
+function cleanup_tests() {
+	echo TEST: cleaning up
+	rm /tmp/test.reads /tmp/test.reads2 output.sam input_sorted.bam input_sorted.bam.asciiheader
+}
+
+function cleanup_hdfs() {
+	echo TEST: cleaning up HDFS
+	$HADOOP fs -rmr /user/${USER}/input.bam
+	$HADOOP fs -rmr /user/${USER}/input_sorted.bam
+	$HADOOP fs -rmr /user/${USER}/output.sam
+}
+
+function test_sorting_hdfs() {
 	echo TEST: importing ${SEQPIG_HOME}/data/input.bam
 	${SEQPIG_HOME}/bin/prepareBamInput.sh ${SEQPIG_HOME}/data/input.bam
-	$HADOOP fs -rmr input_sorted.bam		
+	$HADOOP fs -rmr /user/${USER}/input_sorted.bam		
 	echo TEST: starting sorting
-	${SEQPIG_HOME}/bin/seqpig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
+	${SEQPIG_HOME}/bin/seqpig -param inputfile=/user/${USER}/input.bam -param outputfile=/user/${USER}/input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
+	check_output
+}
+
+function test_sorting_s3() {
+	s3_path=${1}
+	$HADOOP fs -rmr /user/${USER}/input_sorted.bam		
+	echo TEST: starting sorting
+	${SEQPIG_HOME}/bin/seqpig -param inputfile=s3://${s3_path} -param outputfile=/user/${USER}/input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
+	check_output
+}
+
+function check_output() {
 	echo TEST: exporting
 	${SEQPIG_HOME}/bin/prepareBamOutput.sh input_sorted.bam
 	if [ ! -f input_sorted.bam ]; then
@@ -32,11 +60,11 @@ EOF
 	echo TEST: importing sorted file
 	${SEQPIG_HOME}/bin/prepareBamInput.sh input_sorted.bam
 	cat > /tmp/convert_reads.pig <<EOF
-A = load 'input_sorted.bam' using BamUDFLoader('yes');
-store A into 'output.sam' using SamUDFStorer('input_sorted.bam.asciiheader');
+A = load '/user/${USER}/input_sorted.bam' using BamUDFLoader('yes');
+store A into 'hdfs://user/${USER}/output.sam' using SamUDFStorer('input_sorted.bam.asciiheader');
 EOF
 	echo TEST: converting sorted BAM to SAM
-	$HADOOP fs -rmr output.sam
+	$HADOOP fs -rmr /user/${USER}/output.sam
 	${SEQPIG_HOME}/bin/seqpig /tmp/convert_reads.pig
 	echo TEST: exporting sam
 	${SEQPIG_HOME}/bin/prepareSamOutput.sh output.sam
@@ -54,7 +82,6 @@ EOF
 	else
     		echo TEST: ok
 	fi
-	rm /tmp/test.reads /tmp/test.reads2 output.sam input_sorted.bam input_sorted.bam.asciiheader
 	echo TEST: sorting and BAM to SAM conversion test passed!
 }
 
@@ -64,4 +91,44 @@ fi
 
 source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
 
-test_sorting
+init_tests
+
+test_chosen=1
+s3_path=""
+
+while getopts ":hs:l" opt; do
+  case $opt in
+    h)
+      test_chosen=1
+      ;;
+    l)
+      echo "TEST: starting local tests"
+      test_chosen=2
+      ;;
+    s)
+      echo "TEST: starting S3 tests"
+      test_chosen=3
+      s3_path="$OPTARG"
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      test_chosen=4
+      ;;
+  esac
+done
+
+if [ "$test_chosen" -eq "1" ]; then
+      echo "TEST: starting HDFS tests"
+      test_sorting_hdfs
+      cleanup_hdfs
+fi
+
+if [ "$test_chosen" -eq "3" ]; then
+      echo "TEST: starting S3 tests"
+      test_sorting_s3 "$s3_path"
+      cleanup_hdfs
+fi
+
+cleanup_tests
+
+echo TEST: all tests passed
