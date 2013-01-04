@@ -22,35 +22,45 @@ EOF
 
 function cleanup_tests() {
 	echo TEST: cleaning up
+	echo rm /tmp/test.reads /tmp/test.reads2 output.sam input_sorted.bam input_sorted.bam.asciiheader
 	rm /tmp/test.reads /tmp/test.reads2 output.sam input_sorted.bam input_sorted.bam.asciiheader
 }
 
 function cleanup_hdfs() {
 	echo TEST: cleaning up HDFS
+	echo $HADOOP fs -rmr /user/${USER}/input.bam
 	$HADOOP fs -rmr /user/${USER}/input.bam
+	echo $HADOOP fs -rmr /user/${USER}/input_sorted.bam
 	$HADOOP fs -rmr /user/${USER}/input_sorted.bam
+	echo $HADOOP fs -rmr /user/${USER}/output.sam
 	$HADOOP fs -rmr /user/${USER}/output.sam
 }
 
 function test_sorting_hdfs() {
 	echo TEST: importing ${SEQPIG_HOME}/data/input.bam
+	echo ${SEQPIG_HOME}/bin/prepareBamInput.sh ${SEQPIG_HOME}/data/input.bam
 	${SEQPIG_HOME}/bin/prepareBamInput.sh ${SEQPIG_HOME}/data/input.bam
+	echo $HADOOP fs -rmr /user/${USER}/input_sorted.bam
 	$HADOOP fs -rmr /user/${USER}/input_sorted.bam		
 	echo TEST: starting sorting
+	echo ${SEQPIG_HOME}/bin/seqpig -param inputfile=/user/${USER}/input.bam -param outputfile=/user/${USER}/input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 	${SEQPIG_HOME}/bin/seqpig -param inputfile=/user/${USER}/input.bam -param outputfile=/user/${USER}/input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 	check_output
 }
 
 function test_sorting_s3() {
 	s3_path=${1}
-	$HADOOP fs -rmr /user/${USER}/input_sorted.bam		
+	echo $HADOOP fs -rmr /user/${USER}/input_sorted.bam
+	$HADOOP fs -rmr /user/${USER}/input_sorted.bam
 	echo TEST: starting sorting
+	echo ${SEQPIG_HOME}/bin/seqpig -param inputfile=s3://${s3_path} -param outputfile=/user/${USER}/input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 	${SEQPIG_HOME}/bin/seqpig -param inputfile=s3://${s3_path} -param outputfile=/user/${USER}/input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 	check_output
 }
 
 function check_output() {
 	echo TEST: exporting
+	echo ${SEQPIG_HOME}/bin/prepareBamOutput.sh input_sorted.bam
 	${SEQPIG_HOME}/bin/prepareBamOutput.sh input_sorted.bam
 	if [ ! -f input_sorted.bam ]; then
     		echo TEST: sorting BAM test failed, could not find output file
@@ -61,7 +71,7 @@ function check_output() {
 	${SEQPIG_HOME}/bin/prepareBamInput.sh input_sorted.bam
 	cat > /tmp/convert_reads.pig <<EOF
 A = load '/user/${USER}/input_sorted.bam' using BamUDFLoader('yes');
-store A into 'hdfs://user/${USER}/output.sam' using SamUDFStorer('input_sorted.bam.asciiheader');
+store A into '/user/${USER}/output.sam' using SamUDFStorer('/user/${USER}/input_sorted.bam.asciiheader');
 EOF
 	echo TEST: converting sorted BAM to SAM
 	$HADOOP fs -rmr /user/${USER}/output.sam
