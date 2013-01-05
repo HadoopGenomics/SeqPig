@@ -33,4 +33,4 @@ type -P "${HADOOP}" &>/dev/null || {
 SEQPIG_JARS=$(find ${SEQPIG_HOME}/lib ${PIG_HOME}/contrib -name '*.jar' -print | tr '\n' :)${SEQPIG_HOME}/build/jar/SeqPig.jar
 
 SAM_VERSION=1.76
-HADOOP_BAM_VERSION=5.0
+HADOOP_BAM_VERSION=5.1
