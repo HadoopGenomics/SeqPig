@@ -1,4 +1,11 @@
- ** V0.3 **
+** V0.4 **
+
+   - AS: more scripts, UDF's and better documentation
+   - AS: now most scripts also run via Amazon EMR Pig jobs
+   - AS: better documentation
+   - AS: some bug fixes 
+
+** V0.3 **
 
    - AS: added filtering by regions for bam files
    - AS: fixed some bugs in example scripts (thanks Sebastian!)
