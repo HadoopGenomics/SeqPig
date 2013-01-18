@@ -41,10 +41,10 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
 
-/* UDF ReadPileup 
+/* UDF ReadSplit
    
- * takes a single read (created via input format from SAMRecord) and produces pileup data
- for each reference position
+ * takes a single read (created via input format from SAMRecord) and produces base data
+   (read base, reference base, quality, etc.) for each reference position
 */
 
 public class ReadSplit extends EvalFunc<DataBag>
@@ -69,8 +69,6 @@ public class ReadSplit extends EvalFunc<DataBag>
 
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
     private BagFactory mBagFactory = BagFactory.getInstance();
-
-    //private List<Tuple> deletionTuples = new ArrayList();
 
     public ReadSplit() {
     }

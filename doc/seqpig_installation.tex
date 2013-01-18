@@ -152,6 +152,13 @@ previous sections, you can start the SeqPig-enabled ``grunt'' shell by running
 $ seqpig
 \end{lstlisting}
 %
+If you prefer to tun SeqPig in local mode (without Hadoop), which is useful
+for debugging scripts, you can start it by running
+%
+\begin{lstlisting}
+$ seqpig -x local
+\end{lstlisting}
+%
 \subsubsection{Starting scripts from the command line for non-interactive use}
 Alternatively to using the interactive Pig grunt shell, users can write scripts
 that are then submitted to Pig/Hadoop for automated execution. This type of
