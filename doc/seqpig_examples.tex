@@ -164,14 +164,14 @@ with MD tags aligned to the same reference, should produce the same output as
 {\tt samtools mpileup -A -f ref.fasta -B input.bam}):
 \begin{lstlisting}
 A = load 'input.bam' using BamUDFLoader('yes');
-B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
       basequal, attributes#'MD', mapqual), start, flags, name;
 C = FILTER C BY $0 is not null;
 D = FOREACH C GENERATE flatten($0), start, flags, name;
 E = GROUP D BY (chr, pos);
 F = FOREACH E { G = FOREACH D GENERATE refbase, pileup, qual, start,
-      (flags/16)\%2, name; G = ORDER G BY start, $4, name; GENERATE group.chr,
+      (flags/16)%2, name; G = ORDER G BY start, $4, name; GENERATE group.chr,
       group.pos, PileupOutputFormatting(G, group.pos); }
 G = ORDER F BY chr, pos;
 H = FOREACH G GENERATE chr, pos, flatten($2);
@@ -221,7 +221,7 @@ consider the distribution of the mapping quality over the collection of
 reads. Thanks to Pig's {\tt GROUP} operator this is fairly easy.
 \begin{lstlisting}
 A = load 'input.bam' using BamUDFLoader('yes');
-B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 read_stats_data = FOREACH B GENERATE mapqual;
 read_stats_grouped = GROUP read_stats_data BY mapqual;
 read_stats = FOREACH read_stats_grouped GENERATE group, COUNT($1);
@@ -243,7 +243,7 @@ each position inside a read the distribution of the number of read bases
 that were called.
 \begin{lstlisting}
 A = load 'input.bam' using BamUDFLoader('yes');
-B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
 D = FOREACH C GENERATE FLATTEN($0);
 base_stats_data = FOREACH D GENERATE refbase, basepos, UPPER(readbase) AS readbase;
@@ -304,7 +304,7 @@ fairly similar to the previous one with the difference of not grouping
 over the reference bases.
 \begin{lstlisting}
 A = load 'input.bam' using BamUDFLoader('yes');
-B = FILTER A BY (flags/4)\%2==0 and (flags/1024)\%2==0;
+B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
 D = FOREACH C GENERATE FLATTEN($0);
 base_stats_data = FOREACH D GENERATE basepos, basequal;
