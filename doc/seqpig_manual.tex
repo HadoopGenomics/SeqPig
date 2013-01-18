@@ -1,5 +1,6 @@
 \documentclass[a4paper,10pt,bibtotoc,abstracton,oneside,noindent,DIV15]{scrartcl}
-\usepackage{listings,url}
+\usepackage{url,textcomp}
+\usepackage{listings}
 \usepackage{pslatex,color,hyperref,graphicx,titlesec}
 \usepackage[OT1]{fontenc}
 
@@ -34,6 +35,7 @@ showspaces=false,                       % Dont make spaces visible
 showtabs=false,                         % Dont make tabls visible
 columns=flexible,                       % Column format
 morekeywords={__global__, __device__},  % CUDA specific keywords
+upquote=true,
 }
 
 \lstset{breaklines=true}
