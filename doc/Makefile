@@ -20,6 +20,8 @@ clean:
 
 %.html : %.tex %.toc $(LATEX_SOURCES)
 	htlatex $< "xhtml"
+	cat $@ | sed s/"#8217;"/"#39;"/g > tmp.html
+	mv tmp.html $@
 
 %.toc : %.tex
 	pdflatex $<
