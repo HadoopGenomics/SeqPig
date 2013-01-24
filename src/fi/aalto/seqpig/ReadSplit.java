@@ -147,7 +147,7 @@ public class ReadSplit extends EvalFunc<DataBag>
 	return ((match_length == md_length) && (match_length + insert_length + clip_length == sequence.length()));
     }
 
-    private void setFields(Tuple tpl, int refpos, String refbase, int basepos, String readbase, int basequal) 
+    private void setFields(Tuple tpl, int refpos, String refbase, int basepos, String readbase, int cur_basequal) 
 	throws org.apache.pig.backend.executionengine.ExecException {
         tpl.set(0, chromosome);
 	tpl.set(1, refpos);
@@ -158,11 +158,11 @@ public class ReadSplit extends EvalFunc<DataBag>
 	tpl.set(6, flags);
 	tpl.set(7, basepos);
 	tpl.set(8, readbase);
-	tpl.set(9, basequal);
+	tpl.set(9, cur_basequal);
     }
 
     private int getBaseQuality(int baseindex) {
-    	return (int)(basequal.substring(baseindex, baseindex+1).charAt(0));
+    	return (int)(basequal.substring(baseindex, baseindex+1).charAt(0))-33;
     }
 
 
@@ -265,7 +265,7 @@ public class ReadSplit extends EvalFunc<DataBag>
 			for (int i = 0; i < consumed; i++) {
 
 			    String refbase, readbase;
-			    int basequal;
+			    int cur_basequal;
 
 			    Tuple tpl = TupleFactory.getInstance().newTuple(10);
 
@@ -279,9 +279,9 @@ public class ReadSplit extends EvalFunc<DataBag>
 			    else
 				refbase = mdOp.getSeq().substring(i, i+1);
 
-			    basequal = getBaseQuality(seqpos);
+			    cur_basequal = getBaseQuality(seqpos);
 
-			    setFields(tpl, refpos++, refbase, seqpos-read_clip_offset, readbase, basequal);
+			    setFields(tpl, refpos++, refbase, seqpos-read_clip_offset, readbase, cur_basequal);
 				
 			    if(i == consumed-1)
 				prev_tpl = tpl;
@@ -330,11 +330,11 @@ public class ReadSplit extends EvalFunc<DataBag>
 
 		for(int i=0;i<alignOp.getLen();i++) {
 		    String readbase = readbases.substring(i,i+1);
-		    int basequal = getBaseQuality(seqpos);
+		    int cur_basequal = getBaseQuality(seqpos);
 
 		    Tuple tpl = TupleFactory.getInstance().newTuple(10);
 
-		    setFields(tpl, refpos, refbase, seqpos-read_clip_offset, readbase, basequal);	
+		    setFields(tpl, refpos, refbase, seqpos-read_clip_offset, readbase, cur_basequal);	
 		    seqpos++;
 
 		    output.add(tpl);
