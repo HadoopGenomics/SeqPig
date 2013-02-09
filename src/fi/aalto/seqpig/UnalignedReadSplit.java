@@ -60,12 +60,10 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
     }
 
     // tuple input format: (subset of FastqUDFLoader output format + MD tag)
-    //   name
     //   sequence
     //   base qualities
 
     // tuple output format:
-    //   read name
     //   base position (inside read)
     //   base
     //   base quality (if applicable else null)    
@@ -79,9 +77,8 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
 	if (input == null || input.size() == 0)
 	    return null;
 
-	name = (String)input.get(0);
-	sequence = (String)input.get(1);
-	basequal = (String)input.get(2);
+	sequence = (String)input.get(0);
+	basequal = (String)input.get(1);
 
         if(sequence.length() != basequal.length()) {
             throw new IOException("Sequence and base quality strings have different length!! sequence: " + sequence + " qualitis: " + basequal);
@@ -93,12 +90,11 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
 		String readbase = sequence.substring(i,i+1);
 		int cur_basequal = getBaseQuality(i);
 
-		Tuple tpl = TupleFactory.getInstance().newTuple(4);
+		Tuple tpl = TupleFactory.getInstance().newTuple(3);
 
-                tpl.set(0, name);
-		tpl.set(1, i);
-		tpl.set(2, readbase);
-		tpl.set(3, cur_basequal);
+		tpl.set(0, i);
+		tpl.set(1, readbase);
+		tpl.set(2, cur_basequal);
 
 		output.add(tpl);
 	}
@@ -110,7 +106,6 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
 	public Schema outputSchema(Schema input) {
 	try{
 	    Schema bagSchema = new Schema();
-	    bagSchema.add(new Schema.FieldSchema("name", DataType.CHARARRAY));
 	    bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
 	    bagSchema.add(new Schema.FieldSchema("readbase", DataType.CHARARRAY));
 	    bagSchema.add(new Schema.FieldSchema("basequal", DataType.INTEGER));
