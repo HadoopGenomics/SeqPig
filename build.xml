@@ -23,8 +23,7 @@
   		<include name="lib/*.jar"/>
   	</fileset>
         <fileset id="pig_jars" dir="${env.PIG_HOME}">
-        	<!-- <include name="pig-0.9.2.jar"/> -->
-	        <include name="pig-0.10.0.jar"/>
+				<include name="pig*.jar"/>
 	</fileset>
   </path>
 
@@ -65,7 +64,7 @@
           <attribute name="Main-Class" value="${main.class}"/>
         </manifest>
 
-        <zipfileset src="${lib.dir}/hadoop-bam-5.0.jar" includes="**/*.java **/*.class"/>
+        <zipfileset src="${lib.dir}/hadoop-bam*.jar" includes="**/*.java **/*.class"/>
 	<zipfileset src="${lib.dir}/picard-1.76.jar" includes="**/*.java **/*.class"/>
 	<zipfileset src="${lib.dir}/sam-1.76.jar" includes="**/*.java **/*.class"/>
 	<zipfileset src="${lib.dir}/seal.jar" includes="**/*.java **/*.class"/>
