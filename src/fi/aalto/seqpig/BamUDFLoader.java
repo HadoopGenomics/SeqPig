@@ -72,17 +72,17 @@ public class BamUDFLoader extends LoadFunc implements LoadMetadata {
 	System.out.println("BamUDFLoader: ignoring attributes");
     }
     
-	public BamUDFLoader(String loadAttributesStr) {
-	    if(loadAttributesStr.equals("yes"))
-		loadAttributes = true;
-	    else {
-		loadAttributes = false;
-		System.out.println("BamUDFLoader: ignoring attributes");
-	    }
+    public BamUDFLoader(String loadAttributesStr) {
+	if(loadAttributesStr.equals("yes"))
+	    loadAttributes = true;
+	else {
+	    loadAttributes = false;
+	    System.out.println("BamUDFLoader: ignoring attributes");
 	}
+    }
     
     @Override
-	public Tuple getNext() throws IOException {
+    public Tuple getNext() throws IOException {
         try {
 	    
 	    if (mProtoTuple == null) {
@@ -118,9 +118,9 @@ public class BamUDFLoader extends LoadFunc implements LoadMetadata {
 		    
 		    if(tagAndValue.value != null) {
 			if(tagAndValue.value.getClass().getName().equals("java.lang.Character"))
-			  attributes.put(tagAndValue.tag, tagAndValue.value.toString());
+			    attributes.put(tagAndValue.tag, tagAndValue.value.toString());
 			else
-			   attributes.put(tagAndValue.tag, tagAndValue.value);
+			    attributes.put(tagAndValue.tag, tagAndValue.value);
 		    }
 		}
 		
@@ -164,7 +164,7 @@ public class BamUDFLoader extends LoadFunc implements LoadMetadata {
 
     @Override
     public void setLocation(String location, Job job)
-            throws IOException {
+	throws IOException {
         FileInputFormat.setInputPaths(job, location);
     }
 
