@@ -77,15 +77,15 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
             bagSchema.add(new Schema.FieldSchema("readbase", DataType.INTEGER));
             bagSchema.add(new Schema.FieldSchema("basequal", DataType.INTEGER));
 
-            Schema udfSchema = new Schema(new Schema.FieldSchema("UnalignedReadSplit", bagSchema, DataType.BAG));
+            Schema udfSchema = bagSchema; //new Schema(new Schema.FieldSchema("UnalignedReadSplit", bagSchema, DataType.BAG));
 
         if(conf != null) {
             SchemaTupleBackend.initialize(conf, new PigContext()); 
             mSchemaTupleFactory = SchemaTupleFactory.getInstance(udfSchema, false);
-        } //else {
-            GenContext context = GenContext.UDF;
-            SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, false, context);
-        //}
+        } else {
+           GenContext context = GenContext.UDF;
+           SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, false, context);
+        }
     }
 
     // tuple input format: (subset of FastqUDFLoader output format + MD tag)
