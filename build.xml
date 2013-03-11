@@ -1,75 +1,73 @@
 
 <project name="SeqPig" basedir="." default="main">
- 
-  <assertions>
-  	<enable package="fi.aalto.seqpig"/>
-  </assertions>
- 
-  <property environment="env"/> 
 
-  <property name="src.dir"     value="src"/>
-  <property name="lib.dir"     value="lib"/>
-  
-  <property name="build.dir"   value="build"/>
-  <property name="classes.dir" value="${build.dir}/classes"/>
-  <property name="jar.dir"     value="${build.dir}/jar"/>
+	<assertions>
+		<enable package="fi.aalto.seqpig"/>
+	</assertions>
 
-  <property name="main-class"  value="fi.aalto.seqpig.BamUDFTest"/>
+	<property environment="env"/>
 
-  <path id="classpath">
-	<fileset dir="${lib.dir}" includes="**/*.jar"/>
-	<fileset id="hadoop_jars" dir="${env.HADOOP_HOME}">
-  		<include name="hadoop-*.jar"/>
-  		<include name="lib/*.jar"/>
-  	</fileset>
-        <fileset id="pig_jars" dir="${env.PIG_HOME}">
-        	<!-- <include name="pig-0.9.2.jar"/> -->
-	        <include name="pig-0.10.0.jar"/>
-	</fileset>
-  </path>
+	<property name="src.dir"     value="src"/>
+	<property name="lib.dir"     value="lib"/>
+	<property name="build.dir"   value="build"/>
+	<property name="classes.dir" value="${build.dir}/classes"/>
+	<property name="jar.dir"     value="${build.dir}/jar"/>
 
-  <target name="clean">
-    <delete dir="${build.dir}"/>
-  </target>
-  
-  <target name="compile">
-    <mkdir dir="${classes.dir}"/>
-    <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" debug="on"/>
-  </target>
-  
-  <target name="jar" depends="compile">
-    <mkdir dir="${jar.dir}"/>
-    <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
-      <manifest>
-        <attribute name="Main-Class" value="${main-class}"/>
-      </manifest>
-    </jar>
-  </target>
-  
-  <target name="run" depends="jar">
-    <java fork="true" classname="${main-class}">
-      <classpath>
-        <path refid="classpath"/>
-        <path location="${jar.dir}/${ant.project.name}.jar"/>
-      </classpath>
-    </java>
-  </target>
-  
-  <target name="clean-build" depends="clean,jar"/>
-  
-  <target name="main" depends="clean,run"/>
+	<property name="main-class"  value="fi.aalto.seqpig.BamUDFTest"/>
 
-  <target name="seqpig-with-deps" depends="compile" description="creating single jar bundle" >
-    <jar id="files" jarfile="${jar.dir}/${ant.project.name}_bundle.jar" basedir="${classes.dir}">
-        <manifest>
-          <attribute name="Main-Class" value="${main.class}"/>
-        </manifest>
+	<path id="classpath">
+		<fileset dir="${lib.dir}" includes="**/*.jar"/>
+		<fileset id="hadoop_jars" dir="${env.HADOOP_HOME}">
+			<include name="hadoop-*.jar"/>
+			<include name="lib/*.jar"/>
+		</fileset>
+		<fileset id="pig_jars" dir="${env.PIG_HOME}">
+			<include name="pig*.jar"/>
+		</fileset>
+	</path>
 
-        <zipfileset src="${lib.dir}/hadoop-bam-5.0.jar" includes="**/*.java **/*.class"/>
-	<zipfileset src="${lib.dir}/picard-1.76.jar" includes="**/*.java **/*.class"/>
-	<zipfileset src="${lib.dir}/sam-1.76.jar" includes="**/*.java **/*.class"/>
-	<zipfileset src="${lib.dir}/seal.jar" includes="**/*.java **/*.class"/>
-    </jar>
-  </target>
+	<target name="clean">
+		<delete dir="${build.dir}"/>
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${classes.dir}"/>
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" debug="on"/>
+	</target>
+
+	<target name="jar" depends="compile">
+		<mkdir dir="${jar.dir}"/>
+		<jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="run" depends="jar">
+		<java fork="true" classname="${main-class}">
+			<classpath>
+				<path refid="classpath"/>
+				<path location="${jar.dir}/${ant.project.name}.jar"/>
+			</classpath>
+		</java>
+	</target>
+
+	<target name="clean-build" depends="clean,jar"/>
+
+	<target name="main" depends="clean,run"/>
+
+	<target name="seqpig-with-deps" depends="compile" description="creating single jar bundle" >
+		<jar id="files" jarfile="${jar.dir}/${ant.project.name}_bundle.jar" basedir="${classes.dir}">
+			<manifest>
+				<attribute name="Main-Class" value="${main.class}"/>
+			</manifest>
+
+			<zipfileset src="${lib.dir}/hadoop-bam*.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="${lib.dir}/picard-1.76.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="${lib.dir}/sam-1.76.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="${lib.dir}/seal.jar" includes="**/*.java **/*.class"/>
+		</jar>
+	</target>
 
 </project>
