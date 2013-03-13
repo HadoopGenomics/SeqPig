@@ -79,7 +79,7 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 
         assert(new_tpl.size() == READ_LENGTH);
 
-        for(int i=0;i<READ_LENGTH;i++) {
+        for(int i=0;i<READ_LENGTH && i<sequence.length() && i<basequals.length();i++) {
             String readbase = sequence.substring(i,i+1);
             int readbase_int = map_base_to_int(readbase.charAt(0));
             int readbasequal_int = getBaseQuality(i, basequals);
