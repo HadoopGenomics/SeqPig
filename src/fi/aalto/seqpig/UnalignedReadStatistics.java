@@ -38,10 +38,12 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.WrappedIOException;
 import org.apache.pig.builtin.AVG;
 
+import fi.tkk.ics.hadoop.bam.FormatConstants;
+
 public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
 	protected final static int READ_LENGTH = 100;
-	protected final static int STATS_PER_POS = 5;
+	protected final static int STATS_PER_POS = 5; // one per base: A, C, G, T, N
 	protected final static int NUM_FIELDS_OUTPUT = (STATS_PER_POS * READ_LENGTH); // for each position, one value for
 	// count of each possible base and for average base quality
 
@@ -63,10 +65,6 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 		}
 	}
 
-	protected static int getBaseQuality(int baseindex, String basequal) {
-		return (int)(basequal.substring(baseindex, baseindex+1).charAt(0))-33;
-	}
-
 	protected static void initTuple(Tuple tpl) throws Exception {
 		for(int i=0;i<NUM_FIELDS_OUTPUT;i++) { tpl.set(i, (double)0.0); }
 	}
@@ -79,9 +77,8 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 		assert(new_tpl.size() == READ_LENGTH);
 
 		for(int i=0;i<READ_LENGTH && i<sequence.length() && i<basequals.length();i++) {
-			String readbase = sequence.substring(i,i+1);
-			int readbase_int = map_base_to_int(readbase.charAt(0));
-			int readbasequal_int = getBaseQuality(i, basequals);
+			int readbase_int = map_base_to_int(sequence.charAt(i));
+			int readbasequal_int = (int)basequals.charAt(i) - FormatConstants.SANGER_OFFSET;
 
 			// first update base frequencies
 			int tuple_index = (i*STATS_PER_POS) + readbase_int;
@@ -90,7 +87,8 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 
 			// now update average base quality
 			tuple_index = (i*STATS_PER_POS) + STATS_PER_POS - 1;
-			output_tpl.set(tuple_index, ((Double)output_tpl.get(tuple_index)).doubleValue() + ((double)readbasequal_int/(double)number_of_reads));
+			output_tpl.set(tuple_index, ((Double)output_tpl.get(tuple_index)).doubleValue() +
+					((double)readbasequal_int/(double)number_of_reads));
 		}
 	}
 
@@ -129,7 +127,7 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 			initTuple(output_tpl);
 
 			while (it.hasNext()){
-				System.out.println("processing tuple!");
+				//System.out.println("processing tuple!");
 				Tuple t = (Tuple)it.next();
 				processTuple(output_tpl, t, number_of_reads);
 			}
@@ -223,7 +221,7 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 			} catch (Exception e) {
 				e.printStackTrace();
 				int errCode = 2106;
-				String msg = "Error while computing UnalideReadStatistics in " + this.getClass().getSimpleName();
+				String msg = "Error while computing UnalignedReadStatistics in " + this.getClass().getSimpleName();
 				throw new ExecException(msg, errCode, PigException.BUG, e);           
 			}
 		}
