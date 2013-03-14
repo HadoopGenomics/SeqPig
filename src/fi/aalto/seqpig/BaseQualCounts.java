@@ -39,34 +39,13 @@ import org.apache.pig.impl.util.WrappedIOException;
 
 import fi.tkk.ics.hadoop.bam.FormatConstants;
 
-public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
+public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
 	protected final static int READ_LENGTH = 100;
-	//protected final static int STATS_PER_POS = 5; // one per base: A, C, G, T, N
-	protected final static char[] BASES = new char[]{ 'A', 'C', 'G', 'T', 'N' };
-	protected final static int STATS_PER_POS = 1 + BASES.length; // position + one per each A, C, G, T, N
-	//protected final static int NUM_FIELDS_OUTPUT = (STATS_PER_POS * READ_LENGTH); // for each position, one value for
-	protected final static int NUM_FIELDS_OUTPUT = READ_LENGTH;
-
+	// number of buckets:  position + one per valid quality score (i.e. the max score +1 for 0)
+	protected final static int STATS_PER_POS = 1 + FormatConstants.SANGER_MAX + 1;
 
 	private static TupleFactory mTupleFactory = TupleFactory.getInstance();
-
-	protected static int map_base_to_int(char c) {
-		switch(c) {
-			case 'A':
-				return 0;
-			case 'C':
-				return 1;
-			case 'G':
-				return 2;
-			case 'T':
-				return 3;
-			case 'N':
-				return 4;
-			default:
-				throw new RuntimeException("invalid base character " + c);
-		}
-	}
 
 	protected static void initTuple(Tuple tpl) throws Exception {
 		for (int i = 0; i < tpl.size(); ++i) {
@@ -78,33 +57,25 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 		}
 	}
 
-	// accumulating_tpl is tuple that follows output convention, new_tpl is (readbases, basequals) pair
+	// accumulating_tpl is tuple that follows output convention, new_tpl is (basequals)
 	protected static void processTuple(Tuple accumulating_tpl, Tuple new_tpl) throws Exception {
-		String sequence = (String)new_tpl.get(0);
-		String basequals = (String)new_tpl.get(1);
+		String basequals = (String)new_tpl.get(0);
 
 		assert(new_tpl.size() == READ_LENGTH);
-		assert(sequence.length() == READ_LENGTH);
-		assert(sequence.length() == basequals.length());
+		assert(basequals.length() == READ_LENGTH);
 
-		for(int pos=0; pos < sequence.length(); ++pos) {
-			int readbase_int = map_base_to_int(sequence.charAt(pos));
+		for(int pos = 0; pos < basequals.length(); ++pos) {
 			int readbasequal_int = (int)basequals.charAt(pos) - FormatConstants.SANGER_OFFSET;
 
-			// first update base frequencies
-			Tuple column = (Tuple)accumulating_tpl.get(pos);
-			column.set(1+readbase_int, 1L + (Long)column.get(1+readbase_int));
-			
-			/*
-			int tuple_index = (pos*STATS_PER_POS) + readbase_int;
-			accumulating_tpl.set(tuple_index, ((Double)accumulating_tpl.get(tuple_index)).doubleValue()
-					+ ((double)1.0/((double)number_of_reads)));
+			if (readbasequal_int < 0 || readbasequal_int > FormatConstants.SANGER_MAX) {
+				throw new RuntimeException("Base quality score " +
+						(char)(readbasequal_int + FormatConstants.SANGER_OFFSET) +
+						" is out of range");
+			}
 
-			// now update average base quality
-			tuple_index = (pos*STATS_PER_POS) + STATS_PER_POS - 1;
-			accumulating_tpl.set(tuple_index, ((Double)accumulating_tpl.get(tuple_index)).doubleValue() +
-					((double)readbasequal_int/(double)number_of_reads));
-			*/
+			// update base frequencies
+			Tuple column = (Tuple)accumulating_tpl.get(pos);
+			column.set(1+readbasequal_int, 1L + (Long)column.get(1+readbasequal_int));
 		}
 	}
 
@@ -119,15 +90,7 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 
 	// values is bag of tuples that follow output convention
 	static protected Tuple combineTuples(DataBag values) throws Exception {
-
-		// from AVG:
-		// combine is called from Intermediate and Final
-		// In either case, Initial would have been called
-		// before and would have sent in valid tuples
-		// Hence we don't need to check if incoming bag
-		// is empty
-
-		Tuple output_tpl = mTupleFactory.newTuple(NUM_FIELDS_OUTPUT);
+		Tuple output_tpl = mTupleFactory.newTuple(READ_LENGTH);
 		initTuple(output_tpl);
 
 		for (Iterator<Tuple> it = values.iterator(); it.hasNext();) {
@@ -142,17 +105,16 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 	}
 
 	@Override
-	public Tuple exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
+	public Tuple exec(Tuple input) throws IOException, ExecException {
 		try {
 			DataBag bag = (DataBag)input.get(0);
 			long number_of_reads = bag.size();
 			Iterator it = bag.iterator();
 
-			Tuple output_tpl = TupleFactory.getInstance().newTuple(NUM_FIELDS_OUTPUT); 
+			Tuple output_tpl = TupleFactory.getInstance().newTuple(READ_LENGTH); 
 			initTuple(output_tpl);
 
 			while (it.hasNext()){
-				//System.out.println("processing tuple!");
 				Tuple t = (Tuple)it.next();
 				processTuple(output_tpl, t);
 			}
@@ -169,7 +131,7 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 	}
 
 	public String getIntermed() {
-		return Intermediate.class.getName();
+		return Final.class.getName();
 	}
 
 	public String getFinal() {
@@ -180,7 +142,7 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 		@Override
 		public Tuple exec(Tuple input) {
 			try {
-				Tuple output_tpl = mTupleFactory.newTuple(NUM_FIELDS_OUTPUT);
+				Tuple output_tpl = mTupleFactory.newTuple(READ_LENGTH);
 				initTuple(output_tpl);
 
 				DataBag bg = (DataBag)input.get(0);
@@ -200,8 +162,7 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 		}
 	}
 
-	// from AVG
-	static public class Intermediate extends EvalFunc<Tuple> {
+	static public class Final extends EvalFunc<Tuple> {
 		@Override
 		public Tuple exec(Tuple input) throws IOException {
 			try {
@@ -220,40 +181,6 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 		}
 	}
 
-	static public class Final extends EvalFunc<Tuple> {
-		@Override
-		public Tuple exec(Tuple input) throws IOException {
-			try {
-				DataBag b = (DataBag)input.get(0);
-				Tuple combined = combineTuples(b);
-
-				/*
-				double number_of_reads = 0;
-
-				// first compute the number of reads
-				for(int i=0;i<4;i++) {
-					number_of_reads += ((Double)combined.get(i)).doubleValue();
-				}
-
-				// then normalize
-				for(int i=0;i<NUM_FIELDS_OUTPUT;i++) {
-					combined.set(i, ((Double)combined.get(i)).doubleValue() / number_of_reads);
-				}
-				*/
-
-				return combined;
-			} catch (ExecException ee) {
-				ee.printStackTrace();
-				throw ee;
-			} catch (Exception e) {
-				e.printStackTrace();
-				int errCode = 2106;
-				String msg = "Error while computing UnalignedReadStatistics in " + this.getClass().getSimpleName();
-				throw new ExecException(msg, errCode, PigException.BUG, e);           
-			}
-		}
-	}
-
 	@Override
 	public Schema outputSchema(Schema input) {
 		Schema columnSchema = new Schema();
@@ -261,8 +188,8 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 
 		try {
 			columnSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
-			for (int i = 0; i < BASES.length; ++i)
-				columnSchema.add(new Schema.FieldSchema(String.format("%cs", BASES[i]), DataType.LONG));
+			for (int qscore = 0; qscore <= FormatConstants.SANGER_MAX; ++qscore)
+				columnSchema.add(new Schema.FieldSchema(String.format("%d", qscore), DataType.LONG));
 
 			for(int i = 0; i < READ_LENGTH; i++) {
 				tupleSchema.add(new Schema.FieldSchema(String.format("pos_%04d", i), columnSchema, DataType.TUPLE));
@@ -280,7 +207,7 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 	public void accumulate(Tuple b) throws IOException {
 		try {
 			if(accumulatingTuple == null) {
-				accumulatingTuple = mTupleFactory.newTuple(NUM_FIELDS_OUTPUT);
+				accumulatingTuple = mTupleFactory.newTuple(READ_LENGTH);
 				initTuple(accumulatingTuple);
 			}
 
@@ -304,19 +231,6 @@ public class UnalignedReadStatistics extends EvalFunc<Tuple> implements Algebrai
 	@Override
 	public Tuple getValue() {
 		return accumulatingTuple;
-		/*
-		try {
-			if (accumulatingTuple != null) {
-				for(int i=0;i<NUM_FIELDS_OUTPUT;i++) {
-					accumulatingTuple.set(i, ((Double)accumulatingTuple.get(i)).doubleValue() / ((double)intermediateReadCount));
-				}
-			}
-			return accumulatingTuple;
-		} catch(Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-		*/
 	}    
 }
 
