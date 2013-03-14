@@ -43,9 +43,34 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 {
 	protected final static int READ_LENGTH = 100;
 	// number of buckets:  position + one per valid quality score (i.e. the max score +1 for 0)
-	protected final static int STATS_PER_POS = 1 + FormatConstants.SANGER_MAX + 1;
+
+	// let's bucket base qualities into bins of size BASE_QUAL_BINSIZE, cutting off
+	// values smaller than a minimum and values larger than a maximum
+	protected final static int MIN_BASE_QUAL = 20;
+	protected final static int MAX_BASE_QUAL = FormatConstants.SANGER_MAX + 1;
+	protected final static int BASE_QUAL_BINSIZE = 2;
+	protected final static int STATS_PER_POS = 1 // for position
+		+ ((int)Math.ceil((MAX_BASE_QUAL - MIN_BASE_QUAL) / ((double)BASE_QUAL_BINSIZE)));
 
 	private static TupleFactory mTupleFactory = TupleFactory.getInstance();
+
+        protected static int map_basequal_to_int(int basequal) {
+                if(basequal <= MIN_BASE_QUAL)
+			return 0;
+		if(basequal >= MAX_BASE_QUAL)
+			return STATS_PER_POS-2; // note!!! minus 2!!! since 1 is added later
+
+		return (int)Math.floor((basequal-MIN_BASE_QUAL)/((double)BASE_QUAL_BINSIZE));
+        }
+
+	protected static int map_int_to_basequal(int index) {
+		int retval = (index * BASE_QUAL_BINSIZE) + MIN_BASE_QUAL;
+
+		if(retval >= MAX_BASE_QUAL)
+			return MAX_BASE_QUAL;
+
+		return retval;
+        }
 
 	protected static void initTuple(Tuple tpl) throws Exception {
 		for (int i = 0; i < tpl.size(); ++i) {
@@ -61,7 +86,7 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 	protected static void processTuple(Tuple accumulating_tpl, Tuple new_tpl) throws Exception {
 		String basequals = (String)new_tpl.get(0);
 
-		assert(new_tpl.size() == READ_LENGTH);
+		assert(new_tpl.size() == READ_LENGTH); // andre: this does not make sense? new_tuple.size() == 1?
 		assert(basequals.length() == READ_LENGTH);
 
 		for(int pos = 0; pos < basequals.length(); ++pos) {
@@ -74,8 +99,9 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 			}
 
 			// update base frequencies
+			int basequal_index = map_basequal_to_int(readbasequal_int);
 			Tuple column = (Tuple)accumulating_tpl.get(pos);
-			column.set(1+readbasequal_int, 1L + (Long)column.get(1+readbasequal_int));
+			column.set(1+basequal_index, 1L + (Long)column.get(1+basequal_index));
 		}
 	}
 
@@ -188,8 +214,11 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 
 		try {
 			columnSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
-			for (int qscore = 0; qscore <= FormatConstants.SANGER_MAX; ++qscore)
+			//for (int qscore = 0; qscore <= FormatConstants.SANGER_MAX; ++qscore)
+			for(int f = 1; f < STATS_PER_POS; f++) {
+				int qscore = map_int_to_basequal(f-1); // note: -1
 				columnSchema.add(new Schema.FieldSchema(String.format("%d", qscore), DataType.LONG));
+			}
 
 			for(int i = 0; i < READ_LENGTH; i++) {
 				tupleSchema.add(new Schema.FieldSchema(String.format("pos_%04d", i), columnSchema, DataType.TUPLE));
@@ -211,7 +240,7 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 				initTuple(accumulatingTuple);
 			}
 
-			processTuple(accumulatingTuple, b); // note: we normalize later, so pretend there is only one read
+			processTuple(accumulatingTuple, b);
 		} catch (ExecException ee) {
 			ee.printStackTrace();
 			throw ee;
