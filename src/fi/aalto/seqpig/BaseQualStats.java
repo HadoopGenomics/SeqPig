@@ -39,38 +39,23 @@ import org.apache.pig.impl.util.WrappedIOException;
 
 import fi.tkk.ics.hadoop.bam.FormatConstants;
 
-public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
+public class BaseQualStats extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
-	public final static int READ_LENGTH = 101;
+
+	// idea: compute variance via the "wrong formula"
+	// see http://www.cs.berkeley.edu/~mhoemmen/cs194/Tutorials/variance.pdf
+	// 
+        // sigma_N(x) = sqrt(1/(N-1) (\sum_i x_i^2 - 1/n (\sum x_i)^2))
+
+	protected final static int READ_LENGTH = 100;
 	// number of buckets:  position + one per valid quality score (i.e. the max score +1 for 0)
 
-	// let's bucket base qualities into bins of size BASE_QUAL_BINSIZE, cutting off
-	// values smaller than a minimum and values larger than a maximum
-	public final static int MIN_BASE_QUAL = 20;
-	public final static int MAX_BASE_QUAL = FormatConstants.SANGER_MAX + 1;
-	public final static int BASE_QUAL_BINSIZE = 2;
-	public final static int STATS_PER_POS = 1 // for position
-		+ ((int)Math.ceil((MAX_BASE_QUAL - MIN_BASE_QUAL) / ((double)BASE_QUAL_BINSIZE)));
+	protected final static int STATS_PER_POS = 1 // for position
+		+ 1 // for N ( = \sum_i 1)
+                + 1 // for x_i sum
+                + 1; // for x_i^2 sum
 
 	private static TupleFactory mTupleFactory = TupleFactory.getInstance();
-
-        protected static int map_basequal_to_int(int basequal) {
-                if(basequal <= MIN_BASE_QUAL)
-			return 0;
-		if(basequal >= MAX_BASE_QUAL)
-			return STATS_PER_POS-2; // note!!! minus 2!!! since 1 is added later
-
-		return (int)Math.floor((basequal-MIN_BASE_QUAL)/((double)BASE_QUAL_BINSIZE));
-        }
-
-	public static int map_int_to_basequal(int index) {
-		int retval = (index * BASE_QUAL_BINSIZE) + MIN_BASE_QUAL;
-
-		if(retval >= MAX_BASE_QUAL)
-			return MAX_BASE_QUAL;
-
-		return retval;
-        }
 
 	protected static void initTuple(Tuple tpl) throws Exception {
 		for (int i = 0; i < tpl.size(); ++i) {
@@ -86,9 +71,6 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 	protected static void processTuple(Tuple accumulating_tpl, Tuple new_tpl) throws Exception {
 		String basequals = (String)new_tpl.get(0);
 
-		assert(new_tpl.size() == READ_LENGTH); // andre: this does not make sense? new_tuple.size() == 1?
-		assert(basequals.length() == READ_LENGTH);
-
 		for(int pos = 0; pos < basequals.length(); ++pos) {
 			int readbasequal_int = (int)basequals.charAt(pos) - FormatConstants.SANGER_OFFSET;
 
@@ -98,10 +80,16 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 						" is out of range");
 			}
 
-			// update base frequencies
-			int basequal_index = map_basequal_to_int(readbasequal_int);
 			Tuple column = (Tuple)accumulating_tpl.get(pos);
-			column.set(1+basequal_index, 1L + (Long)column.get(1+basequal_index));
+
+			// 1. update i-counter
+			column.set(1, 1L + (Long)column.get(1));
+			// 2. update x_i-counter
+			column.set(2, ((long)readbasequal_int) + (Long)column.get(2));
+			// 3. update x_i^2-counter
+			column.set(3, (((long)readbasequal_int)*((long)readbasequal_int))
+				+ (Long)column.get(3));
+			
 		}
 	}
 
@@ -214,11 +202,9 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 
 		try {
 			columnSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
-			//for (int qscore = 0; qscore <= FormatConstants.SANGER_MAX; ++qscore)
-			for(int f = 1; f < STATS_PER_POS; f++) {
-				int qscore = map_int_to_basequal(f-1); // note: -1
-				columnSchema.add(new Schema.FieldSchema(String.format("%d", qscore), DataType.LONG));
-			}
+			columnSchema.add(new Schema.FieldSchema("1_sum", DataType.LONG));
+			columnSchema.add(new Schema.FieldSchema("x_i_sum", DataType.LONG));
+			columnSchema.add(new Schema.FieldSchema("x_i_sqr_sum", DataType.LONG));
 
 			for(int i = 0; i < READ_LENGTH; i++) {
 				tupleSchema.add(new Schema.FieldSchema(String.format("pos_%04d", i), columnSchema, DataType.TUPLE));
