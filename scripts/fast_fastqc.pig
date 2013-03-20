@@ -15,9 +15,7 @@ set pig.exec.mapPartAgg true;
 set pig.exec.mapPartAgg.minReduction 5;
 
 -- new experimental Pig feature -- generates specialized typed classes for the tuples
-set pig.schematuple true;
--- This won't work with BaseQualCounts...at least for now
---set pig.schematuple off;
+set pig.schematuple on;
 
 A = load '$inputpath' using FastqUDFLoader();
 B = FOREACH A GENERATE sequence, quality;
@@ -26,4 +24,5 @@ C = GROUP B ALL;
 --D = FOREACH C GENERATE BaseCounts(B.$0), BaseQualCounts(B.$1);
 --D = FOREACH C GENERATE BaseCounts(B.$0);
 --D = FOREACH C GENERATE BaseQualCounts(B.$1);
---dump D;
+D = FOREACH C GENERATE ABaseCounts(B.$0), ABaseQCounts(B.$1);
+dump D;
