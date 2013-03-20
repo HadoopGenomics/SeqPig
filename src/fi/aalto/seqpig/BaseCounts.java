@@ -79,10 +79,10 @@ public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulato
 	protected static void processTuple(Tuple accumulating_tpl, Tuple new_tpl) throws Exception {
 		String sequence = (String)new_tpl.get(0);
 
-		assert(new_tpl.size() == READ_LENGTH); // andre: this does not make sense? new_tuple.size() == 1?
+		assert(new_tpl.size() == 1);
 		assert(sequence.length() == READ_LENGTH);
 
-		for(int pos=0; pos < sequence.length(); ++pos) {
+		for(int pos = 0; pos < sequence.length(); ++pos) {
 			int readbase_int = map_base_to_int(sequence.charAt(pos));
 
 			// update base frequencies
@@ -215,7 +215,6 @@ public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulato
 
 	private Tuple accumulatingTuple = null;
 
-        // note: here b is an input tuple (single read)
 	@Override
 	public void accumulate(Tuple b) throws IOException {
 		try {
@@ -224,7 +223,7 @@ public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulato
 				initTuple(accumulatingTuple);
 			}
 
-			processTuple(accumulatingTuple, b); // note: we normalize later, so pretend there is only one read
+			processTuple(accumulatingTuple, b);
 		} catch (ExecException ee) {
 			ee.printStackTrace();
 			throw ee;
@@ -246,4 +245,3 @@ public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulato
 		return accumulatingTuple;
 	}    
 }
-

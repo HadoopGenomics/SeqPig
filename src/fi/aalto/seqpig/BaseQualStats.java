@@ -45,15 +45,15 @@ public class BaseQualStats extends EvalFunc<Tuple> implements Algebraic, Accumul
 	// idea: compute variance via the "wrong formula"
 	// see http://www.cs.berkeley.edu/~mhoemmen/cs194/Tutorials/variance.pdf
 	// 
-        // sigma_N(x) = sqrt(1/(N-1) (\sum_i x_i^2 - 1/n (\sum x_i)^2))
+	// sigma_N(x) = sqrt(1/(N-1) (\sum_i x_i^2 - 1/n (\sum x_i)^2))
 
 	protected final static int READ_LENGTH = 100;
 	// number of buckets:  position + one per valid quality score (i.e. the max score +1 for 0)
 
 	protected final static int STATS_PER_POS = 1 // for position
 		+ 1 // for N ( = \sum_i 1)
-                + 1 // for x_i sum
-                + 1; // for x_i^2 sum
+		+ 1 // for x_i sum
+		+ 1; // for x_i^2 sum
 
 	private static TupleFactory mTupleFactory = TupleFactory.getInstance();
 

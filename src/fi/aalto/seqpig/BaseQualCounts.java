@@ -54,14 +54,14 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 
 	private static TupleFactory mTupleFactory = TupleFactory.getInstance();
 
-        protected static int map_basequal_to_int(int basequal) {
-                if(basequal <= MIN_BASE_QUAL)
+	protected static int map_basequal_to_int(int basequal) {
+		if(basequal <= MIN_BASE_QUAL)
 			return 0;
 		if(basequal >= MAX_BASE_QUAL)
 			return STATS_PER_POS-2; // note!!! minus 2!!! since 1 is added later
 
 		return (int)Math.floor((basequal-MIN_BASE_QUAL)/((double)BASE_QUAL_BINSIZE));
-        }
+	}
 
 	public static int map_int_to_basequal(int index) {
 		int retval = (index * BASE_QUAL_BINSIZE) + MIN_BASE_QUAL;
@@ -70,7 +70,7 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 			return MAX_BASE_QUAL;
 
 		return retval;
-        }
+	}
 
 	protected static void initTuple(Tuple tpl) throws Exception {
 		for (int i = 0; i < tpl.size(); ++i) {
@@ -86,7 +86,7 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 	protected static void processTuple(Tuple accumulating_tpl, Tuple new_tpl) throws Exception {
 		String basequals = (String)new_tpl.get(0);
 
-		assert(new_tpl.size() == READ_LENGTH); // andre: this does not make sense? new_tuple.size() == 1?
+		assert(new_tpl.size() == 1);
 		assert(basequals.length() == READ_LENGTH);
 
 		for(int pos = 0; pos < basequals.length(); ++pos) {
@@ -262,4 +262,3 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 		return accumulatingTuple;
 	}    
 }
-
