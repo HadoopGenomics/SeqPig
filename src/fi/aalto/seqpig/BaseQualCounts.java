@@ -34,31 +34,36 @@ import fi.tkk.ics.hadoop.bam.FormatConstants;
 public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
 	public static final int READ_LENGTH = 101;
-	protected static final int STATS_PER_POS = FormatConstants.SANGER_MAX + 1;
+	public static final int STATS_PER_POS = FormatConstants.SANGER_MAX + 1;
 	private static final BqReader bqReader = new BqReader();
 
 	private ItemCounter2D itemCounter = new ItemCounter2D(READ_LENGTH, STATS_PER_POS, bqReader);
 
 	//************ map bq strings to byte[] ************/
-	private static class BqReader implements ItemCounter2D.TupleToItem {
+        public static class BqReader implements ItemCounter2D.TupleToItem {
 
-		public byte[] tupleToItem(final Tuple input) throws ExecException {
-			String basequals = (String)input.get(0);
-			byte[] output = new byte[basequals.length()];
+	    public static int map_qual_to_int(char qual) {
+		int readbasequal_int = (int)qual - FormatConstants.SANGER_OFFSET;
+		    
+		if (readbasequal_int < 0 || readbasequal_int > FormatConstants.SANGER_MAX)
+		    throw new RuntimeException("Base quality score " + qual + " is out of range");
 
-			for(int pos = 0; pos < basequals.length(); ++pos) {
-				int readbasequal_int = (int)basequals.charAt(pos) - FormatConstants.SANGER_OFFSET;
+		return readbasequal_int;
+            }
 
-				if (readbasequal_int < 0 || readbasequal_int > FormatConstants.SANGER_MAX) {
-					throw new RuntimeException("Base quality score " +
-							(char)(readbasequal_int + FormatConstants.SANGER_OFFSET) +
-							" is out of range");
-				}
-				output[pos] = (byte)readbasequal_int;
-			}
+	    public static int map_int_to_qual(int val) {
+		return val; // + FormatConstants.SANGER_OFFSET;
+	    }
 
-			return output;
-		}
+	    public byte[] tupleToItem(final Tuple input) throws ExecException {
+		String basequals = (String)input.get(0);
+		byte[] output = new byte[basequals.length()];
+		
+		for(int pos = 0; pos < basequals.length(); ++pos)
+		    output[pos] = (byte)map_qual_to_int(basequals.charAt(pos));
+			
+		return output;
+	    }
 	}
 
 	//************** Algebraic ******************/

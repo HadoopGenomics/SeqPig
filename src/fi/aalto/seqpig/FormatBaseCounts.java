@@ -54,7 +54,7 @@ public class FormatBaseCounts extends EvalFunc<DataBag>
     }
 
     // bag output format:
-    //   { ( position, <A count>, <C count>, <G count>, <T count>, <N count>) }
+    //   { ( position, <A fraction>, <C fraction>, <G fraction>, <T fraction>, <N fraction>) }
    
     @Override 
     public DataBag exec(Tuple t) throws IOException, org.apache.pig.backend.executionengine.ExecException {
