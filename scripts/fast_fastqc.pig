@@ -24,5 +24,5 @@ C = GROUP B ALL;
 --D = FOREACH C GENERATE BaseCounts(B.$0), BaseQualCounts(B.$1);
 --D = FOREACH C GENERATE BaseCounts(B.$0);
 --D = FOREACH C GENERATE BaseQualCounts(B.$1);
-D = FOREACH C GENERATE ABaseCounts(B.$0), ABaseQCounts(B.$1);
-dump D;
+D = FOREACH C GENERATE BaseCounts(B.$0), BaseQualCounts(B.$1);
+STORE D into 'output2.dat';

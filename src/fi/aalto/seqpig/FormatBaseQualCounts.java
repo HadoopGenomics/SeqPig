@@ -53,10 +53,10 @@ public class FormatBaseQualCounts extends EvalFunc<DataBag>
     @Override 
     public DataBag exec(Tuple t) throws IOException, org.apache.pig.backend.executionengine.ExecException {
 	    
-	if (t == null || t.size() == 0)
+	//if (t == null || t.size() == 0)
 	    return null;
 
-	Tuple input = (Tuple)t.get(0);
+	    /*Tuple input = (Tuple)t.get(0);
 
 	DataBag output = BagFactory.getInstance().newDefaultBag();
 
@@ -101,7 +101,7 @@ public class FormatBaseQualCounts extends EvalFunc<DataBag>
 		output.add(output_tpl);
 	}
 
-	return output;
+	return output;*/
     }
 
     @Override
@@ -113,7 +113,7 @@ public class FormatBaseQualCounts extends EvalFunc<DataBag>
 	    Schema columnSchema = new Schema();
 
 	    for(int f = 1; f < BaseQualCounts.STATS_PER_POS; f++) {
-	        int qscore = BaseQualCounts.map_int_to_basequal(f-1); // note: -1
+	        int qscore = 0; //BaseQualCounts.map_int_to_basequal(f-1); // note: -1
 		columnSchema.add(new Schema.FieldSchema(String.format("qual%d", qscore), DataType.DOUBLE));
 	    }
 

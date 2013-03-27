@@ -1,4 +1,5 @@
-// Copyright (c) 2012 Aalto University
+// Copyright (c) 2013 Aalto University
+// Copyright (c) 2013 CRS4
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -20,228 +21,109 @@
 
 package fi.aalto.seqpig;
 
-import java.util.Iterator;
-
 import java.io.IOException;
-import org.apache.pig.data.BagFactory;
-import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.data.TupleFactory;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.Accumulator;
 import org.apache.pig.Algebraic;
-import org.apache.pig.PigException;
-import org.apache.pig.PigWarning;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.apache.pig.impl.util.WrappedIOException;
-
-import fi.tkk.ics.hadoop.bam.FormatConstants;
 
 public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
-	protected final static int READ_LENGTH = 100;
-	protected final static char[] BASES = new char[]{ 'A', 'C', 'G', 'T', 'N' };
-	protected final static int STATS_PER_POS = 1 + BASES.length; // position + one per each A, C, G, T, N
+	protected static final char[] BASES = new char[]{ 'A', 'C', 'G', 'T', 'N' };
+	public static final int READ_LENGTH = 101;
+	private static final ReadSplitter readSplitter = new ReadSplitter();
 
+	private ItemCounter2D itemCounter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
 
-	private static TupleFactory mTupleFactory = TupleFactory.getInstance();
+	//************ map sequences to byte[] ************/
+	private static class ReadSplitter implements ItemCounter2D.TupleToItem {
 
-	protected static int map_base_to_int(char c) {
-		switch(c) {
-			case 'A':
-				return 0;
-			case 'C':
-				return 1;
-			case 'G':
-				return 2;
-			case 'T':
-				return 3;
-			case 'N':
-				return 4;
-			default:
-				throw new RuntimeException("invalid base character " + c);
-		}
-	}
-
-	protected static void initTuple(Tuple tpl) throws Exception {
-		for (int i = 0; i < tpl.size(); ++i) {
-			Tuple column = mTupleFactory.newTuple(STATS_PER_POS);
-			column.set(0, i); // position
-			for (int j = 1; j < STATS_PER_POS; ++j)
-				column.set(j, 0L); // counters
-			tpl.set(i, column);
-		}
-	}
-
-	// accumulating_tpl is tuple that follows output convention, new_tpl is (readbases) 
-	protected static void processTuple(Tuple accumulating_tpl, Tuple new_tpl) throws Exception {
-		String sequence = (String)new_tpl.get(0);
-
-		assert(new_tpl.size() == 1);
-		assert(sequence.length() == READ_LENGTH);
-
-		for(int pos = 0; pos < sequence.length(); ++pos) {
-			int readbase_int = map_base_to_int(sequence.charAt(pos));
-
-			// update base frequencies
-			Tuple column = (Tuple)accumulating_tpl.get(pos);
-			column.set(1+readbase_int, 1L + (Long)column.get(1+readbase_int));
-		}
-	}
-
-	protected static Tuple sumColumnTuples(Tuple accum, Tuple addValue) throws ExecException {
-		// sum all elements except the first, which is the position within the sequence
-		assert(accum.size() == addValue.size());
-		for (int i = 1; i < accum.size(); ++i) {
-			accum.set(i, (Long)accum.get(i) + (Long)addValue.get(i));
-		}
-		return accum;
-	}
-
-	// values is bag of tuples that follow output convention
-	static protected Tuple combineTuples(DataBag values) throws Exception {
-		Tuple output_tpl = mTupleFactory.newTuple(READ_LENGTH);
-		initTuple(output_tpl);
-
-		for (Iterator<Tuple> it = values.iterator(); it.hasNext();) {
-			Tuple partial = it.next();
-
-			for(int pos = 0; pos < partial.size(); ++pos) {
-				output_tpl.set(pos, sumColumnTuples((Tuple)output_tpl.get(pos), (Tuple)partial.get(pos)));
+		protected static byte map_base_to_int(char c) {
+			switch(c) {
+				case 'A':
+					return (byte)0;
+				case 'C':
+					return (byte)1;
+				case 'G':
+					return (byte)2;
+				case 'T':
+					return (byte)3;
+				case 'N':
+					return (byte)4;
+				default:
+					throw new RuntimeException("invalid base character " + c);
 			}
 		}
 
-		return output_tpl;
-	}
+		public byte[] tupleToItem(final Tuple input) throws ExecException {
+			String bases = (String)input.get(0);
+			byte[] output = new byte[bases.length()];
 
-	@Override
-	public Tuple exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
-		try {
-			DataBag bag = (DataBag)input.get(0);
-			long number_of_reads = bag.size();
-			Iterator it = bag.iterator();
-
-			Tuple output_tpl = TupleFactory.getInstance().newTuple(READ_LENGTH); 
-			initTuple(output_tpl);
-
-			while (it.hasNext()){
-				Tuple t = (Tuple)it.next();
-				processTuple(output_tpl, t);
+			for(int pos = 0; pos < bases.length(); ++pos) {
+				output[pos] = map_base_to_int(bases.charAt(pos));
 			}
 
-			return output_tpl;
-		} catch(Exception e) {
-			e.printStackTrace();
-			throw new IOException("problem in exec");
+			return output;
 		}
 	}
+
+	//************** Algebraic ******************/
 
 	public String getInitial() {
 		return Initial.class.getName();
 	}
 
 	public String getIntermed() {
-		return Final.class.getName();
+		return Intermediate.class.getName();
 	}
 
 	public String getFinal() {
-		return Final.class.getName();
-	}
-
-	static public class Initial extends EvalFunc<Tuple> {
-		@Override
-		public Tuple exec(Tuple input) {
-			try {
-				Tuple output_tpl = mTupleFactory.newTuple(READ_LENGTH);
-				initTuple(output_tpl);
-
-				DataBag bg = (DataBag)input.get(0);
-
-				if(bg == null) return output_tpl;
-
-				if(bg.iterator().hasNext()) {
-					Tuple t = bg.iterator().next();
-					processTuple(output_tpl, t);
-				}
-
-				return output_tpl;
-			} catch(Exception e) {
-				e.printStackTrace();
-				return null;
-			}
-		}
-	}
-
-	static public class Final extends EvalFunc<Tuple> {
-		@Override
-		public Tuple exec(Tuple input) throws IOException {
-			try {
-				DataBag b = (DataBag)input.get(0);
-				return combineTuples(b);
-			} catch (ExecException ee) {
-				ee.printStackTrace();
-				throw ee;
-			} catch (Exception e) {
-				e.printStackTrace();
-				int errCode = 2106;
-				String msg = "Error while computing average in " + this.getClass().getSimpleName();
-				throw new ExecException(msg, errCode, PigException.BUG, e);           
-
-			}
-		}
+		return Intermediate.class.getName();
 	}
 
 	@Override
 	public Schema outputSchema(Schema input) {
-		Schema columnSchema = new Schema();
-		Schema tupleSchema = new Schema();
-
-		try {
-			columnSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
-			for (int i = 0; i < BASES.length; ++i)
-				columnSchema.add(new Schema.FieldSchema(String.format("%cs", BASES[i]), DataType.LONG));
-
-			for(int i = 0; i < READ_LENGTH; i++) {
-				tupleSchema.add(new Schema.FieldSchema(String.format("pos_%04d", i), columnSchema, DataType.TUPLE));
-			}
-
-			return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), tupleSchema, DataType.TUPLE));
-		} catch(Exception e) { e.printStackTrace(); return null; }
+		return itemCounter.outputSchema();
 	}
 
-	/* Accumulator interface implementation */
+	@Override
+	public Tuple exec(Tuple input) throws IOException {
+		return itemCounter.execAggregate(input);
+	}
 
-	private Tuple accumulatingTuple = null;
+	public static class Initial extends EvalFunc<Tuple> {
+		@Override
+		public Tuple exec(Tuple input) throws IOException {
+			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
+			return counter.execInitial(input);
+		}
+	}
+
+	public static class Intermediate extends EvalFunc<Tuple> {
+		@Override
+		public Tuple exec(Tuple input) throws IOException {
+			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
+			return counter.execAggregate(input);
+		}
+	}
+
+	/* Accumulator interface implementation (delegates to ItemCounter2D) */
 
 	@Override
 	public void accumulate(Tuple b) throws IOException {
-		try {
-			if(accumulatingTuple == null) {
-				accumulatingTuple = mTupleFactory.newTuple(READ_LENGTH);
-				initTuple(accumulatingTuple);
-			}
-
-			processTuple(accumulatingTuple, b);
-		} catch (ExecException ee) {
-			ee.printStackTrace();
-			throw ee;
-		} catch (Exception e) {
-			e.printStackTrace();
-			int errCode = 2106;
-			String msg = "Error while computing average in " + this.getClass().getSimpleName();
-			throw new ExecException(msg, errCode, PigException.BUG, e);           
-		}
+		itemCounter.accumulate(b);
 	}        
 
 	@Override
-	public void cleanup() {
-		accumulatingTuple = null;
-	}
+	public Tuple getValue() {
+		return itemCounter.getValue();
+	}  
 
 	@Override
-	public Tuple getValue() {
-		return accumulatingTuple;
-	}    
+	public void cleanup() {
+		itemCounter.cleanup();
+	}
 }

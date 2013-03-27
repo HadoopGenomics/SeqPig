@@ -44,6 +44,7 @@ import java.util.Iterator;
 
 public class FormatBaseQualStats extends EvalFunc<DataBag>
 {
+
     public FormatBaseQualStats() {
     }
 
