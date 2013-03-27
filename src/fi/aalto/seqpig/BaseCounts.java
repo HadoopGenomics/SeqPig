@@ -32,14 +32,21 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
-	protected static final char[] BASES = new char[]{ 'A', 'C', 'G', 'T', 'N' };
+	public static final char[] BASES = new char[]{ 'A', 'C', 'G', 'T', 'N' };
 	public static final int READ_LENGTH = 101;
 	private static final ReadSplitter readSplitter = new ReadSplitter();
 
 	private ItemCounter2D itemCounter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
 
 	//************ map sequences to byte[] ************/
-	private static class ReadSplitter implements ItemCounter2D.TupleToItem {
+	public static class ReadSplitter implements ItemCounter2D.TupleToItem {
+
+                public static char map_int_to_base(int b) {
+		    if(b < 0 || b >= BASES.length)
+			throw new RuntimeException("invalid base index " + Integer.toString(b));
+
+		    return BASES[b];
+		}
 
 		protected static byte map_base_to_int(char c) {
 			switch(c) {
