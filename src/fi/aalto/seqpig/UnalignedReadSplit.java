@@ -27,12 +27,12 @@ import org.apache.pig.data.NonSpillableDataBag;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
-//import org.apache.pig.data.TupleFactory;
-import org.apache.pig.data.SchemaTuple;
+import org.apache.pig.data.TupleFactory;
+/*import org.apache.pig.data.SchemaTuple;
 import org.apache.pig.data.SchemaTupleFactory;
 import org.apache.pig.data.SchemaTupleBackend;
 import org.apache.pig.data.SchemaTupleFrontend;
-import org.apache.pig.data.SchemaTupleClassGenerator.GenContext;
+import org.apache.pig.data.SchemaTupleClassGenerator.GenContext;*/
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
@@ -64,15 +64,15 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
     private String sequence;
     private String basequal;
 
-    private SchemaTupleFactory mSchemaTupleFactory;
-    //private TupleFactory mTupleFactory = TupleFactory.getInstance();
+    //private SchemaTupleFactory mSchemaTupleFactory;
+    private TupleFactory mTupleFactory = TupleFactory.getInstance();
     //private BagFactory mBagFactory = BagFactory.getInstance();
 
     public UnalignedReadSplit() throws org.apache.pig.parser.ParserException, java.io.IOException {
-        Configuration conf = UDFContext.getUDFContext().getJobConf();
+        //Configuration conf = UDFContext.getUDFContext().getJobConf();
 
         //Schema udfSchema = Utils.getSchemaFromString("(pos:int, readbase:int, basequal:int)");
-        Schema bagSchema = new Schema();
+        /*Schema bagSchema = new Schema();
             bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
             bagSchema.add(new Schema.FieldSchema("readbase", DataType.INTEGER));
             bagSchema.add(new Schema.FieldSchema("basequal", DataType.INTEGER));
@@ -85,7 +85,7 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
         } else {
            GenContext context = GenContext.UDF;
            SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, false, context);
-        }
+        }*/
     }
 
     // tuple input format: (subset of FastqUDFLoader output format + MD tag)
@@ -119,13 +119,13 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
 
         for(int i=0;i<sequence.length();i++) {
 		readbase = sequence.substring(i,i+1);
-                int readbase_int = (int)readbase.charAt(0);
+                //int readbase_int = (int)readbase.charAt(0);
 		int cur_basequal = getBaseQuality(i);
 
-		SchemaTuple tpl = mSchemaTupleFactory.newTuple(3);
+		Tuple tpl = mTupleFactory.newTuple(3);
 
 		tpl.set(0, i);
-		tpl.set(1, readbase_int);
+		tpl.set(1, readbase);
 		tpl.set(2, cur_basequal);
 
 		output.add(tpl);
@@ -139,7 +139,7 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
 	try{
 	    Schema bagSchema = new Schema();
 	    bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
-	    bagSchema.add(new Schema.FieldSchema("readbase", DataType.INTEGER));
+	    bagSchema.add(new Schema.FieldSchema("readbase", DataType.CHARARRAY));
 	    bagSchema.add(new Schema.FieldSchema("basequal", DataType.INTEGER));
 
 	    return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
