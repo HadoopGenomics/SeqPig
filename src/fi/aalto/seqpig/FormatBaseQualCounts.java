@@ -44,13 +44,21 @@ import java.util.Iterator;
 public class FormatBaseQualCounts extends EvalFunc<DataBag>
 {
     private int read_length;
+    private boolean normalize;
 
     public FormatBaseQualCounts() {
-	read_length = BaseQualCounts.READ_LENGTH;
+	this.read_length = BaseQualCounts.READ_LENGTH;
+	this.normalize = true;
     }
 
     public FormatBaseQualCounts(int read_length) {
 	this.read_length = read_length;
+	this.normalize = true;
+    }
+
+    public FormatBaseQualCounts(int read_length, boolean normalize) {
+	this.read_length = read_length;
+	this.normalize = normalize;
     }
 
     // bag output format showing the quality distribution per position:
@@ -96,8 +104,12 @@ public class FormatBaseQualCounts extends EvalFunc<DataBag>
 	    output_tpl.set(1, avg);
 	    output_tpl.set(2, Math.sqrt(square_avg - (avg * avg)) );
 	    
-	    for(int q=0;q<num_qual_values;q++)
-		output_tpl.set(3+q, new Double(counts[p*num_qual_values + q] / ((double) read_counter)));
+	    if(normalize)
+		for(int q=0;q<num_qual_values;q++)
+		    output_tpl.set(3+q, new Double(counts[p*num_qual_values + q] / ((double) read_counter)));
+	    else
+		for(int q=0;q<num_qual_values;q++)
+		    output_tpl.set(3+q, new Double(counts[p*num_qual_values + q]));
 	    
 	    output.add(output_tpl);
 	}
