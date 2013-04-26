@@ -73,7 +73,7 @@ public class ReadSplit extends EvalFunc<DataBag>
     public ReadSplit() {
     }
 
-    // tuple input format: (subset of BamUDFLoader output format + MD tag)
+    // tuple input format: (subset of BamLoader output format + MD tag)
     //   name
     //   start
     //   sequence

@@ -2,7 +2,7 @@
 -- start of script: count the number of different bases occuring at each reference position
 --
 --   import BAM file
-A = load '$inputfile' using BamUDFLoader('yes');
+A = load '$inputfile' using BamLoader('yes');
 --   following good Pig practice, we try to project early and get rid of fields we do not need
 A = FOREACH A GENERATE read, flags, refname, start, cigar, basequal, mapqual;
 --   filter out unmapped reads

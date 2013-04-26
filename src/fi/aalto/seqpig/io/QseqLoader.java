@@ -53,22 +53,32 @@ import java.util.Properties;
 import java.util.ArrayList;
 import java.io.StringWriter;
 
-import fi.tkk.ics.hadoop.bam.FastaInputFormat;
-import fi.tkk.ics.hadoop.bam.FastaInputFormat.FastaRecordReader;
-import fi.tkk.ics.hadoop.bam.ReferenceFragment;
+import fi.tkk.ics.hadoop.bam.QseqInputFormat;
+import fi.tkk.ics.hadoop.bam.QseqInputFormat.QseqRecordReader;
+import fi.tkk.ics.hadoop.bam.SequencedFragment;
 
-public class FastaUDFLoader extends LoadFunc implements LoadMetadata {
+public class QseqLoader extends LoadFunc implements LoadMetadata {
     protected RecordReader in = null;
     private ArrayList<Object> mProtoTuple = null;
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
 
     // tuple format:
     //
-    //   index_sequence: string (chromosome or contig identifier)
-    //   start: int (start position of reference fragment)
+    //   instrument:string
+    //   run_number:int
+    //   flow_cell_id: string
+    //   lane: int
+    //   tile: int
+    //   xpos: int
+    //   ypos: int
+    //   read: int
+    //   qc_passed (a.k.a. filter): boolean
+    //   control_number: int
+    //   index_sequence: string
     //   sequence: string
+    //   quality: string (note: we assume that encoding chosen on command line!!!)
     
-    public FastaUDFLoader() {}
+    public QseqLoader() {}
 
     @Override
     public Tuple getNext() throws IOException {
@@ -83,12 +93,24 @@ public class FastaUDFLoader extends LoadFunc implements LoadMetadata {
                 return null;
             }
 
-	    Text fastqrec_name = ((FastaRecordReader)in).getCurrentKey();
-            ReferenceFragment fastqrec = ((FastaRecordReader)in).getCurrentValue();
+	    Text fastqrec_name = ((QseqRecordReader)in).getCurrentKey();
+            SequencedFragment fastqrec = ((QseqRecordReader)in).getCurrentValue();
+	   
+	    //mProtoTuple.add(new String(fastqrec_name.toString()));
 	    
+	    mProtoTuple.add(fastqrec.getInstrument());
+	    mProtoTuple.add(fastqrec.getRunNumber());
+	    mProtoTuple.add(fastqrec.getFlowcellId());
+	    mProtoTuple.add(fastqrec.getLane());
+	    mProtoTuple.add(fastqrec.getTile());
+	    mProtoTuple.add(fastqrec.getXpos());
+	    mProtoTuple.add(fastqrec.getYpos());
+	    mProtoTuple.add(fastqrec.getRead());
+	    mProtoTuple.add(fastqrec.getFilterPassed());
+	    mProtoTuple.add(fastqrec.getControlNumber());
 	    mProtoTuple.add(fastqrec.getIndexSequence());
-	    mProtoTuple.add(fastqrec.getPosition());
 	    mProtoTuple.add(fastqrec.getSequence().toString());
+  	    mProtoTuple.add(fastqrec.getQuality().toString());
 
             Tuple t =  mTupleFactory.newTupleNoCopy(mProtoTuple);
             mProtoTuple = null;
@@ -104,7 +126,7 @@ public class FastaUDFLoader extends LoadFunc implements LoadMetadata {
 
     @Override
     public InputFormat getInputFormat() {
-        return new FastaInputFormat();
+        return new QseqInputFormat();
     }
 
     @Override
@@ -122,9 +144,19 @@ public class FastaUDFLoader extends LoadFunc implements LoadMetadata {
     public ResourceSchema getSchema(String location, Job job) throws IOException {
        
 	Schema s = new Schema();
+	s.add(new Schema.FieldSchema("instrument", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("run_number", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("flow_cell_id", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("lane", DataType.INTEGER));	
+	s.add(new Schema.FieldSchema("tile", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("xpos", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("ypos", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("read", DataType.INTEGER));
+	s.add(new Schema.FieldSchema("qc_passed", DataType.BOOLEAN));
+	s.add(new Schema.FieldSchema("control_number", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("index_sequence", DataType.CHARARRAY));
-	s.add(new Schema.FieldSchema("start", DataType.INTEGER));
 	s.add(new Schema.FieldSchema("sequence", DataType.CHARARRAY));
+	s.add(new Schema.FieldSchema("quality", DataType.CHARARRAY));
 
         return new ResourceSchema(s);
     }

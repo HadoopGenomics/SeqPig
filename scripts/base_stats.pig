@@ -14,7 +14,7 @@ DEFINE filter_reads_unmapdupl(A, min_map_qual) RETURNS B {
 --   start of script
 --
 --   import BAM file
-A = load '$inputfile' using BamUDFLoader('yes');
+A = load '$inputfile' using BamLoader('yes');
 --   filter reads based on flags (unmapped or duplicates) and mapping quality
 B = filter_reads_unmapdupl(A, $min_map_qual);
 --   split reads into entries for each base

@@ -32,7 +32,7 @@ define STRLEN org.apache.pig.piggybank.evaluation.string.LENGTH();
 --
 
 --   import reads
-reads = load '$inputpath' using FastqUDFLoader();
+reads = load '$inputpath' using FastqLoader();
 reads_by_bases = FOREACH reads GENERATE UnalignedReadSplit(sequence, quality);
 
 ------- read stats

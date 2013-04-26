@@ -1,5 +1,5 @@
 Register 'python/SAMReadStreaming.py' using jython as myfuncs;
-B = load '$inputfile' using BamUDFLoader('yes');
+B = load '$inputfile' using BamLoader('yes');
 C = foreach B generate name, start, end, read, cigar, basequal, flags, insertsize, mapqual, matestart, indexbin, materefindex, refindex, attributes, start / 1000;
 D = foreach B generate name, start, end, read, cigar, basequal, flags, insertsize, mapqual, matestart, indexbin, materefindex, refindex, attributes, end / 1000;
 E = UNION C, D;

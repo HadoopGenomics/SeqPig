@@ -23,15 +23,15 @@ prepareBamInput.sh input.bam
 \end{lstlisting} 
 and then loaded in the grunt shell via
 \begin{lstlisting} 
-A = load 'input.bam' using BamUDFLoader('yes');
+A = load 'input.bam' using BamLoader('yes');
 \end{lstlisting} 
-The 'yes' parameter to {\tt BamUDFLoader} chooses read attributes to be loaded; choose 'no' whenever these
+The 'yes' parameter to {\tt BamLoader} chooses read attributes to be loaded; choose 'no' whenever these
 are not required).
 
 Once some operations have been performed, the resulting (modified) read
 data can then be stored into a new BAM file via
 \begin{lstlisting}
-store A into 'output.bam' using BamUDFStorer('input.bam.asciiheader');
+store A into 'output.bam' using BamStorer('input.bam.asciiheader');
 \end{lstlisting}
 and can also be exported from HDFS to the local filesystem via
 \begin{lstlisting}
@@ -51,7 +51,7 @@ dump A;
 Another very useful Pig command is {\tt describe}, which returns the schema that Pig
 uses for a given data bag. Example:
 \begin{lstlisting}
-A = load 'input.bam' using BamUDFLoader('yes');
+A = load 'input.bam' using BamLoader('yes');
 describe A;
 \end{lstlisting}
 returns
@@ -163,7 +163,7 @@ Generating samtools compatible pileup (for a correctly sorted BAM file
 with MD tags aligned to the same reference, should produce the same output as
 {\tt samtools mpileup -A -f ref.fasta -B input.bam}):
 \begin{lstlisting}
-A = load 'input.bam' using BamUDFLoader('yes');
+A = load 'input.bam' using BamLoader('yes');
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
       basequal, attributes#'MD', mapqual), start, flags, name;
@@ -220,7 +220,7 @@ In order to evaluate the output of an aligner, it may be useful to
 consider the distribution of the mapping quality over the collection of
 reads. Thanks to Pig's {\tt GROUP} operator this is fairly easy.
 \begin{lstlisting}
-A = load 'input.bam' using BamUDFLoader('yes');
+A = load 'input.bam' using BamLoader('yes');
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 read_stats_data = FOREACH B GENERATE mapqual;
 read_stats_grouped = GROUP read_stats_data BY mapqual;
@@ -242,7 +242,7 @@ read. The following simple script generates for each reference base and
 each position inside a read the distribution of the number of read bases
 that were called.
 \begin{lstlisting}
-A = load 'input.bam' using BamUDFLoader('yes');
+A = load 'input.bam' using BamLoader('yes');
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
 D = FOREACH C GENERATE FLATTEN($0);
@@ -303,7 +303,7 @@ indicate some quality issues with the run. The resulting script is actually
 fairly similar to the previous one with the difference of not grouping
 over the reference bases.
 \begin{lstlisting}
-A = load 'input.bam' using BamUDFLoader('yes');
+A = load 'input.bam' using BamLoader('yes');
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
 C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
 D = FOREACH C GENERATE FLATTEN($0);
@@ -356,8 +356,8 @@ on for example whether they are stored in Qseq or Fastq.
 
 The following two lines simply convert an input Qseq into Fastq.
 \begin{lstlisting}
-reads = load 'input.qseq' using QseqUDFLoader();
-STORE reads INTO 'output.fastq' using FastqUDFStorer(); 
+reads = load 'input.qseq' using QseqLoader();
+STORE reads INTO 'output.fastq' using FastqStorer(); 
 \end{lstlisting}
 The other direction works analogously.
 
@@ -374,9 +374,9 @@ part of the PiggyBank (see Section~\ref{sect:piggybank_note}).
 \begin{lstlisting}
 DEFINE SUBSTRING org.apache.pig.piggybank.evaluation.string.SUBSTRING();
 DEFINE LENGTH org.apache.pig.piggybank.evaluation.string.LENGTH();
-reads = load 'input.qseq' using QseqUDFLoader();
+reads = load 'input.qseq' using QseqLoader();
 B = FOREACH A GENERATE instrument, run_number, flow_cell_id, lane, tile, xpos, ypos, read, qc_passed, control_number, index_sequence, SUBSTRING(sequence, 0, LENGTH(sequence) - 3) AS sequence, SUBSTRING(quality, 0, LENGTH(quality) - 3) AS quality;
-store B into 'output.qseq' using QseqUDFStorer();
+store B into 'output.qseq' using QseqStorer();
 \end{lstlisting}
 \begin{description}
 	\item[Note] This example script is equivalent to executing from the command line

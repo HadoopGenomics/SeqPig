@@ -88,7 +88,7 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
         }*/
     }
 
-    // tuple input format: (subset of FastqUDFLoader output format + MD tag)
+    // tuple input format: (subset of FastqLoader output format + MD tag)
     //   sequence
     //   base qualities
 

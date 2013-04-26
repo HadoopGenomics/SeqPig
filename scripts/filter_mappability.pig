@@ -22,10 +22,10 @@ SET mapred.create.symlink yes
 --   start of script
 --
 --   import BAM file
-A = load '$inputfile' using BamUDFLoader('yes');
+A = load '$inputfile' using BamLoader('yes');
 --   filter reads based on flags (unmapped or duplicates) and mapping quality
 B = filter_reads_unmapdupl(A, $min_map_qual);
 --   filter reads based on mappability data
 C = FILTER B BY MapFilter(refindex, start, end);
 --   write output to HDFS
-store C into '$outputfile' using BamUDFStorer('$inputfile.asciiheader');
+store C into '$outputfile' using BamStorer('$inputfile.asciiheader');

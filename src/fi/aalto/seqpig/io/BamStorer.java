@@ -72,7 +72,7 @@ import java.net.URI;
 
 import org.apache.commons.codec.binary.Base64;
 
-public class BamUDFStorer extends StoreFunc {
+public class BamStorer extends StoreFunc {
     protected RecordWriter writer = null;
     protected String samfileheader = null;
     protected SAMFileHeader samfileheader_decoded = null;
@@ -80,12 +80,12 @@ public class BamUDFStorer extends StoreFunc {
     protected HashMap<String,Integer> selectedBAMAttributes = null;
     protected HashMap<String,Integer> allBAMFieldNames = null;
 
-    public BamUDFStorer() {
-	System.out.println("WARNING: noarg BamUDFStorer() constructor!");
+    public BamStorer() {
+	System.out.println("WARNING: noarg BamStorer() constructor!");
         decodeSAMFileHeader();
     }
 
-    public BamUDFStorer(String samfileheaderfilename) {
+    public BamStorer(String samfileheaderfilename) {
 
 	String str = "";
 	this.samfileheader = "";
@@ -130,7 +130,7 @@ public class BamUDFStorer extends StoreFunc {
 	    String datastr = codec.encodeBase64String(bstream.toByteArray());
 	    p.setProperty("samfileheader", datastr);
 	} catch (Exception e) {
-	    System.out.println("ERROR: Unable to store SAMFileHeader in BamUDFStorer!");
+	    System.out.println("ERROR: Unable to store SAMFileHeader in BamStorer!");
 	}
 
 	this.samfileheader_decoded = getSAMFileHeader();

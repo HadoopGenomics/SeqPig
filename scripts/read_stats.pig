@@ -2,7 +2,7 @@
 %default min_base_qual 0
 %default pparallel 1
 --   import BAM file
-A = load '$inputfile' using BamUDFLoader('yes');
+A = load '$inputfile' using BamLoader('yes');
 --   filter reads based on flags (unmapped or duplicates) and mapping quality
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual;
 --  calculate read statistics

@@ -8,7 +8,7 @@ DEFINE filteredReadPileup BinReadPileup('$min_base_qual', '$reads_cutoff');
 -- start of script: generate samtools-like pileup for given set of reads
 --
 --   import BAM file
-A = load '$inputfile' using BamUDFLoader('yes');
+A = load '$inputfile' using BamLoader('yes');
 --   filter reads based on flags (unmapped or duplicates), mapping quality and MD tag
 B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0 and mapqual>=$min_map_qual and attributes#'MD' is not null and name is not null;
 --   generate pileup data for each read (one record per position)

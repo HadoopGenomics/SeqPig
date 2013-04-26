@@ -6,7 +6,7 @@
 --   start of script
 --
 --   import reads
-reads = load '$inputfile' using FastqUDFLoader();
+reads = load '$inputfile' using FastqLoader();
 reads_by_bases = FOREACH reads GENERATE UnalignedReadSplit(sequence, quality);
 bases = FOREACH reads_by_bases GENERATE FLATTEN($0);
 --   calculate base frequencies based on position inside read

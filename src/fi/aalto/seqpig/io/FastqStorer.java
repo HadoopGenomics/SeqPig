@@ -62,7 +62,7 @@ import fi.tkk.ics.hadoop.bam.SequencedFragment;
 
 import org.apache.commons.codec.binary.Base64;
 
-public class FastqUDFStorer extends StoreFunc {
+public class FastqStorer extends StoreFunc {
     protected RecordWriter writer = null;
     protected HashMap<String,Integer> allFastqFieldNames = null;
 
@@ -82,7 +82,7 @@ public class FastqUDFStorer extends StoreFunc {
     //   sequence: string
     //   quality: string (note: we assume that encoding chosen on command line!!!)
 
-    public FastqUDFStorer(){}
+    public FastqStorer(){}
 
     @Override
     public void putNext(Tuple f) throws IOException {
