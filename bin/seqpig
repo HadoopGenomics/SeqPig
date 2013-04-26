@@ -9,7 +9,7 @@ fi
 
 source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
 
-import_list=fi.aalto.seqpig:fi.aalto.seqpig.io
+import_list=fi.aalto.seqpig:fi.aalto.seqpig.io:fi.aalto.seqpig.filter
 
 echo "pig.additional.jars: ${SEQPIG_JARS}"
 echo "udf.import.list: ${import_list}"

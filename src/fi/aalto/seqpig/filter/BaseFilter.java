@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-package fi.aalto.seqpig;
+package fi.aalto.seqpig.filter;
 
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.data.Tuple; 
