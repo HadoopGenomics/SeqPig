@@ -14,4 +14,5 @@ import_list=fi.aalto.seqpig
 echo "pig.additional.jars: ${SEQPIG_JARS}"
 echo "udf.import.list: ${import_list}"
 
+echo "${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_JARS} -Dudf.import.list=${import_list} ${@}"
 exec "${PIG_HOME}/bin/pig" -Dpig.additional.jars=${SEQPIG_JARS} -Dudf.import.list=${import_list} "${@}"
