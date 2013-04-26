@@ -19,9 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-package fi.aalto.seqpig;
+package fi.aalto.seqpig.stats;
 
 import java.io.IOException;
+import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.Accumulator;
@@ -29,41 +30,51 @@ import org.apache.pig.Algebraic;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 
-import fi.tkk.ics.hadoop.bam.FormatConstants;
-
-public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
+public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
+	public static final char[] BASES = new char[]{ 'A', 'C', 'G', 'T', 'N' };
 	public static final int READ_LENGTH = 101;
-	public static final int STATS_PER_POS = FormatConstants.SANGER_MAX + 1;
-	private static final BqReader bqReader = new BqReader();
+	private static final ReadSplitter readSplitter = new ReadSplitter();
 
-	private ItemCounter2D itemCounter = new ItemCounter2D(READ_LENGTH, STATS_PER_POS, bqReader);
+	private ItemCounter2D itemCounter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
 
-	//************ map bq strings to byte[] ************/
-        public static class BqReader implements ItemCounter2D.TupleToItem {
+	//************ map sequences to byte[] ************/
+	public static class ReadSplitter implements ItemCounter2D.TupleToItem {
 
-	    public static int map_qual_to_int(char qual) {
-		int readbasequal_int = (int)qual - FormatConstants.SANGER_OFFSET;
-		    
-		if (readbasequal_int < 0 || readbasequal_int > FormatConstants.SANGER_MAX)
-		    throw new RuntimeException("Base quality score " + qual + " is out of range");
+                public static char map_int_to_base(int b) {
+		    if(b < 0 || b >= BASES.length)
+			throw new RuntimeException("invalid base index " + Integer.toString(b));
 
-		return readbasequal_int;
-            }
+		    return BASES[b];
+		}
 
-	    public static int map_int_to_qual(int val) {
-		return val; // + FormatConstants.SANGER_OFFSET;
-	    }
+		protected static byte map_base_to_int(char c) {
+			switch(c) {
+				case 'A':
+					return (byte)0;
+				case 'C':
+					return (byte)1;
+				case 'G':
+					return (byte)2;
+				case 'T':
+					return (byte)3;
+				case 'N':
+					return (byte)4;
+				default:
+					throw new RuntimeException("invalid base character " + c);
+			}
+		}
 
-	    public byte[] tupleToItem(final Tuple input) throws ExecException {
-		String basequals = (String)input.get(0);
-		byte[] output = new byte[basequals.length()];
-		
-		for(int pos = 0; pos < basequals.length(); ++pos)
-		    output[pos] = (byte)map_qual_to_int(basequals.charAt(pos));
-			
-		return output;
-	    }
+		public byte[] tupleToItem(final Tuple input) throws ExecException {
+			String bases = (String)input.get(0);
+			byte[] output = new byte[bases.length()];
+
+			for(int pos = 0; pos < bases.length(); ++pos) {
+				output[pos] = map_base_to_int(bases.charAt(pos));
+			}
+
+			return output;
+		}
 	}
 
 	//************** Algebraic ******************/
@@ -93,7 +104,7 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 	public static class Initial extends EvalFunc<Tuple> {
 		@Override
 		public Tuple exec(Tuple input) throws IOException {
-			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, STATS_PER_POS, bqReader);
+			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
 			return counter.execInitial(input);
 		}
 	}
@@ -101,7 +112,7 @@ public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumu
 	public static class Intermediate extends EvalFunc<Tuple> {
 		@Override
 		public Tuple exec(Tuple input) throws IOException {
-			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, STATS_PER_POS, bqReader);
+			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
 			return counter.execAggregate(input);
 		}
 	}

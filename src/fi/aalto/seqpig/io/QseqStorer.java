@@ -62,7 +62,7 @@ import fi.tkk.ics.hadoop.bam.SequencedFragment;
 
 import org.apache.commons.codec.binary.Base64;
 
-public class QseqUDFStorer extends StoreFunc {
+public class QseqStorer extends StoreFunc {
     protected RecordWriter writer = null;
     protected HashMap<String,Integer> allQseqFieldNames = null;
 
@@ -82,7 +82,7 @@ public class QseqUDFStorer extends StoreFunc {
     //   sequence: string
     //   quality: string (note: we assume that encoding chosen on command line!!!)
 
-    public QseqUDFStorer(){}
+    public QseqStorer(){}
 
     @Override
     public void putNext(Tuple f) throws IOException {

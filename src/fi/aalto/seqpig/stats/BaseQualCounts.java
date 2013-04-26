@@ -19,7 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-package fi.aalto.seqpig;
+package fi.aalto.seqpig.stats;
 
 import java.io.IOException;
 import org.apache.pig.data.Tuple;
@@ -31,16 +31,16 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 import fi.tkk.ics.hadoop.bam.FormatConstants;
 
-public class AvgBaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
+public class BaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
 	public static final int READ_LENGTH = 101;
 	public static final int STATS_PER_POS = FormatConstants.SANGER_MAX + 1;
-	private static final AvgBqReader abqReader = new AvgBqReader();
+	private static final BqReader bqReader = new BqReader();
 
-	private ItemCounter2D itemCounter = new ItemCounter2D(1, STATS_PER_POS, abqReader);
+	private ItemCounter2D itemCounter = new ItemCounter2D(READ_LENGTH, STATS_PER_POS, bqReader);
 
-	//************ map abq strings to byte[] ************/
-        public static class AvgBqReader implements ItemCounter2D.TupleToItem {
+	//************ map bq strings to byte[] ************/
+        public static class BqReader implements ItemCounter2D.TupleToItem {
 
 	    public static int map_qual_to_int(char qual) {
 		int readbasequal_int = (int)qual - FormatConstants.SANGER_OFFSET;
@@ -57,14 +57,11 @@ public class AvgBaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Acc
 
 	    public byte[] tupleToItem(final Tuple input) throws ExecException {
 		String basequals = (String)input.get(0);
-		byte[] output = new byte[1];
+		byte[] output = new byte[basequals.length()];
 		
-		long avg_base_qual = 0L;
-
 		for(int pos = 0; pos < basequals.length(); ++pos)
-		    avg_base_qual += map_qual_to_int(basequals.charAt(pos));
+		    output[pos] = (byte)map_qual_to_int(basequals.charAt(pos));
 			
-		output[0] = (byte)Math.round(avg_base_qual/((double)basequals.length()));
 		return output;
 	    }
 	}
@@ -96,7 +93,7 @@ public class AvgBaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Acc
 	public static class Initial extends EvalFunc<Tuple> {
 		@Override
 		public Tuple exec(Tuple input) throws IOException {
-			ItemCounter2D counter = new ItemCounter2D(1, STATS_PER_POS, abqReader);
+			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, STATS_PER_POS, bqReader);
 			return counter.execInitial(input);
 		}
 	}
@@ -104,7 +101,7 @@ public class AvgBaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Acc
 	public static class Intermediate extends EvalFunc<Tuple> {
 		@Override
 		public Tuple exec(Tuple input) throws IOException {
-			ItemCounter2D counter = new ItemCounter2D(1, STATS_PER_POS, abqReader);
+			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, STATS_PER_POS, bqReader);
 			return counter.execAggregate(input);
 		}
 	}

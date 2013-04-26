@@ -19,7 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-package fi.aalto.seqpig;
+package fi.aalto.seqpig.stats;
 
 import java.util.Arrays;
 import java.nio.LongBuffer;

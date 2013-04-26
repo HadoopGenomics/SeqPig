@@ -19,10 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-package fi.aalto.seqpig;
+package fi.aalto.seqpig.stats;
 
 import java.io.IOException;
-import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.Accumulator;
@@ -30,51 +29,44 @@ import org.apache.pig.Algebraic;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 
-public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
+import fi.tkk.ics.hadoop.bam.FormatConstants;
+
+public class AvgBaseQualCounts extends EvalFunc<Tuple> implements Algebraic, Accumulator<Tuple>
 {
-	public static final char[] BASES = new char[]{ 'A', 'C', 'G', 'T', 'N' };
 	public static final int READ_LENGTH = 101;
-	private static final ReadSplitter readSplitter = new ReadSplitter();
+	public static final int STATS_PER_POS = FormatConstants.SANGER_MAX + 1;
+	private static final AvgBqReader abqReader = new AvgBqReader();
 
-	private ItemCounter2D itemCounter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
+	private ItemCounter2D itemCounter = new ItemCounter2D(1, STATS_PER_POS, abqReader);
 
-	//************ map sequences to byte[] ************/
-	public static class ReadSplitter implements ItemCounter2D.TupleToItem {
+	//************ map abq strings to byte[] ************/
+        public static class AvgBqReader implements ItemCounter2D.TupleToItem {
 
-                public static char map_int_to_base(int b) {
-		    if(b < 0 || b >= BASES.length)
-			throw new RuntimeException("invalid base index " + Integer.toString(b));
+	    public static int map_qual_to_int(char qual) {
+		int readbasequal_int = (int)qual - FormatConstants.SANGER_OFFSET;
+		    
+		if (readbasequal_int < 0 || readbasequal_int > FormatConstants.SANGER_MAX)
+		    throw new RuntimeException("Base quality score " + qual + " is out of range");
 
-		    return BASES[b];
-		}
+		return readbasequal_int;
+            }
 
-		protected static byte map_base_to_int(char c) {
-			switch(c) {
-				case 'A':
-					return (byte)0;
-				case 'C':
-					return (byte)1;
-				case 'G':
-					return (byte)2;
-				case 'T':
-					return (byte)3;
-				case 'N':
-					return (byte)4;
-				default:
-					throw new RuntimeException("invalid base character " + c);
-			}
-		}
+	    public static int map_int_to_qual(int val) {
+		return val; // + FormatConstants.SANGER_OFFSET;
+	    }
 
-		public byte[] tupleToItem(final Tuple input) throws ExecException {
-			String bases = (String)input.get(0);
-			byte[] output = new byte[bases.length()];
+	    public byte[] tupleToItem(final Tuple input) throws ExecException {
+		String basequals = (String)input.get(0);
+		byte[] output = new byte[1];
+		
+		long avg_base_qual = 0L;
 
-			for(int pos = 0; pos < bases.length(); ++pos) {
-				output[pos] = map_base_to_int(bases.charAt(pos));
-			}
-
-			return output;
-		}
+		for(int pos = 0; pos < basequals.length(); ++pos)
+		    avg_base_qual += map_qual_to_int(basequals.charAt(pos));
+			
+		output[0] = (byte)Math.round(avg_base_qual/((double)basequals.length()));
+		return output;
+	    }
 	}
 
 	//************** Algebraic ******************/
@@ -104,7 +96,7 @@ public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulato
 	public static class Initial extends EvalFunc<Tuple> {
 		@Override
 		public Tuple exec(Tuple input) throws IOException {
-			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
+			ItemCounter2D counter = new ItemCounter2D(1, STATS_PER_POS, abqReader);
 			return counter.execInitial(input);
 		}
 	}
@@ -112,7 +104,7 @@ public class BaseCounts extends EvalFunc<Tuple> implements Algebraic, Accumulato
 	public static class Intermediate extends EvalFunc<Tuple> {
 		@Override
 		public Tuple exec(Tuple input) throws IOException {
-			ItemCounter2D counter = new ItemCounter2D(READ_LENGTH, BASES.length, readSplitter);
+			ItemCounter2D counter = new ItemCounter2D(1, STATS_PER_POS, abqReader);
 			return counter.execAggregate(input);
 		}
 	}

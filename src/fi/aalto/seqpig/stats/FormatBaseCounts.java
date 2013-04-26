@@ -18,11 +18,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-package fi.aalto.seqpig;
+package fi.aalto.seqpig.stats;
 
-import org.apache.pig.data.BagFactory;
+import java.nio.LongBuffer;
+import java.nio.ByteBuffer;
+import java.io.IOException;
 import org.apache.pig.data.DataBag;
+import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
+import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.EvalFunc;
@@ -34,71 +38,53 @@ import org.apache.pig.backend.executionengine.ExecException;
 import java.io.IOException;
 import java.util.Iterator;
 
-/* formats the output of BaseQualStats
+/* Formats the output of BaseCounts
 */
 
-// idea: compute variance via the "wrong formula"
-// see http://www.cs.berkeley.edu/~mhoemmen/cs194/Tutorials/variance.pdf
-// 
-// sigma_N(x) = sqrt(1/(N-1) (\sum_i x_i^2 - 1/n (\sum x_i)^2))
-
-public class FormatBaseQualStats extends EvalFunc<DataBag>
+public class FormatBaseCounts extends EvalFunc<DataBag>
 {
+    private int read_length;
 
-    public FormatBaseQualStats() {
+    public FormatBaseCounts() {
+	read_length = BaseCounts.READ_LENGTH;
     }
 
-    // nested tuple input format:
-    //   for each read position pos
-    //       (pos, <number_of_samples>, \sum x_i, \sum x_i^2)
+    public FormatBaseCounts(int read_length) {
+	this.read_length = read_length;
+    }
 
-
-    // tuple output format:
-    //   position
-    //   avg base quality (arithmetic mean)
-    //   standard deviation (based on population variance)
+    // bag output format:
+    //   { ( position, <A fraction>, <C fraction>, <G fraction>, <T fraction>, <N fraction>) }
    
     @Override 
     public DataBag exec(Tuple t) throws IOException, org.apache.pig.backend.executionengine.ExecException {
-	    
+	
 	if (t == null || t.size() == 0)
 	    return null;
-
-	Tuple input = (Tuple)t.get(0);
-
+	
+        Tuple tmp = (Tuple)t.get(0);
+	DataByteArray input = (DataByteArray)tmp.get(0);
 	DataBag output = BagFactory.getInstance().newDefaultBag();
+	int num_bases = (input.size() / 8) / read_length;
+        long[] counts = new long[num_bases * read_length];
 
-	int num_of_fields = input.size();
+        ByteBuffer.wrap(input.get()).asLongBuffer().get(counts);
 
-	for(int f = 0; f<num_of_fields; f++) {
-        	Tuple input_tpl = (Tuple)input.get(f);
-		Tuple output_tpl = TupleFactory.getInstance().newTuple(3);
+	for(int p = 0; p<read_length; p++) {
+	    Tuple output_tpl = TupleFactory.getInstance().newTuple(num_bases+1);
 
-		// sigma_N(x) = sqrt(1/(N-1) (\sum_i x_i^2 - 1/n (\sum x_i)^2))
-		//	      = sqrty(1/(N-1) (tmp1 - tmp2))
-
-		long N = (Long)input_tpl.get(1);
-
-                // set value for position
-		output_tpl.set(0, (Integer)input_tpl.get(0));
-
-		if(N >= 1) {
-		    double tmp1 = (Long)input_tpl.get(3);
-		    double tmp2 = ((Long)input_tpl.get(2) / ((double)N))
-			* ((Long)input_tpl.get(2));
-		    
-		    // set value for mean
-		    output_tpl.set(1, (Long)input_tpl.get(2) / ((double)N));
-
-		    String str = String.format("N: %d, tmp1: %f tmp2: %f tmp1-tmp2: %f", N, tmp1, tmp2, tmp1-tmp2);
-		    System.out.println(str);
-
-		    if(N >= 2)
-		        // set value for stddev
-		        output_tpl.set(2, Math.sqrt( (tmp1 - tmp2)/((double)N-1) ));
-		}
-
-		output.add(output_tpl);
+	    // set position		
+	    output_tpl.set(0, new Integer(p));
+	    
+	    long read_counter = 0L;
+	    
+	    for(int b=0;b<num_bases;b++)
+		read_counter += counts[p*num_bases + b];
+	    
+	    for(int b=0;b<num_bases;b++)
+		output_tpl.set(1+b, new Double(counts[p*num_bases + b] / ((double) read_counter)));
+	    
+	    output.add(output_tpl);
 	}
 
 	return output;
@@ -108,9 +94,11 @@ public class FormatBaseQualStats extends EvalFunc<DataBag>
     public Schema outputSchema(Schema input) {
 	try{
 	    Schema bagSchema = new Schema();
-	    bagSchema.add(new Schema.FieldSchema("pos", DataType.LONG));
-            bagSchema.add(new Schema.FieldSchema("mean", DataType.DOUBLE));
-	    bagSchema.add(new Schema.FieldSchema("stddev", DataType.DOUBLE));
+	    bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
+
+	    for(int f = 1; f <= BaseCounts.BASES.length; f++) {
+		bagSchema.add(new Schema.FieldSchema(String.valueOf(BaseCounts.ReadSplitter.map_int_to_base(f-1)), DataType.DOUBLE));
+	    }
 
 	    return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), bagSchema, DataType.BAG));
 	}catch (Exception e){
