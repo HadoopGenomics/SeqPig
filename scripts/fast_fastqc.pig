@@ -42,9 +42,12 @@ read_len = FOREACH reads GENERATE STRLEN(sequence);
 read_len_counts = FOREACH (GROUP read_len BY $0) GENERATE group AS len, COUNT_STAR($1) as count;
 
 -- per sequence avg base quality
-read_q = FOREACH reads_by_bases GENERATE ROUND(AVG($0.basequal)) as read_qual;
-read_q_counts = FOREACH (GROUP read_q BY read_qual) GENERATE group as avg_read_qual, COUNT_STAR($1) as count;
+-- read_q = FOREACH reads_by_bases GENERATE ROUND(AVG($0.basequal)) as read_qual;
+-- read_q_counts = FOREACH (GROUP read_q BY read_qual) GENERATE group as avg_read_qual, COUNT_STAR($1) as count;
 
+read_seq_qual = FOREACH reads GENERATE quality;
+avgbase_qual_counts = FOREACH (GROUP read_seq_qual ALL) GENERATE AvgBaseQualCounts($1.$0);
+formatted_avgbase_qual_counts = FOREACH avgbase_qual_counts GENERATE FormatAvgBaseQualCounts($0);
 
 -- per sequence GC content
 read_gc = FOREACH reads_by_bases {
@@ -63,7 +66,8 @@ formatted_base_qual_counts = FOREACH base_qual_counts GENERATE FormatBaseCounts(
 ------- generate output
 
 STORE read_len_counts INTO '$outputpath/read_len_counts';
-STORE read_q_counts INTO '$outputpath/read_q_counts';
+-- STORE read_q_counts INTO '$outputpath/read_q_counts';
+STORE formatted_avgbase_qual_counts INTO '$outputpath/read_q_counts';
 STORE read_gc_counts INTO '$outputpath/read_gc_counts';
 STORE formatted_base_qual_counts INTO '$outputpath/base_qual_counts';
 -- per base GC and N content can be generated from the counts above
