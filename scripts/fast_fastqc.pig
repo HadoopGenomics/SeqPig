@@ -63,6 +63,8 @@ read_seq_qual = FOREACH reads GENERATE sequence, quality;
 base_qual_counts = FOREACH (GROUP read_seq_qual ALL) GENERATE BaseCounts($1.$0), BaseQualCounts($1.$1);
 formatted_base_qual_counts = FOREACH base_qual_counts GENERATE FormatBaseCounts($0), FormatBaseQualCounts($1);
 
+base_gc_counts = FOREACH base_qual_counts GENERATE FormatGCCounts($0);
+
 ------- generate output
 
 STORE read_len_counts INTO '$outputpath/read_len_counts';
@@ -70,4 +72,5 @@ STORE read_len_counts INTO '$outputpath/read_len_counts';
 STORE formatted_avgbase_qual_counts INTO '$outputpath/read_q_counts';
 STORE read_gc_counts INTO '$outputpath/read_gc_counts';
 STORE formatted_base_qual_counts INTO '$outputpath/base_qual_counts';
--- per base GC and N content can be generated from the counts above
+-- per base GC and N content can be generated from the counts above, example:
+STORE base_gc_counts INTO '$outputpath/base_gc_counts';
