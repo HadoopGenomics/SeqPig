@@ -2,20 +2,18 @@
 \section{Examples}
 \label{sect:examples}
 
-This section lists a number of examples of the types of operations that can be
-performed with SeqPig.  Of course, what can be done is not limited to these
-operations.
+This section lists a number of examples of the types of operations
+that can be performed with SeqPig. Each example is typically a mix of
+standard Pig operations and SeqPig user-defined functions (UDF's).
 
 \subsection{Operations on BAM files}
 
-To access sequencing data in BAM files, SeqPig uses Hadoop-BAM, which provides
-access to all fields and optional attributes in the data records.
-
-%Hadoop-BAM
-%provides access to sequencing data in BAM and SAM format
-%through the SAMRecord (see \url{http://picard.sourceforge.net/javadoc/net/sf/samtools/SAMRecord.html}),
-%which is the Picard type for a (typically aligned) read. As such, all fields and
-%optional attributes become accessible from within Pig.
+To access sequencing data in BAM files, SeqPig uses Hadoop-BAM, which
+provides access to all fields and optional attributes in the data
+records. Note that once the data has been imported to Pig the only
+difference between say read data originating from BAM and Fastq files
+is that some fields in tuples derived from BAM may not be available in
+those from Fastq, e.g., alignment start positions.
 
 All the examples below assume that an input BAM file is initially imported to HDFS via
 \begin{lstlisting} 
@@ -25,11 +23,15 @@ and then loaded in the grunt shell via
 \begin{lstlisting} 
 A = load 'input.bam' using BamLoader('yes');
 \end{lstlisting} 
-The 'yes' parameter to {\tt BamLoader} chooses read attributes to be loaded; choose 'no' whenever these
-are not required).
+The 'yes' parameter to {\tt BamLoader} chooses read attributes to be
+loaded; choose 'no' whenever these are not required). This additional
+setup step is required to extract the header and store it inside HDFS
+to simplify some operations that only operate on a chunk of the BAM
+file without having access to the original header. Similarly, for
+uncompressed SAM files there is a corresponding {\tt prepareSamInput.sh}.
 
-Once some operations have been performed, the resulting (modified) read
-data can then be stored into a new BAM file via
+Once some operations have been performed, the resulting (possibly
+modified) read data can then be stored into a new BAM file via
 \begin{lstlisting}
 store A into 'output.bam' using BamStorer('input.bam.asciiheader');
 \end{lstlisting}
@@ -42,6 +44,8 @@ prepareBamOutput.sh output.bam
 for example the header of the source file used to generate it, which is
 generated automatically by the {\tt prepareBamInput.sh} script used to import it)
 \end{description}
+
+\subsubsection{Simple operations}
 
 Writing the BAM data to the screen (similarly to samtools view)
 can be done simply by
@@ -92,7 +96,9 @@ to the relevant fields. The previous example is equivalent to
 run scripts/filter_defs.pig
 A = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 \end{lstlisting}
-For of a full list of the available filters look at the file {\tt scripts/filter\_defs.pig}.
+Note that the above example assumes that {\tt filter\_defs.pig} can be
+found below the directory where the Pig shell was started. For of a
+full list of the available filters look at this file.
 
 \subsubsection{Filtering out reads with low mapping quality}
 
@@ -141,9 +147,11 @@ dump C;
 will output the number of reads that lie in any non-overlapping bin of size 200 base pairs.
 
  \subsubsection{Computing base frequencies (counts) for each reference coordinate}
+
 \begin{lstlisting}
+run scripts/filter_defs.pig
 A = FOREACH A GENERATE read, flags, refname, start, cigar, basequal, mapqual;
-A = FILTER A BY (flags/4)%2==0;
+A = FILTER A BY not ReadUnmapped(flags);
 RefPos = FOREACH A GENERATE ReadRefPositions(read, flags, refname, start, cigar, basequal), mapqual;
 flatset = FOREACH RefPos GENERATE flatten($0), mapqual;
 grouped = GROUP flatset BY ($0, $1, $2);
@@ -163,8 +171,9 @@ Generating samtools compatible pileup (for a correctly sorted BAM file
 with MD tags aligned to the same reference, should produce the same output as
 {\tt samtools mpileup -A -f ref.fasta -B input.bam}):
 \begin{lstlisting}
+run scripts/filter_defs.pig
 A = load 'input.bam' using BamLoader('yes');
-B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
+B = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
       basequal, attributes#'MD', mapqual), start, flags, name;
 C = FILTER C BY $0 is not null;
@@ -201,27 +210,28 @@ There are two optional parameters for pileup.pig: {\tt min\_map\_qual} and
 either insufficient map quality or base qualities. Their values can
 be set the same way as the other parameters above.
 
-There is an alternative pileup script which typically performs better but
-is more sensitive to additional parameters. This second script, {\tt
-pileup2.pig}, is based on a \emph{binning} of the reads according to
-intervals on the reference sequence. The pileup output is then generated on
-a by-bin level and not on a by-position level. This script can be invoked
-with the same paramters as {\tt pileup2.pig}. However, it has tunable
-parameters that determine the size of the bins ({\tt binsize}) and the
-maximum number of reads considered per bin ({\tt reads\_cutoff}), which is
-similar to the maximum depth parameter that samtools accepts. However,
-note that since this parameter is set on a per-bin level you may chose it dependent on
-the read length and bin size, as well as the amount of memory available on
-the compute nodes.
-
+There is an alternative pileup script which typically performs better
+but is more sensitive to additional parameters. This second script,
+{\tt pileup2.pig}, is based on a \emph{binning} of the reads according
+to intervals on the reference sequence. The pileup output is then
+generated on a by-bin level and not on a by-position level. This
+script can be invoked with the same paramters as {\tt
+  pileup2.pig}. However, it has tunable parameters that determine the
+size of the bins ({\tt binsize}) and the maximum number of reads
+considered per bin ({\tt reads\_cutoff}), which is similar to the
+maximum depth parameter that samtools accepts. However, note that
+since this parameter is set on a per-bin level you may chose it
+dependent on the read length and bin size, as well as the amount of
+memory available on the compute nodes.
 
 \subsubsection{Collecting read-mapping-quality statistics}
 In order to evaluate the output of an aligner, it may be useful to
 consider the distribution of the mapping quality over the collection of
 reads. Thanks to Pig's {\tt GROUP} operator this is fairly easy.
 \begin{lstlisting}
+run scripts/filter_defs.pig
 A = load 'input.bam' using BamLoader('yes');
-B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
+B = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 read_stats_data = FOREACH B GENERATE mapqual;
 read_stats_grouped = GROUP read_stats_data BY mapqual;
 read_stats = FOREACH read_stats_grouped GENERATE group, COUNT($1);
@@ -242,8 +252,9 @@ read. The following simple script generates for each reference base and
 each position inside a read the distribution of the number of read bases
 that were called.
 \begin{lstlisting}
+run scripts/filter_defs.pig
 A = load 'input.bam' using BamLoader('yes');
-B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
+B = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
 D = FOREACH C GENERATE FLATTEN($0);
 base_stats_data = FOREACH D GENERATE refbase, basepos, UPPER(readbase) AS readbase;
@@ -303,8 +314,9 @@ indicate some quality issues with the run. The resulting script is actually
 fairly similar to the previous one with the difference of not grouping
 over the reference bases.
 \begin{lstlisting}
+run scripts/filter_defs.pig
 A = load 'input.bam' using BamLoader('yes');
-B = FILTER A BY (flags/4)%2==0 and (flags/1024)%2==0;
+B = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 C = FOREACH B GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
 D = FOREACH C GENERATE FLATTEN($0);
 base_stats_data = FOREACH D GENERATE basepos, basequal;
@@ -400,6 +412,9 @@ formatted_avgbase_qual_counts = FOREACH avgbase_qual_counts GENERATE
 
 \subsubsection{Distribution of GC content over the read set}
 
+The following example shows how one can exploit Pig's GROUP and COUNT
+operators to obtain statistics of the composition of read bases.
+
 \begin{lstlisting}
 reads = load 'input.fq' using FastqLoader();
 reads_by_bases = FOREACH reads GENERATE UnalignedReadSplit(sequence, quality);
@@ -459,7 +474,21 @@ $ pig -param inputfile=input.qseq -param outputfile=output.qseq -param backclip=
 \end{lstlisting}
 \end{description}
 
-\section{Further information}
+\section{Performance tuning}
+
+\subsection{Pig parameters}
+
+Recent releases of Pig (such as 0.11.0) have a parameter that enables
+aggregation of partial results on the mapper side, which greatly
+improves performances of some of the UDF's described above. Further,
+another option that is worth considering is to use so-called
+\emph{schema tuples}. For more information see the Pig
+documentation. The recommended setting is as follows:
+\begin{itemize}
+\item {\tt set pig.exec.mapPartAgg true;}
+\item {\tt set pig.exec.mapPartAgg.minReduction 5;}
+\item {\tt set pig.schematuple on;}
+\end{itemize}
 
 \subsection{Hadoop parameters}
 
