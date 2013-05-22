@@ -361,6 +361,80 @@ STORE reads INTO 'output.fastq' using FastqStorer();
 \end{lstlisting}
 The other direction works analogously.
 
+The following examples are not specific to the type of input data
+(Fastq, Qseq, BAM, $\ldots$). They roughly correspond to the ones
+computed by the popular FastQC tool can be all found in the {\tt
+  fast\_fastqc.pig} script.
+
+\subsubsection{Computing a read length distribution}
+\label{sect:read_length_dist}
+
+\begin{lstlisting}
+reads = load 'input.fq' using FastqLoader();
+read_len = FOREACH reads GENERATE STRLEN(sequence);
+read_len_counts = FOREACH (GROUP read_len BY $0) GENERATE group AS len, COUNT_STAR($1) as count;
+\end{lstlisting}
+
+\subsubsection{Computing a distribution of the average base quality of a read}
+
+By using a SeqPig UDF to split reads into bases, one can compute this
+statistic by relying on Pig's GROUP BY operator as follows.
+%
+\begin{lstlisting}
+reads = load 'input.fq' using FastqLoader();
+reads_by_bases = FOREACH reads GENERATE UnalignedReadSplit(sequence, quality);
+read_q = FOREACH reads_by_bases GENERATE ROUND(AVG($0.basequal)) as read_qual;
+read_q_counts = FOREACH (GROUP read_q BY read_qual) GENERATE group as avg_read_qual, COUNT_STAR($1) as count;
+\end{lstlisting}
+
+Alternatively, SeqPig also provides another UDF that has better performance
+for larger read sets.
+%
+\begin{lstlisting}
+reads = load 'input.fq' using FastqLoader();
+read_seq_qual = FOREACH reads GENERATE quality;
+avgbase_qual_counts = FOREACH (GROUP read_seq_qual ALL) GENERATE AvgBaseQualCounts($1.$0);
+formatted_avgbase_qual_counts = FOREACH avgbase_qual_counts GENERATE
+    FormatAvgBaseQualCounts($0);
+\end{lstlisting}
+
+\subsubsection{Distribution of GC content over the read set}
+
+\begin{lstlisting}
+reads = load 'input.fq' using FastqLoader();
+reads_by_bases = FOREACH reads GENERATE UnalignedReadSplit(sequence, quality);
+read_gc = FOREACH reads_by_bases {
+  only_gc = FILTER $0 BY readbase == 'G' OR readbase == 'C';
+  GENERATE COUNT(only_gc) as count;
+}
+read_gc_counts = FOREACH (GROUP read_gc BY count) GENERATE group as gc_count, COUNT_STAR($1) as count;
+\end{lstlisting}
+
+\subsubsection{Computing base statistics over the read set}
+
+\label{sect:base_stats}
+
+Similarly to GC content, one can rely on Pig operations to compute for
+each read position the distribution of nucleotides and their base
+qualities, as given by the aligner. However, in order to improve
+performance for larger data sets, SeqPig also provides UDF's for this
+purpose.
+
+\begin{lstlisting}
+reads = load 'input.fq' using FastqLoader();
+read_seq_qual = FOREACH reads GENERATE sequence, quality;
+base_qual_counts = FOREACH (GROUP read_seq_qual ALL) GENERATE BaseCounts($1.$0), BaseQualCounts($1.$1);
+formatted_base_qual_counts = FOREACH base_qual_counts GENERATE FormatBaseCounts($0), FormatBaseQualCounts($1);
+base_gc_counts = FOREACH base_qual_counts GENERATE FormatGCCounts($0);
+\end{lstlisting}
+
+\begin{description}
+	\item[Note] All the statistics computed by the examples of Sections~\ref{sect:read_length_dist}--\ref{sect:base_stats} can be executed at once via
+\begin{lstlisting}
+$ pig -param inputpath=input.fq -param outputpath=fast-fastqc-output $SEQPIG_HOME/scripts/fast_fastqc.pig
+\end{lstlisting}
+\end{description}
+
 \subsubsection{Clipping bases and base qualities}
 
 \label{sect:read_clipping}

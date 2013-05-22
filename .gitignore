@@ -19,3 +19,4 @@ release_commands.txt
 *.tmp
 *.xref
 *.4ct
+*.bak

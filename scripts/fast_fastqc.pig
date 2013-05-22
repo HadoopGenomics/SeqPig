@@ -52,7 +52,7 @@ formatted_avgbase_qual_counts = FOREACH avgbase_qual_counts GENERATE FormatAvgBa
 -- per sequence GC content
 read_gc = FOREACH reads_by_bases {
   only_gc = FILTER $0 BY readbase == 'G' OR readbase == 'C';
-  GENERATE COUNT_STAR(only_gc) as count;
+  GENERATE COUNT(only_gc) as count;
 }
 read_gc_counts = FOREACH (GROUP read_gc BY count) GENERATE group as gc_count, COUNT_STAR($1) as count;
 
