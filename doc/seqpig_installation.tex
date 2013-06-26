@@ -31,8 +31,8 @@ The following two dependencies are already included in a pre-compiled SeqPig rel
 
 On a Cloudera Hadoop installation with Pig a suitable environment configuration would be:
 \begin{lstlisting} 
-export HADOOP_HOME=/usr/lib/hadoop
-export PIG_HOME=/usr/lib/pig
+$ export HADOOP_HOME=/usr/lib/hadoop
+$ export PIG_HOME=/usr/lib/pig
 \end{lstlisting}
 
 \subsection{Installing a pre-compiled release}
@@ -127,16 +127,13 @@ execute
 \begin{lstlisting} 
 $ test/test_all.sh
 \end{lstlisting}
-This test requires that Hadoop is set up correctly. It first imports a BAM
-file, sorts the reads by coordinate and converts it to SAM for comparing
-the results. The test should end with the line
+By default the tests run Pig in local mode. In order to test Hadoop
+mode pass the command line argument {\tt -h}. Note that this test
+requires that Hadoop to be set up correctly. It first imports a BAM
+file, sorts the reads by coordinate and converts it to SAM for
+comparing the results. The test should end with the line
 \begin{lstlisting}
 TEST: all tests passed
-\end{lstlisting}
-Alternatively, the same script can execute Pig in local mode, which does not
-require a working Hadoop instance. To run the tests in local mode execute
-\begin{lstlisting} 
-$ test/test_all.sh -l
 \end{lstlisting}
 If you intend to run SeqPig on an Amazon Elastic MapReduce instance, you can
 also test input from S3 by providing an S3 path to the file {\tt data/input.bam}:
