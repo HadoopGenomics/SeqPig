@@ -10,20 +10,24 @@
 
 \subsection{Dependencies}
 
-\begin{enumerate}
+\begin{itemize}
 	\item A Hadoop cluster (we have tested with Hadoop 0.20.2)
 	\item Pig (at least version 0.10)
-	\item Hadoop-BAM (\url{https://sourceforge.net/projects/hadoop-bam/})
-	\item Seal (\url{http://biodoop-seal.sourceforge.net/})
-\end{enumerate}
+\end{itemize}
+%
+The following two dependencies are already included in a pre-compiled SeqPig release:
+\begin{itemize}
+\item Hadoop-BAM (\url{https://sourceforge.net/projects/hadoop-bam/})
+\item Seal (\url{http://biodoop-seal.sourceforge.net/})
+\end{itemize}
 
 \subsection{Environment variables}
 \label{sect:install_env}
-\begin{enumerate}
+\begin{itemize}
 \item Set Hadoop-related variables (e.g., {\tt HADOOP\_HOME}) for your
 	installation
 \item Set {\tt PIG\_HOME} to point to your Pig installation
-\end{enumerate}
+\end{itemize}
 
 On a Cloudera Hadoop installation with Pig a suitable environment configuration would be:
 \begin{lstlisting} 
@@ -31,11 +35,32 @@ export HADOOP_HOME=/usr/lib/hadoop
 export PIG_HOME=/usr/lib/pig
 \end{lstlisting}
 
+\subsection{Installing a pre-compiled release}
+
+\begin{enumerate}
+\item Dowload the latest SeqPig release from \url{https://sourceforge.net/projects/seqpig/}
+\item Untar the release into an installation directory of your choice and set the {\tt SEQPIG\_HOME}
+  environment variable to point to the installation directory of SeqPig; e.g.,
+%
+\begin{lstlisting} 
+$ tar xvzf seqpig_0.5.tar.gz -C /usr/local/java/
+$ export SEQPIG_HOME=/usr/local/java/seqpig 
+\end{lstlisting}
+%
+\item For your convenience, you can add the bin directory to your {\tt PATH}:
+%
+\begin{lstlisting} 
+$ export PATH=${PATH}:${SEQPIG_HOME}/bin
+\end{lstlisting}
+%
+This way, you'll be able to start a SeqPig-enabled Pig shell by running the {\tt
+seqpig} command.
+\end{enumerate}
+
 \subsection{Instructions for building SeqPig}
 
 \begin{enumerate}
 \item Download hadoop-bam from \url{https://sourceforge.net/projects/hadoop-bam/}.
-
 \item Download and build the latest Seal git master version from
  \url{http://biodoop-seal.sourceforge.net/}. Note that this requires setting
  {\tt HADOOP\_BAM} to the installation directory of hadoop-bam.
@@ -57,24 +82,6 @@ for convenience.
 Once you've built SeqPig, you can move the directory to a location of your
 preference (if on a shared system, perhaps {\tt /usr/local/java/seqpig}, else
 even your home directory could be fine).
-
-
-Set the environment variable {\tt SEQPIG\_HOME} to point to the installation
-directory of SeqPig; e.g.,
-%
-\begin{lstlisting} 
-export SEQPIG_HOME=/usr/local/java/seqpig 
-\end{lstlisting}
-%
-
-For your convenience, you can add the bin directory to your {\tt PATH}:
-%
-\begin{lstlisting} 
-$ export PATH=${PATH}:${SEQPIG_HOME}/bin
-\end{lstlisting}
-%
-This way, you'll be able to start a SeqPig-enabled Pig shell by running the {\tt
-seqpig} command.
 
 \subsubsection{Note}
 \label{sect:piggybank_note}
