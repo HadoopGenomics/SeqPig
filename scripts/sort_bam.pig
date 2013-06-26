@@ -4,8 +4,8 @@
 %default pparallel 1
 --
 --   macro definitions
-DEFINE ReadUnmapped fi.aalto.seqpig.SAMFlagsFilter('HasSegmentUnmapped');
-DEFINE IsDuplicate fi.aalto.seqpig.SAMFlagsFilter('IsDuplicate');
+DEFINE ReadUnmapped fi.aalto.seqpig.filter.SAMFlagsFilter('HasSegmentUnmapped');
+DEFINE IsDuplicate fi.aalto.seqpig.filter.SAMFlagsFilter('IsDuplicate');
 --
 --   start of script
 --

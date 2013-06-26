@@ -83,8 +83,8 @@ function check_output() {
 	echo TEST: importing sorted file
 	${SEQPIG_HOME}/bin/prepareBamInput.sh input_sorted.bam
 	cat > /tmp/convert_reads.pig <<EOF
-A = load '/user/${USER}/input_sorted.bam' using BamUDFLoader('yes');
-store A into '/user/${USER}/output.sam' using SamUDFStorer('/user/${USER}/input_sorted.bam.asciiheader');
+A = load '/user/${USER}/input_sorted.bam' using BamLoader('yes');
+store A into '/user/${USER}/output.sam' using SamStorer('/user/${USER}/input_sorted.bam.asciiheader');
 EOF
 	echo TEST: converting sorted BAM to SAM
 	$HADOOP fs -rmr /user/${USER}/output.sam
@@ -127,8 +127,8 @@ function test_sorting_local() {
 	cp -a ${SEQPIG_HOME}/data/input.bam.asciiheader input_sorted.bam.asciiheader
 	echo TEST: ok
 	cat > /tmp/convert_reads.pig <<EOF
-A = load '$(pwd)/input_sorted.bam' using BamUDFLoader('yes');
-store A into '$(pwd)/output' using SamUDFStorer('$(pwd)/input_sorted.bam.asciiheader');
+A = load '$(pwd)/input_sorted.bam' using BamLoader('yes');
+store A into '$(pwd)/output' using SamStorer('$(pwd)/input_sorted.bam.asciiheader');
 EOF
 	echo TEST: converting sorted BAM to SAM
 	${SEQPIG_HOME}/bin/seqpig -x local /tmp/convert_reads.pig
@@ -159,7 +159,7 @@ source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
 
 init_tests
 
-test_chosen=1
+test_chosen=2
 s3_path=""
 
 while getopts ":hs:l" opt; do
