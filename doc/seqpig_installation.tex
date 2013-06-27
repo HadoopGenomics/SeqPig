@@ -8,10 +8,16 @@
 
 \Css{ol li { padding: 0; margin: 0.5em; }}
 
-\subsection{Dependencies}
+Since SeqPig builds on top of Pig, which itself relies on Hadoop for
+job executions, the installation requires a working Pig and Hadoop
+setup. For more information in this direction see for example \url{http://pig.apache.org/docs/r0.11.1/start.html}.
 
+\subsection{Dependencies}
+%
+We have tested SeqPig with the following dependencies.
+%
 \begin{itemize}
-	\item A Hadoop cluster (we have tested with Hadoop 0.20.2)
+	\item Hadoop 0.20.2
 	\item Pig (at least version 0.10)
 \end{itemize}
 %
