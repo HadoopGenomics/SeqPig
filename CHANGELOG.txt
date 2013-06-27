@@ -1,3 +1,9 @@
+** V0.5 **
+
+   - AS: breaking up UDF's into modules (io, filter, etc.)
+   - AS: adding FastQC like UDF's and example script
+   - AS: improving documentation
+
 ** V0.4 **
 
    - AS: more scripts, UDF's and better documentation
