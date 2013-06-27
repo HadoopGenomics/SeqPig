@@ -5,30 +5,31 @@
 This section lists a number of examples of the types of operations
 that can be performed with SeqPig. Each example is typically a mix of
 standard Pig operations and SeqPig user-defined functions (UDF's).
+Note that once the data has been imported to Pig the only difference
+between say read data originating from BAM and Fastq files is that
+some fields in tuples derived from BAM may not be available in those
+from Fastq, e.g., alignment start positions.
 
 \subsection{Operations on BAM files}
 
 To access sequencing data in BAM files, SeqPig uses Hadoop-BAM, which
 provides access to all fields and optional attributes in the data
-records. Note that once the data has been imported to Pig the only
-difference between say read data originating from BAM and Fastq files
-is that some fields in tuples derived from BAM may not be available in
-those from Fastq, e.g., alignment start positions.
-
-All the examples below assume that an input BAM file is initially imported to HDFS via
+records. All the examples below assume that an input BAM file is
+initially imported to HDFS via
 \begin{lstlisting} 
-prepareBamInput.sh input.bam
+$ prepareBamInput.sh input.bam
 \end{lstlisting} 
-and then loaded in the grunt shell via
+This additional setup step is required to extract the header and store
+it inside HDFS to simplify some operations that only operate on a
+chunk of the BAM file without having access to the original header.
+Similarly, for uncompressed SAM files there is a corresponding {\tt
+prepareSamInput.sh}. Once the input file is imported into HDFS it
+can be loaded in the grunt shell via
 \begin{lstlisting} 
 A = load 'input.bam' using BamLoader('yes');
 \end{lstlisting} 
 The 'yes' parameter to {\tt BamLoader} chooses read attributes to be
-loaded; choose 'no' whenever these are not required). This additional
-setup step is required to extract the header and store it inside HDFS
-to simplify some operations that only operate on a chunk of the BAM
-file without having access to the original header. Similarly, for
-uncompressed SAM files there is a corresponding {\tt prepareSamInput.sh}.
+loaded; choose 'no' whenever these are not required).
 
 Once some operations have been performed, the resulting (possibly
 modified) read data can then be stored into a new BAM file via
@@ -60,7 +61,7 @@ describe A;
 \end{lstlisting}
 returns
 \begin{lstlisting}  
-	BamData: {name: chararray,start: int,end: int,read: chararray,cigar: chararray,
+	A: {name: chararray,start: int,end: int,read: chararray,cigar: chararray,
    basequal: chararray,flags: int,insertsize: int,mapqual:int,matestart: int,
    materefindex: int,refindex: int,refname: chararray,attributes: map[]}
 \end{lstlisting}
@@ -129,6 +130,8 @@ A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsiz
 mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
 A = ORDER A BY refname, start, $14, name;
 \end{lstlisting}
+Note that the column index {\tt \$14} here is used to refer to the strand flag computed by the expression
+{\tt (flags/16)}.
 \begin{description}
 	\item[Note] This is roughly equivalent to executing from the command line
 \begin{lstlisting}
@@ -145,6 +148,8 @@ C = FOREACH B GENERATE group, COUNT(A);
 dump C; 
 \end{lstlisting}
 will output the number of reads that lie in any non-overlapping bin of size 200 base pairs.
+For a more precise coverage computation see Section~\ref{subsubsect:pileup} on computing
+read pileup.
 
  \subsubsection{Computing base frequencies (counts) for each reference coordinate}
 
@@ -167,6 +172,7 @@ $ pig -param inputfile=input.bam -param outputfile=input.basecounts -param ppara
 \end{description}
 
 \subsubsection{Pileup}
+\label{subsubsect:pileup}
 Generating samtools compatible pileup (for a correctly sorted BAM file
 with MD tags aligned to the same reference, should produce the same output as
 {\tt samtools mpileup -A -f ref.fasta -B input.bam}):
@@ -359,10 +365,13 @@ with Pig in local mode.
 
 \subsection{Processing Qseq and Fastq data}
 
-SeqPig supports the import and export of non-aligned reads stored in Qseq and
-Fastq data. Due to Pig's model that all records correspond to tuples, which
-form bags, reads can be processed in very much the same way independent
-on for example whether they are stored in Qseq or Fastq.
+SeqPig supports the import and export of non-aligned reads stored in
+Qseq and Fastq data. Due to Pig's model that all records correspond to
+tuples, which form bags, reads can be processed in very much the same
+way independent on for example whether they are stored in Qseq or
+Fastq. Also, since Fastq and Qseq files are header-less, there is no
+pre-processing step required prior to loading the files, compared to
+SAM/BAM import.
 
 \subsubsection{Converting Qseq to Fastq and vice versa}
 
