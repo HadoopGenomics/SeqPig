@@ -132,7 +132,7 @@ mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2 AS
 A = ORDER A BY refname, start, strand, name;
 \end{lstlisting}
 Note that {\tt strand} here is used to refer to the strand flag computed by the expression
-{\tt (flags/16)%2}.
+{\tt (flags/16)\%2}.
 \begin{description}
 	\item[Note] This is roughly equivalent to executing from the command line
 \begin{lstlisting}
