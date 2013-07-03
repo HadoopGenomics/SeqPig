@@ -17,7 +17,7 @@ setup. For more information in this direction see for example \url{http://pig.ap
 We have tested SeqPig with the following dependencies.
 %
 \begin{itemize}
-	\item Hadoop 0.20.2
+	\item Hadoop versions 0.20.2 or 1.0.4
 	\item Pig (at least version 0.10)
 \end{itemize}
 %
@@ -44,7 +44,10 @@ $ export PIG_HOME=/usr/lib/pig
 \subsection{Installing a pre-compiled release}
 
 \begin{enumerate}
-\item Dowload the latest SeqPig release from \url{https://sourceforge.net/projects/seqpig/}
+\item Dowload the latest SeqPig release from \url{http://sourceforge.net/projects/seqpig/files/}:
+\begin{lstlisting} 
+$ wget @\url{http://sourceforge.net/projects/seqpig/files/seqpig_0.5.tar.gz}@
+\end{lstlisting}
 \item Untar the release into an installation directory of your choice and set the {\tt SEQPIG\_HOME}
   environment variable to point to the installation directory of SeqPig; e.g.,
 %
@@ -59,18 +62,33 @@ $ export SEQPIG_HOME=/usr/local/java/seqpig
 $ export PATH=${PATH}:${SEQPIG_HOME}/bin
 \end{lstlisting}
 %
-This way, you'll be able to start a SeqPig-enabled Pig shell by running the {\tt
-seqpig} command.
+This way, you'll be able to start a SeqPig-enabled Pig shell by
+running the {\tt seqpig} command.
 \end{enumerate}
+
+Note that since the sources are included in the release you are also
+able to build SeqPig if necessary, as described below.
 
 \subsection{Instructions for building SeqPig}
 
 \begin{enumerate}
-\item Download hadoop-bam from \url{https://sourceforge.net/projects/hadoop-bam/}.
+\item Download the latest release of hadoop-bam from \url{http://sourceforge.net/projects/hadoop-bam/files/}.
+\begin{lstlisting} 
+$ wget @\url{http://sourceforge.net/projects/hadoop-bam/files/hadoop-bam-5.1.tar.gz}@
+$ tar xvzf hadoop-bam-5.1.tar.gz
+$ export HADOOP\_BAM=`pwd`/hadoop-bam-5.1
+\end{lstlisting}
 \item Download and build the latest Seal git master version from
  \url{http://biodoop-seal.sourceforge.net/}. Note that this requires setting
- {\tt HADOOP\_BAM} to the installation directory of hadoop-bam.
-
+ {\tt HADOOP\_BAM} to the installation directory of hadoop-bam, as done in the previous step.
+\begin{lstlisting} 
+$ git clone @\url{git://git.code.sf.net/p/biodoop-seal/code}@ biodoop-seal-code
+\end{lstlisting}
+For more information on how to build Seal see \url{http://biodoop-seal.sourceforge.net/installation.html}.
+\item Clone the SeqPig repository.
+\begin{lstlisting} 
+$ git clone @\url{git://git.code.sf.net/p/seqpig/code}@ seqpig-code
+\end{lstlisting}
 \item Inside the cloned SeqPig git repository create a
 {\tt lib/} subdirectory and copy (or link) the jar files
 from hadoop-bam and Seal to this new directory.  The files should be:
@@ -81,7 +99,6 @@ from hadoop-bam and Seal to this new directory.  The files should be:
 %
 Note: the Picard and Sam jar files are contained in the hadoop-bam release
 for convenience.
-
 \item Run {\tt ant} to build {\tt SeqPig.jar}.
 \end{enumerate}
 

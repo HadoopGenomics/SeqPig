@@ -6,7 +6,7 @@ This section lists a number of examples of the types of operations
 that can be performed with SeqPig. Each example is typically a mix of
 standard Pig operations and SeqPig user-defined functions (UDF's).
 Note that once the data has been imported to Pig the only difference
-between say read data originating from BAM and Fastq files is that
+between, say, read data originating from BAM and Fastq files, is that
 some fields in tuples derived from BAM may not be available in those
 from Fastq, e.g., alignment start positions.
 
@@ -48,7 +48,7 @@ generated automatically by the {\tt prepareBamInput.sh} script used to import it
 
 \subsubsection{Simple operations}
 
-Writing the BAM data to the screen (similarly to samtools view)
+Writing the BAM data to the screen (similarly to {\tt samtools view})
 can be done simply by
 \begin{lstlisting}
 dump A;
@@ -66,7 +66,7 @@ returns
    materefindex: int,refindex: int,refname: chararray,attributes: map[]}
 \end{lstlisting}
 Notice that all fields except the attributes are standard data types (strings
-or integers). Specific attributes can be accessed via {\tt attributes\#'name'}. For
+or integers). Specific attributes can be accessed via \verb|attributes\#'name'|. For
 example,
 \begin{lstlisting} 
 B = FOREACH A GENERATE name, attributes#'MD';
@@ -97,9 +97,10 @@ to the relevant fields. The previous example is equivalent to
 run scripts/filter_defs.pig
 A = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags);
 \end{lstlisting}
-Note that the above example assumes that {\tt filter\_defs.pig} can be
-found below the directory where the Pig shell was started. For of a
-full list of the available filters look at this file.
+Note that the above example assumes that the Pig shell was started in
+the SeqPig root directory. If this is not the case, you need to adjust
+the path to {\tt filter\_defs.pig} accordingly. For of a full list of
+the available filters look at this file.
 
 \subsubsection{Filtering out reads with low mapping quality}
 
@@ -127,15 +128,15 @@ Sorting an input BAM file by chromosome, reference start coordinate, strand
 and readname (in this hierarchical order):
 \begin{lstlisting}
 A = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize,
-mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
-A = ORDER A BY refname, start, $14, name;
+mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2 AS strand;
+A = ORDER A BY refname, start, strand, name;
 \end{lstlisting}
-Note that the column index {\tt \$14} here is used to refer to the strand flag computed by the expression
-{\tt (flags/16)}.
+Note that {\tt strand} here is used to refer to the strand flag computed by the expression
+{\tt (flags/16)%2}.
 \begin{description}
 	\item[Note] This is roughly equivalent to executing from the command line
 \begin{lstlisting}
-$ pig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
+$ seqpig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 \end{lstlisting}
 \end{description}
 
@@ -167,7 +168,7 @@ store base_counts into 'input.basecounts';
 \begin{description}
 	\item[Note] This is roughly equivalent to executing from the command line
 \begin{lstlisting}
-$ pig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
+$ seqpig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
 \end{lstlisting}
 \end{description}
 
@@ -195,7 +196,7 @@ store H into 'input.pileup' using PigStorage('\t');
 \begin{description}
 	\item[Note] This is equivalent to executing from the command line
 \begin{lstlisting}
-$ pig -param inputfile=input.bam -param outputfile=input.pileup -param pparallel=1
+$ seqpig -param inputfile=input.bam -param outputfile=input.pileup -param pparallel=1
     ${SEQPIG_HOME}/scripts/pileup.pig
 \end{lstlisting}
 \end{description}
@@ -226,7 +227,7 @@ script can be invoked with the same parameters as {\tt
 size of the bins ({\tt binsize}) and the maximum number of reads
 considered per bin ({\tt reads\_cutoff}), which is similar to the
 maximum depth parameter that samtools accepts. However, note that
-since this parameter is set on a per-bin level you may chose it
+since this parameter is set on a per-bin level you may choose it
 dependent on the read length and bin size, as well as the amount of
 memory available on the compute nodes.
 
@@ -247,7 +248,7 @@ STORE read_stats into 'mapqual_dist.txt';
 \begin{description}
 	\item[Note] This is equivalent to executing from the command line
 \begin{lstlisting}
-$ pig -param inputfile=input.bam -param outputfile=mapqual_dist.txt ${SEQPIG_HOME}/scripts/read_stats.pig
+$ seqpig -param inputfile=input.bam -param outputfile=mapqual_dist.txt ${SEQPIG_HOME}/scripts/read_stats.pig
 \end{lstlisting}
 \end{description}
 
@@ -294,7 +295,7 @@ C       2       {(C,9)}
 \begin{description}
 	\item[Note] This example script is equivalent to executing from the command line
 \begin{lstlisting}
-$ pig -param inputfile=input.bam -param outputfile=outputfile_readstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
+$ seqpig -param inputfile=input.bam -param outputfile=outputfile_readstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
 \end{lstlisting}
 \end{description}
 Figure~\ref{fig:basequal3d} shows the distribution obtained from a sample BAM file.
@@ -349,17 +350,17 @@ Here is an example output (for a BAM file with 50 reads):
 \begin{description}
 	\item[Note] This example script is equivalent to executing from the command line
 \begin{lstlisting}
-$ pig -param inputfile=input.bam -param outputfile=outputfile_basequalstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
+$ seqpig -param inputfile=input.bam -param outputfile=outputfile_basequalstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
 \end{lstlisting}
 \end{description}
 
 \subsubsection{Filtering reads by mappability threshold}
 The script {\tt filter\_mappability.pig} filters reads in a given BAM file based on a given
-mappability threshold. Both input BAM and mappability file need to reside inside HDFS
+mappability threshold. Both input BAM and mappability file need to reside inside HDFS.
 \begin{lstlisting}
-$ pig -param inputfile=/user/hadoop/input.bam -param outputfile=/user/hadoop/output.bam -param regionfile=/user/hadoop/mappability.100kbp.txt -param threshold=90 $SEQPIG_HOME/scripts/filter_mappability.pig
+$ seqpig -param inputfile=/user/hadoop/input.bam -param outputfile=/user/hadoop/output.bam -param regionfile=/user/hadoop/mappability.100kbp.txt -param threshold=90 $SEQPIG_HOME/scripts/filter_mappability.pig
 \end{lstlisting}
-Note that since the script relies on distributing the bam file header and the
+Note that since the script relies on distributing the BAM file header and the
 mappability file via Hadoop's distributed cache, it is not possible to run it
 with Pig in local mode.
 
@@ -368,14 +369,14 @@ with Pig in local mode.
 SeqPig supports the import and export of non-aligned reads stored in
 Qseq and Fastq data. Due to Pig's model that all records correspond to
 tuples, which form bags, reads can be processed in very much the same
-way independent on for example whether they are stored in Qseq or
+way independent of, for example, whether they are stored in Qseq or
 Fastq. Also, since Fastq and Qseq files are header-less, there is no
 pre-processing step required prior to loading the files, compared to
 SAM/BAM import.
 
 \subsubsection{Converting Qseq to Fastq and vice versa}
 
-The following two lines simply convert an input Qseq into Fastq.
+The following two lines simply convert an input Qseq file into Fastq format.
 \begin{lstlisting}
 reads = load 'input.qseq' using QseqLoader();
 STORE reads INTO 'output.fastq' using FastqStorer(); 
@@ -384,7 +385,7 @@ The other direction works analogously.
 
 The following examples are not specific to the type of input data
 (Fastq, Qseq, BAM, $\ldots$). They roughly correspond to the ones
-computed by the popular FastQC tool can be all found in the {\tt
+computed by the popular FastQC tool and can be all found in the {\tt
   fast\_fastqc.pig} script.
 
 \subsubsection{Computing a read length distribution}
@@ -455,7 +456,7 @@ base_gc_counts = FOREACH base_qual_counts GENERATE FormatGCCounts($0);
 \begin{description}
 	\item[Note] All the statistics computed by the examples of Sections~\ref{sect:read_length_dist}--\ref{sect:base_stats} can be executed at once via
 \begin{lstlisting}
-$ pig -param inputpath=input.fq -param outputpath=fast-fastqc-output $SEQPIG_HOME/scripts/fast_fastqc.pig
+$ seqpig -param inputpath=input.fq -param outputpath=fast-fastqc-output $SEQPIG_HOME/scripts/fast_fastqc.pig
 \end{lstlisting}
 \end{description}
 
@@ -463,11 +464,12 @@ $ pig -param inputpath=input.fq -param outputpath=fast-fastqc-output $SEQPIG_HOM
 
 \label{sect:read_clipping}
 
-Assuming there were some problems in certain cycles of the sequencer, it
-may be useful to clip bases from reads. This example removes the last 3
-bases and their qualities and stores the data under a new filename. Note
-that here we rely on the {\tt SUBSTRING} and {\tt LENGTH} string functions, which is
-part of the PiggyBank (see Section~\ref{sect:piggybank_note}).
+Assuming there were some problems in certain cycles of the sequencer,
+it may be useful to clip bases from reads. This example removes the
+last 3 bases and their qualities and stores the data under a new
+filename. Note that here we rely on the {\tt SUBSTRING} and {\tt LENGTH}
+string functions, which are part of the PiggyBank (see
+Section~\ref{sect:piggybank_note}).
 
 \begin{lstlisting}
 DEFINE SUBSTRING org.apache.pig.piggybank.evaluation.string.SUBSTRING();
@@ -479,7 +481,7 @@ store B into 'output.qseq' using QseqStorer();
 \begin{description}
 	\item[Note] This example script is equivalent to executing from the command line
 \begin{lstlisting}
-$ pig -param inputfile=input.qseq -param outputfile=output.qseq -param backclip=3 $SEQPIG_HOME/scripts/clip_reads.pig
+$ seqpig -param inputfile=input.qseq -param outputfile=output.qseq -param backclip=3 $SEQPIG_HOME/scripts/clip_reads.pig
 \end{lstlisting}
 \end{description}
 
@@ -515,7 +517,7 @@ consider the following Hadoop-specific parameters in {\tt mapred-site.xml}.
 Additionally, it is possible to pass command line parameters (such as mapper and reducer memory limits).
 For instance, consider the Pig invocation (see {\tt tools/tun\_all\_pileup2.sh})
 \begin{lstlisting}
-${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dmapred.job.map.memory.mb=${MAP_MEMORY} -Dmapred.job.reduce.memory.mb=${REDUCE_MEMORY} -Dmapred.child.java.opts=-Xmx${CHILD_MEMORY}M -Dudf.import.list=fi.aalto.seqpig -param inputfile=$INPUTFILE -param outputfile=$OUTPUTFILE -param pparallel=${REDUCESLOTS} ${SEQPIG_HOME}/scripts/pileup2.pig
+${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dmapred.job.map.memory.mb=${MAP_MEMORY} -Dmapred.job.reduce.memory.mb=${REDUCE_MEMORY} -Dmapred.child.java.opts=-Xmx${CHILD_MEMORY}M -Dudf.import.list=fi.aalto.seqpig -param inputfile=$INPUTFILE -param outputfile=$OUTPUTFILE -param pparallel=${REDUCE_SLOTS} ${SEQPIG_HOME}/scripts/pileup2.pig
 \end{lstlisting}
 By setting appropriate values for {\tt MAP\_MEMORY, REDUCE\_MEMORY,
 CHILD\_MEMORY} and for the number of available reduce slots {\tt REDUCESLOTS}
@@ -524,7 +526,7 @@ one may be able to improve performance.
 \subsection{Compression}
 
 For optimal performance and space usage it may be advisable to enable the compression of
-Hadoop map (and possible reduce) output, as well as temporary data generated
+Hadoop map (and possibly reduce) output, as well as temporary data generated
 by Pig. Compression with Pig can be enabled by setting properties such as
 \begin{lstlisting}
   -Djava.library.path=/opt/hadoopgpl/native/Linux-amd64-64

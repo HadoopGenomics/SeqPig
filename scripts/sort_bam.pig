@@ -14,9 +14,9 @@ A = load '$inputfile' using BamLoader('yes');
 --   filter reads based on flags (unmapped or duplicates) and mapping quality
 A = FILTER A BY not ReadUnmapped(flags) and not IsDuplicate(flags) and mapqual>=$min_map_qual;
 --   we want to consider strand information in sorting, so we need to generate the corresponding flag
-B = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize, mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2;
+B = FOREACH A GENERATE name, start, end, read, cigar, basequal, flags, insertsize, mapqual, matestart, materefindex, refindex, refname, attributes, (flags/16)%2 AS strand;
 --   do the actual sorting
-C = ORDER B BY refname, start, $14, name PARALLEL $pparallel;
+C = ORDER B BY refname, start, strand, name PARALLEL $pparallel;
 --   getting rid of the last field which is not needed anymore
 D = FOREACH C GENERATE name, start, end, read, cigar, basequal, flags, insertsize, mapqual, matestart, materefindex, refindex, refname, attributes;
 --   write output to HDFS
