@@ -391,9 +391,17 @@ computed by the popular FastQC tool and can be all found in the {\tt
 \subsubsection{Computing a read length distribution}
 \label{sect:read_length_dist}
 
+Once a read set is imported, it is fairly straightforward to compute
+simple statistics, such as a histogram of the length of reads. Using
+the {\tt LENGTH} string function, which is part of the PiggyBank (see
+Section~\ref{sect:piggybank_note}), we can first compute the set of read
+lengths, group them by their value and then compute the size of each
+of the groups.
+
 \begin{lstlisting}
+DEFINE LENGTH org.apache.pig.piggybank.evaluation.string.LENGTH();
 reads = load 'input.fq' using FastqLoader();
-read_len = FOREACH reads GENERATE STRLEN(sequence);
+read_len = FOREACH reads GENERATE LENGTH(sequence);
 read_len_counts = FOREACH (GROUP read_len BY $0) GENERATE group AS len, COUNT_STAR($1) as count;
 \end{lstlisting}
 
