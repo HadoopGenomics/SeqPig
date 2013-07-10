@@ -41,7 +41,7 @@ and can also be exported from HDFS to the local filesystem via
 prepareBamOutput.sh output.bam
 \end{lstlisting}
 \begin{description}
-	\item[Note] the Pig store operation requires a valid header for the BAM output file,
+	\item[Note] The Pig store operation requires a valid header for the BAM output file,
 for example the header of the source file used to generate it, which is
 generated automatically by the {\tt prepareBamInput.sh} script used to import it)
 \end{description}
@@ -66,7 +66,7 @@ returns
    materefindex: int,refindex: int,refname: chararray,attributes: map[]}
 \end{lstlisting}
 Notice that all fields except the attributes are standard data types (strings
-or integers). Specific attributes can be accessed via \verb|attributes\#'name'|. For
+or integers). Specific attributes can be accessed via \verb|attributes#'name'|. For
 example,
 \begin{lstlisting} 
 B = FOREACH A GENERATE name, attributes#'MD';
@@ -212,7 +212,7 @@ then format the output according to samtools ({\tt F})
 some Pig operation by unnesting tuples ({\tt G, H})
 \item Store the output to a directory inside HDFS (last line)
 \end{enumerate}
-There are two optional parameters for pileup.pig: {\tt min\_map\_qual} and
+There are two optional parameters for {\tt pileup.pig}: {\tt min\_map\_qual} and
 {\tt min\_base\_qual} (both with default value 0) that filter out reads with
 either insufficient map quality or base qualities. Their values can
 be set the same way as the other parameters above.
@@ -528,7 +528,7 @@ For instance, consider the Pig invocation (see {\tt tools/tun\_all\_pileup2.sh})
 ${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_HOME}/lib/hadoop-bam-5.0.jar:${SEQPIG_HOME}/build/jar/SeqPig.jar:${SEQPIG_HOME}/lib/seal.jar:${SEQPIG_HOME}/lib/picard-1.76.jar:${SEQPIG_HOME}/lib/sam-1.76.jar -Dmapred.job.map.memory.mb=${MAP_MEMORY} -Dmapred.job.reduce.memory.mb=${REDUCE_MEMORY} -Dmapred.child.java.opts=-Xmx${CHILD_MEMORY}M -Dudf.import.list=fi.aalto.seqpig -param inputfile=$INPUTFILE -param outputfile=$OUTPUTFILE -param pparallel=${REDUCE_SLOTS} ${SEQPIG_HOME}/scripts/pileup2.pig
 \end{lstlisting}
 By setting appropriate values for {\tt MAP\_MEMORY, REDUCE\_MEMORY,
-CHILD\_MEMORY} and for the number of available reduce slots {\tt REDUCESLOTS}
+CHILD\_MEMORY} and for the number of available reduce slots {\tt REDUCE\_SLOTS}
 one may be able to improve performance.
 
 \subsection{Compression}
