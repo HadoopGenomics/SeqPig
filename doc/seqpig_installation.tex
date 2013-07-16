@@ -75,7 +75,7 @@ able to build SeqPig if necessary, as described below.
 \subsection{Instructions for building SeqPig}
 
 \begin{enumerate}
-\item Download the latest release of hadoop-bam from \url{http://sourceforge.net/projects/hadoop-bam/files/}.
+\item Download Hadoop-BAM~5.1 from \url{http://sourceforge.net/projects/hadoop-bam/files/}.
 \begin{lstlisting} 
 $ wget @\url{http://sourceforge.net/projects/hadoop-bam/files/hadoop-bam-5.1.tar.gz}@
 $ tar xvzf hadoop-bam-5.1.tar.gz
@@ -83,7 +83,7 @@ $ export HADOOP_BAM=`pwd`/hadoop-bam-5.1
 \end{lstlisting}
 \item Download and build the latest Seal git master version from
  \url{http://biodoop-seal.sourceforge.net/}. Note that this requires setting
- {\tt HADOOP\_BAM} to the installation directory of hadoop-bam, as done in the previous step.
+ {\tt HADOOP\_BAM} to the installation directory of Hadoop-BAM, as done in the previous step.
 \begin{lstlisting} 
 $ git clone @\url{git://git.code.sf.net/p/biodoop-seal/code}@ biodoop-seal-code
 \end{lstlisting}
@@ -94,13 +94,13 @@ $ git clone @\url{git://git.code.sf.net/p/seqpig/code}@ seqpig-code
 \end{lstlisting}
 \item Inside the cloned SeqPig git repository create a
 {\tt lib/} subdirectory and copy (or link) the jar files
-from hadoop-bam and Seal to this new directory.  The files should be:
+from Hadoop-BAM and Seal to this new directory.  The files should be:
 \begin{enumerate}
 	\item \verb@${HADOOP_BAM}/*.jar@
 	\item from the Seal directory, run \verb@ find build/ -name seal.jar@
 \end{enumerate}
 %
-Note: the Picard and Sam jar files are contained in the hadoop-bam release
+Note: the Picard and Sam jar files are contained in the Hadoop-BAM release
 for convenience.
 \item Run {\tt ant} to build {\tt SeqPig.jar}.
 \end{enumerate}
@@ -137,7 +137,7 @@ Pig version installed does not necessarily match the latest Pig release.
 The advantage, however, is the ability to use S3 buckets for input and
 output.
 
-Consider the following example for starting SeqPig on EMR. In this
+Consider the following example for starting SeqPig on Amazon Elastic MapReduce. In this
 example we install SeqPig into {\tt /home/hadoop/seqpig}.
 \begin{lstlisting} 
 $ wget @\url{http://sourceforge.net/projects/seqpig/files/seqpig_0.5.tar.gz}@
@@ -184,7 +184,7 @@ previous sections, you can start the SeqPig-enabled ``grunt'' shell by running
 $ seqpig
 \end{lstlisting}
 %
-If you prefer to tun SeqPig in local mode (without Hadoop), which is useful
+If you prefer to tun SeqPig in local mode (without Hadoop), which can be useful
 for debugging scripts, you can start it by running
 %
 \begin{lstlisting}

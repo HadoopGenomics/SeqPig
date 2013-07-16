@@ -29,7 +29,8 @@ can be loaded in the grunt shell via
 A = load 'input.bam' using BamLoader('yes');
 \end{lstlisting} 
 The 'yes' parameter to {\tt BamLoader} chooses read attributes to be
-loaded; choose 'no' whenever these are not required).
+loaded; choose 'no' whenever these are not required, which is
+also the default value).
 
 Once some operations have been performed, the resulting (possibly
 modified) read data can then be stored into a new BAM file via
@@ -43,7 +44,7 @@ prepareBamOutput.sh output.bam
 \begin{description}
 	\item[Note] The Pig store operation requires a valid header for the BAM output file,
 for example the header of the source file used to generate it, which is
-generated automatically by the {\tt prepareBamInput.sh} script used to import it)
+generated automatically by the {\tt prepareBamInput.sh} script used to import it).
 \end{description}
 
 \subsubsection{Simple operations}
@@ -134,9 +135,10 @@ A = ORDER A BY refname, start, strand, name;
 Note that {\tt strand} here is used to refer to the strand flag computed by the expression
 {\tt (flags/16)\%2}.
 \begin{description}
-	\item[Note] This is roughly equivalent to executing from the command line
+	\item[Note] This is roughly equivalent to executing from the command line:
 \begin{lstlisting}
-$ seqpig -param inputfile=input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
+$ seqpig -param inputfile=input.bam -param outputfile=input_sorted.bam \
+  ${SEQPIG_HOME}/scripts/sort_bam.pig
 \end{lstlisting}
 \end{description}
 
@@ -166,9 +168,10 @@ base_counts = ORDER base_counts BY chr,pos;
 store base_counts into 'input.basecounts';
 \end{lstlisting}
 \begin{description}
-	\item[Note] This is roughly equivalent to executing from the command line
+	\item[Note] This is roughly equivalent to executing from the command line:
 \begin{lstlisting}
-$ seqpig -param inputfile=input.bam -param outputfile=input.basecounts -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
+$ seqpig -param inputfile=input.bam -param outputfile=input.basecounts \
+  -param pparallel=1 ${SEQPIG_HOME}/scripts/basefreq.pig 
 \end{lstlisting}
 \end{description}
 
@@ -194,10 +197,10 @@ H = FOREACH G GENERATE chr, pos, flatten($2);
 store H into 'input.pileup' using PigStorage('\t');
 \end{lstlisting}
 \begin{description}
-	\item[Note] This is equivalent to executing from the command line
+	\item[Note] This is equivalent to executing from the command line:
 \begin{lstlisting}
-$ seqpig -param inputfile=input.bam -param outputfile=input.pileup -param pparallel=1
-    ${SEQPIG_HOME}/scripts/pileup.pig
+$ seqpig -param inputfile=input.bam -param outputfile=input.pileup -param pparallel=1 \
+  ${SEQPIG_HOME}/scripts/pileup.pig
 \end{lstlisting}
 \end{description}
 The script essentially does the following:
@@ -208,8 +211,8 @@ The script essentially does the following:
 coordinate system ({\tt E})
 \item For each of the groups, sort its elements by their position, strand and name;
 then format the output according to samtools ({\tt F})
-\item Sort the final output again by (chromosome, position) and perform
-some Pig operation by unnesting tuples ({\tt G, H})
+\item Sort the final output again by (chromosome, position) and flatten
+it to un-nest the tuples ({\tt G, H})
 \item Store the output to a directory inside HDFS (last line)
 \end{enumerate}
 There are two optional parameters for {\tt pileup.pig}: {\tt min\_map\_qual} and
@@ -246,9 +249,10 @@ read_stats = ORDER read_stats BY group;
 STORE read_stats into 'mapqual_dist.txt';
 \end{lstlisting}
 \begin{description}
-	\item[Note] This is equivalent to executing from the command line
+	\item[Note] This is equivalent to executing from the command line:
 \begin{lstlisting}
-$ seqpig -param inputfile=input.bam -param outputfile=mapqual_dist.txt ${SEQPIG_HOME}/scripts/read_stats.pig
+$ seqpig -param inputfile=input.bam -param outputfile=mapqual_dist.txt \ 
+  ${SEQPIG_HOME}/scripts/read_stats.pig
 \end{lstlisting}
 \end{description}
 
@@ -293,9 +297,10 @@ C       2       {(C,9)}
 ...
 \end{lstlisting}
 \begin{description}
-	\item[Note] This example script is equivalent to executing from the command line
+	\item[Note] This example script is equivalent to executing from the command line:
 \begin{lstlisting}
-$ seqpig -param inputfile=input.bam -param outputfile=outputfile_readstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
+$ seqpig -param inputfile=input.bam -param outputfile=outputfile_readstats.txt \
+  $SEQPIG_HOME/scripts/basequal_stats.pig
 \end{lstlisting}
 \end{description}
 Figure~\ref{fig:basequal3d} shows the distribution obtained from a sample BAM file.
@@ -348,9 +353,10 @@ Here is an example output (for a BAM file with 50 reads):
 ...
 \end{lstlisting}
 \begin{description}
-	\item[Note] This example script is equivalent to executing from the command line
+	\item[Note] This example script is equivalent to executing from the command line:
 \begin{lstlisting}
-$ seqpig -param inputfile=input.bam -param outputfile=outputfile_basequalstats.txt $SEQPIG_HOME/scripts/basequal_stats.pig
+$ seqpig -param inputfile=input.bam -param outputfile=outputfile_basequalstats.txt \
+  $SEQPIG_HOME/scripts/basequal_stats.pig
 \end{lstlisting}
 \end{description}
 
@@ -358,7 +364,9 @@ $ seqpig -param inputfile=input.bam -param outputfile=outputfile_basequalstats.t
 The script {\tt filter\_mappability.pig} filters reads in a given BAM file based on a given
 mappability threshold. Both input BAM and mappability file need to reside inside HDFS.
 \begin{lstlisting}
-$ seqpig -param inputfile=/user/hadoop/input.bam -param outputfile=/user/hadoop/output.bam -param regionfile=/user/hadoop/mappability.100kbp.txt -param threshold=90 $SEQPIG_HOME/scripts/filter_mappability.pig
+$ seqpig -param inputfile=/user/hadoop/input.bam -param outputfile=/user/hadoop/output.bam \
+  -param regionfile=/user/hadoop/mappability.100kbp.txt -param threshold=90 \
+  $SEQPIG_HOME/scripts/filter_mappability.pig
 \end{lstlisting}
 Note that since the script relies on distributing the BAM file header and the
 mappability file via Hadoop's distributed cache, it is not possible to run it
@@ -464,7 +472,8 @@ base_gc_counts = FOREACH base_qual_counts GENERATE FormatGCCounts($0);
 \begin{description}
 	\item[Note] All the statistics computed by the examples of Sections~\ref{sect:read_length_dist}--\ref{sect:base_stats} can be executed at once via
 \begin{lstlisting}
-$ seqpig -param inputpath=input.fq -param outputpath=fast-fastqc-output $SEQPIG_HOME/scripts/fast_fastqc.pig
+$ seqpig -param inputpath=input.fq -param outputpath=fast-fastqc-output \
+  $SEQPIG_HOME/scripts/fast_fastqc.pig
 \end{lstlisting}
 \end{description}
 
@@ -487,9 +496,10 @@ B = FOREACH A GENERATE instrument, run_number, flow_cell_id, lane, tile, xpos, y
 store B into 'output.qseq' using QseqStorer();
 \end{lstlisting}
 \begin{description}
-	\item[Note] This example script is equivalent to executing from the command line
+	\item[Note] This example script is equivalent to executing from the command line:
 \begin{lstlisting}
-$ seqpig -param inputfile=input.qseq -param outputfile=output.qseq -param backclip=3 $SEQPIG_HOME/scripts/clip_reads.pig
+$ seqpig -param inputfile=input.qseq -param outputfile=output.qseq -param backclip=3 \
+  $SEQPIG_HOME/scripts/clip_reads.pig
 \end{lstlisting}
 \end{description}
 
