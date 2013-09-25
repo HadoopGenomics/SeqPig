@@ -36,6 +36,7 @@ import org.apache.pig.ResourceStatistics;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
+import java.lang.StringBuilder;
 import java.util.StringTokenizer;
 import java.io.IOException;
 
@@ -50,17 +51,6 @@ public class BaseFilter extends EvalFunc<Tuple> {
 
     // tuple input/output format:
     //
-    //   instrument:string
-    //   run_number:int
-    //   flow_cell_id: string
-    //   lane: int
-    //   tile: int
-    //   xpos: int
-    //   ypos: int
-    //   read: int
-    //   qc_passed (a.k.a. filter): boolean
-    //   control_number: int
-    //   index_sequence: string
     //   sequence: string
     //   quality: string (note: we assume that encoding chosen on command line!!!)
 
@@ -84,64 +74,44 @@ public class BaseFilter extends EvalFunc<Tuple> {
 
     @Override 
     public Tuple exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
-        if (input == null || input.size() == 0)
+        if (input == null || input.size() < 2)
             return null;
 
-        String sequence = (String)input.get(11);
-	String new_sequence = "";
-	String quality = (String)input.get(12);
+        char[] sequence = ((String)input.get(0)).toCharArray();
+	StringBuilder new_sequence = new StringBuilder(sequence.length);
+	char[] quality = ((String)input.get(1)).toCharArray();
 
-	if(sequence == null || quality == null || sequence.length() != quality.length())
+	if(sequence.length != quality.length)
 	    return null;
 	
-	Tuple tpl = TupleFactory.getInstance().newTuple(13);
-
-	for(int i=0;i<11;i++)
-	    tpl.set(i, input.get(i));
+	Tuple tpl = TupleFactory.getInstance().newTuple(2);
 	
-	tpl.set(12,quality);
+	tpl.set(1,input.get(1)); // quality values stay the same
 	
-	StringTokenizer seq_st = new StringTokenizer(sequence);
-	StringTokenizer qual_st = new StringTokenizer(quality);
-	
-	while (seq_st.hasMoreTokens()) {
-	    String base = seq_st.nextToken();
-	    String qual = qual_st.nextToken();
+	for (int i=0; i<sequence.length; i++) {
+	    int qual_val = (int)quality[i];
+	    char new_base = 'N';
 	    
-	    int qual_val = (int)qual.charAt(0);
+	    if(qual_val >= threshold)
+		new_base = sequence[i];
 	    
-	    if(qual_val > threshold)
-		base = "N";
-	    
-	    new_sequence = new_sequence + base;
+	    new_sequence.append(new_base);
 	}
 	
-	tpl.set(11, new_sequence);
-
+	tpl.set(0, new_sequence.toString());
 	return tpl;
      }
 
     @Override
     public Schema outputSchema(Schema input) {
         try{
-            Schema s = new Schema();
+            Schema tupleSchema = new Schema();
 
-	    s.add(new Schema.FieldSchema("instrument", DataType.CHARARRAY));
-	    s.add(new Schema.FieldSchema("run_number", DataType.INTEGER));
-	    s.add(new Schema.FieldSchema("flow_cell_id", DataType.CHARARRAY));
-	    s.add(new Schema.FieldSchema("lane", DataType.INTEGER));        
-	    s.add(new Schema.FieldSchema("tile", DataType.INTEGER));
-	    s.add(new Schema.FieldSchema("xpos", DataType.INTEGER));
-	    s.add(new Schema.FieldSchema("ypos", DataType.INTEGER));
-	    s.add(new Schema.FieldSchema("read", DataType.INTEGER));
-	    s.add(new Schema.FieldSchema("qc_passed", DataType.BOOLEAN));
-	    s.add(new Schema.FieldSchema("control_number", DataType.INTEGER));
-	    s.add(new Schema.FieldSchema("index_sequence", DataType.CHARARRAY));
-	    s.add(new Schema.FieldSchema("sequence", DataType.CHARARRAY));
-	    s.add(new Schema.FieldSchema("quality", DataType.CHARARRAY));
-	    
-            return s;
-        }catch (Exception e){
+	    tupleSchema.add(new Schema.FieldSchema("sequence", DataType.CHARARRAY));
+	    tupleSchema.add(new Schema.FieldSchema("quality", DataType.CHARARRAY));
+
+	    return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), tupleSchema, DataType.TUPLE));
+        } catch (Exception e){
             return null;
         }
     }
