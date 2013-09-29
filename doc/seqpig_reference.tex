@@ -1,0 +1,663 @@
+
+\section{UDF reference guide}
+\label{sect:refguide}
+
+\lstset{backgroundcolor=}
+
+The aim of this section is to give a brief overview of the available
+UDF's that come with SeqPig, their input and output schemas and their
+operation. For more detailed information please consult the source
+code. Note that some of the usage examples that process BAM files
+assume that unmapped reads or reads that do not have a valid MD tag
+have been filtered out (for filters see below).
+
+\subsection{\texttt{seqpig}}
+
+\subsubsection{\texttt{UnalignedReadSplit}}
+
+The UnalignedReadSplit UDF takes a bag of reads (read in by the Fastq
+or Qseq loaders) and splits them into tuples that correspond to the
+single bases of each read.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.9\textwidth}
+  \begin{lstlisting}
+  reads = load 'input.fq' using FastqLoader();
+  reads_by_bases = FOREACH reads GENERATE UnalignedReadSplit(sequence, quality);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+\multirow{2}{*}{Input schema:} & \emph{read} & \texttt{chararray} & read bases (sequence)\\
+& \emph{basequal} & \texttt{chararray} & base qualities\\\hline
+\multirow{3}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{pos} & \texttt{integer} & position in read\\\\
+& \emph{readbase} & \texttt{chararray} & read base\\
+& \emph{basequal} & \texttt{integer} & base quality
+\end{tabular} 
+
+\subsubsection{\texttt{ReadRefPositions}}
+
+The ReadRefPositions UDF takes an aligned read and outputs a bag of tuples, one
+for each base, that gives the position on the reference sequence this
+base corresponds to.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.9\textwidth}
+  \begin{lstlisting}
+  reads = load 'input.bam' using BamLoader('yes');
+  ref_positions = FOREACH reads GENERATE ReadRefPositions(read, flags, refname, start, cigar, basequal);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+\multirow{6}{*}{Input schema:} & \emph{read} & \texttt{chararray} & read bases (sequence)\\
+& \emph{flags} & \texttt{integer} & SAM flags\\
+& \emph{chr} & \texttt{chararray} & reference name / chromosome\\
+& \emph{position} & \texttt{integer} & mapping position (start)\\
+& \emph{cigar} & \texttt{chararray} & CIGAR string\\
+& \emph{basequal} & \texttt{chararray} & base qualities\\\hline
+\multirow{4}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{chr} & \texttt{chararray} & reference name / chromosome\\
+& \emph{pos} & \texttt{integer} & position (on reference)\\
+& \emph{base} & \texttt{chararray} & read base\\
+& \emph{basequal} & \texttt{chararray} & base quality
+\end{tabular}
+
+\subsubsection{\texttt{ReadSplit}}
+
+Similarly to the previous UDF, ReadSplit determines the reference
+position that a particular base inside a read refers to. Additionally,
+it also tries to determine the base on the reference in questions by
+parsing the MD tag (and CIGAR).
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.9\textwidth}
+  \begin{lstlisting}
+  reads = load 'input.bam' using BamLoader('yes');
+  bases = FOREACH reads GENERATE ReadSplit(name,start,read,cigar,basequal,flags,mapqual,refindex,refname,attributes#'MD');
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+\multirow{10}{*}{Input schema:} & \emph{readname} & \texttt{chararray} & read name\\
+& \emph{start} & \texttt{integer} & mapping position (start)\\
+& \emph{read} & \texttt{chararray} & read bases (sequence)\\
+& \emph{cigar} & \texttt{chararray} & CIGAR string\\
+& \emph{basequal} & \texttt{chararray} & base qualities\\
+& \emph{flags} & \texttt{integer} & SAM flags\\
+& \emph{mapqual} & \texttt{integer} & mapping quality\\
+& \emph{refindex} & \texttt{integer} & reference index (see BAM/SAM loader)\\ 
+& \emph{chr} & \texttt{chararray} & reference name / chromosome (see BAM/SAM loader)\\
+& \emph{MD} & \texttt{chararray} & MD tag\\\hline
+\multirow{10}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{chr} & \texttt{chararray} & reference name / chromosome\\
+& \emph{pos} & \texttt{integer} & position (on reference)\\
+& \emph{refbase} & \texttt{chararray} & base on reference (if known, else null)\\
+& \emph{readname} & \texttt{chararray} & read name\\
+& \emph{readlength} & \texttt{integer} & read length (possibly clipped)\\
+& \emph{mapqual} & \texttt{integer} & mapping quality\\
+& \emph{flags} & \texttt{integer} & SAM flags\\
+& \emph{basepos} & \texttt{integer} & position in read\\
+& \emph{readbase} & \texttt{chararray} & base on read\\
+& \emph{basequal} & \texttt{chararray} & base quality (if applicable, else null)
+\end{tabular}
+
+\subsubsection{\texttt{ReverseComplement}}
+
+The ReverseComplement UDF takes a read base sequence and returns its
+reverse complement.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.9\textwidth}
+  \begin{lstlisting}
+  reads = load 'input.fq' using FastqLoader();
+  reversed_reads = FOREACH reads GENERATE ReverseComplement(sequence);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+Input schema: & \emph{read} & \texttt{chararray} & read bases (sequence)\\
+Output schema: & \emph{reversed\_read} & \texttt{chararray} & read bases (reverse-complemented)\\
+\end{tabular} 
+
+\subsection{\texttt{seqpig.io}}
+
+This package contains import and export functions for the various file
+formats that are supported. In the case of BAM and SAM files, the file
+formats make use of all the fields that are available for a Picard
+sequence record (\texttt{SAMRecord}).
+
+\subsubsection{\texttt{BamLoader} and \texttt{SamLoader}}
+
+The BAM and SAM loader output schemas are identical and both loaders
+take an optional argument that can take values ``yes'' and ``no'',
+indicating whether the map of attributes should be populated. Reading
+in attributes incurs an additional overhead during the import of the
+data, so choose ``no'' whenever these are not needed. For a proper
+definition of the various fields see the SAM file format description
+available at \url{http://samtools.sourceforge.net/SAMv1.pdf}.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.7\textwidth}
+  \begin{lstlisting}
+  reads = load 'input.bam' using BamLoader('yes');
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+\multirow{15}{*}{Output schema:} & Field & Type & Description\\[0.1cm]
+& \emph{name} & \texttt{chararray} & read name\\
+& \emph{start} & \texttt{integer} & start position of alignment\\
+& \emph{end} & \texttt{integer} & end position of alignment\\
+& \emph{read} & \texttt{chararray} & read bases\\
+& \emph{cigar} & \texttt{chararray} & CIGAR string\\
+& \emph{basequal} & \texttt{chararray} & base qualities\\
+& \emph{flags} & \texttt{integer} & flags\\
+& \emph{insertsize} & \texttt{integer} & insert size\\
+& \emph{mapqual} & \texttt{integer} & mapping quality\\
+& \emph{matestart} & \texttt{integer} & mate start position\\
+& \emph{materefindex} & \texttt{integer} & mate reference index\\
+& \emph{refindex} & \texttt{integer} & reference index\\
+& \emph{refname}  & \texttt{chararray} & reference name\\
+& \emph{attributes} & \texttt{map} & SAMRecord attributes
+%\end{tabular}}
+\end{tabular}
+
+\subsubsection{\texttt{BamStorer} and \texttt{SamStorer}}
+
+The BAM and SAM storer input schemas are identical and both are
+essentially equal to the output schema of the corresponding loader
+functions. Note that the order of the fields inside tuples does not
+matter, only their field names need to be present. Both loaders
+require, however, the name of a file that contains a valid SAM header.
+For details see Section~\ref{sect:examples:bam}.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.8\textwidth}
+  \begin{lstlisting}
+  store reads into 'output.bam' using BamStorer('input.bam.asciiheader');
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+\multirow{15}{*}{Input schema:} & Field & Type & Description\\[0.1cm]
+& \emph{name} & \texttt{chararray} & read name\\
+& \emph{start} & \texttt{integer} & start position of alignment\\
+& \emph{end} & \texttt{integer} & end position of alignment\\
+& \emph{read} & \texttt{chararray} & read bases\\
+& \emph{cigar} & \texttt{chararray} & CIGAR string\\
+& \emph{basequal} & \texttt{chararray} & base qualities\\
+& \emph{flags} & \texttt{integer} & flags\\
+& \emph{insertsize} & \texttt{integer} & insert size\\
+& \emph{mapqual} & \texttt{integer} & mapping quality\\
+& \emph{matestart} & \texttt{integer} & mate start position\\
+& \emph{materefindex} & \texttt{integer} & mate reference index\\
+& \emph{refindex} & \texttt{integer} & reference index\\
+& \emph{refname}  & \texttt{chararray} & reference name\\
+& \emph{attributes} & \texttt{map} & SAMRecord attributes
+\end{tabular}
+
+\subsubsection{\texttt{FastqLoader} and \texttt{QseqLoader}}
+
+Both loaders for unaligned read file formats Fastq and Qseq
+essentially provide the same output schema for the tuple field names
+they produce.  Note that some fields that are not present in the input
+data may remain empty.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.8\textwidth}
+  \begin{lstlisting}
+  reads = load 'input.fq' using FastqLoader();
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+\multirow{14}{*}{Output schema:} & Field & Type & Description\\[0.1cm]
+& \emph{instrument} & \texttt{chararray} & instrument identifier\\
+& \emph{run\_number} & \texttt{integer} & run number\\
+& \emph{flow\_cell\_id} & \texttt{chararray} & flow cell ID\\
+& \emph{lane} & \texttt{integer} & lane number\\
+& \emph{tile} & \texttt{integer} & tile\\
+& \emph{xpos} & \texttt{integer} & XPos\\
+& \emph{ypos} & \texttt{integer} & YPos\\
+& \emph{read} & \texttt{integer} & read ID\\
+& \emph{qc\_passed} & \texttt{Boolean} & QC flag\\
+& \emph{control\_number} & \texttt{integer} & control number\\
+& \emph{index\_sequence} & \texttt{chararray} & index sequence\\
+& \emph{sequence} & \texttt{chararray} & read bases\\
+& \emph{quality} & \texttt{chararray} & base qualities
+\end{tabular}
+
+\subsubsection{\texttt{FastqStorer} and \texttt{QseqStorer}}
+
+The Fastq and Qseq storer input schemas are identical and both are
+essentially equal to the output schema of the corresponding loader
+functions. Note that the order of the fields inside tuples does not
+matter, only their field names need to be present. All fields except
+\emph{sequence} and \emph{quality} are optional.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.8\textwidth}
+  \begin{lstlisting}
+  store reads into 'output.fastq' using FastqStorer();
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+\multirow{14}{*}{Input schema:} & Field & Type & Description\\[0.1cm]
+& \emph{instrument} & \texttt{chararray} & instrument identifier\\
+& \emph{run\_number} & \texttt{integer} & run number\\
+& \emph{flow\_cell\_id} & \texttt{chararray} & flow cell ID\\
+& \emph{lane} & \texttt{integer} & lane number\\
+& \emph{tile} & \texttt{integer} & tile\\
+& \emph{xpos} & \texttt{integer} & XPos\\
+& \emph{ypos} & \texttt{integer} & YPos\\
+& \emph{read} & \texttt{integer} & read ID\\
+& \emph{qc\_passed} & \texttt{Boolean} & QC flag\\
+& \emph{control\_number} & \texttt{integer} & control number\\
+& \emph{index\_sequence} & \texttt{chararray} & index sequence\\
+& \emph{sequence} & \texttt{chararray} & read bases\\
+& \emph{quality} & \texttt{chararray} & base qualities
+\end{tabular}
+
+\subsubsection{\texttt{FastaLoader}}
+
+The FastaLoader loads reference sequence data in FASTA format and
+produces tuples that correspond to segments of the reference. These
+tuples could then be, for example, co-grouped with tuples that result
+from an imported BAM file of reads aligned to a matching reference
+sequence in order to compare read with reference bases. For more
+information on the FASTA format see
+\url{http://en.wikipedia.org/wiki/FASTA_format}.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.7\textwidth}
+  \begin{lstlisting}
+  reference_bases = load 'hg19.fa' using FastaLoader();
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+\multirow{4}{*}{Output schema:} & Field & Type & Description\\[0.1cm]
+& \emph{index\_sequence} & \texttt{chararray} & name of reference fragment (e.g., chromX)\\
+& \emph{start} & \texttt{integer} & 1-based start position of current reference fragment\\
+& \emph{sequence} & \texttt{chararray} & reference bases
+\end{tabular}
+
+\subsection{\texttt{seqpig.filter}}
+
+This module contains various functions that implement Apache Pig's
+filter UDF interface.
+
+\subsubsection{\texttt{CoordinateFilter}}
+
+The CoordinateFilter filters aligned reads by Samtools regions. See
+also Section~\ref{subsubsect:regionfiltering}. Note that this filter
+requires a SAM file header to operate, which can be extracted for
+example by running {\tt prepareBamInput.sh} script when uploading a
+BAM file to HDFS.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  DEFINE myFilter CoordinateFilter('input.bam.asciiheader','20:1-44350673');
+  reads = load 'input.bam' using BamLoader('yes');
+  reads = FILTER reads BY myFilter(refindex,start,end);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+\multirow{4}{*}{Input schema:} & Field & Type & Description\\[0.1cm]
+& \emph{refindex} & \texttt{integer} & reference sequence index\\
+& \emph{start} & \texttt{integer} & start position\\
+& \emph{end} & \texttt{integer} & end position
+\end{tabular}
+
+\subsubsection{\texttt{SAMFlagsFilter}}
+
+SAMFlagsFilter is a filter that uses SAM flags for filtering. For more
+example of filtering by SAM flags see
+Section~\ref{subsubsect:flagsfiltering}. Also note the pre-defined set
+of filters that can be activated by running \texttt{run
+  scripts/filter\_defs.pig} from within the SeqPig main directory.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  DEFINE ReadUnmapped SAMFlagsFilter('HasSegmentUnmapped');
+  reads = load 'input.bam' using BamLoader('yes');
+  mapped_reads = FILTER reads BY not ReadUnmapped(flags);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+\multirow{2}{*}{Input schema:} & Field & Type & Description\\[0.1cm]
+& \emph{flags} & \texttt{integer} & SAM flags of read
+\end{tabular}
+
+\subsubsection{\texttt{BaseFilter}}
+
+The BaseFilter is not actually a filter UDF in the Pig sense. Instead,
+it scans the given set of 2-tuples, consisting of read bases and their
+base qualities, and replaces all bases that have quality values below
+a given threshold by ``N''.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  DEFINE baseFilter BaseFilter('50');
+  reads = LOAD 'input.fq' USING FastqLoader();
+  reads_filtered = FOREACH reads GENERATE instrument, run_number, flow_cell_id,
+      lane, tile, xpos, ypos, read, qc_passed, control_number, index_sequence,
+      FLATTEN(baseFilter(sequence, quality));
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+\multirow{3}{*}{Input schema:} & Field & Type & Description\\[0.1cm]
+& \emph{sequence} & \texttt{chararray} & read bases\\
+& \emph{quality} & \texttt{integer} & base qualities
+\end{tabular}\hfill
+
+% MappabilityFilter ???
+
+\subsection{\texttt{seqpig.stats}}
+
+This package contains some UDF's that aim to provide FastQC like
+statistics for sequence data. They rely on an optimized counter class
+that maintains counters for discrete range variables (nucleotides,
+base qualities, etc.) that can be expressed as pairs. For example, one
+may be interested in counting the number of times base quality 30
+appears at position 10 within a given set of reads.  This type of
+counter implements interfaces of Apache Pig that, among other things,
+allow for in-memory map side aggregation of subresults, which leads to
+significant runtime improvements due to a reduction in memory
+allocation overhead. This optimization comes at the expense of fixing
+the set of possible values that can be observed (bases, base
+qualities) and the number of position in question (the readlength). In
+the rest of the section we therefore assume a given upper bound on the
+readlength, which we denote by READLENGTH. For implementation details
+of the counter see \texttt{ItemCounter2D.java}.
+
+\subsubsection{\texttt{BaseCounts}}
+
+The BaseCounts UDF relies on the aforementioned counter class to
+provide a histogram of the occurrences of each of the five base
+identifiers ('A', 'C', 'G', 'T' and 'N') over the given set
+of reads. Note that the output consists of an array of Java long
+values that are encoded inside a byte array. For convenience one
+should call the UDF FormatQualCounts to unpack the byte arrays
+and obtain the original counter values.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  reads = LOAD 'input.fq' USING FastqLoader();
+  read_seqs = FOREACH reads GENERATE sequence;
+  base_counts = FOREACH (GROUP read_seqs ALL) GENERATE BaseCounts($1);
+  formatted_base_counts = FOREACH base_counts GENERATE FormatBaseCounts($0);
+\end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+Input schema: & \emph{arbitrary} & \texttt{chararray} & bases\\
+Output schema: & \emph{long\_array\_NxM} & \texttt{bytearray} & counter values encoded as bytes (N=5 and M is equal to READLENGTH)
+\end{tabular}
+
+\subsubsection{\texttt{FormatBaseCounts}}
+
+FormatBaseCounts takes the output of BaseCounts and extracts its
+counter values. For a complete example see above or script
+\texttt{scripts/fast\_fastqc.pig}.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  base_counts = FOREACH (GROUP read_seqs ALL) GENERATE BaseCounts($1);
+  formatted_base_counts = FOREACH base_counts GENERATE FormatBaseCounts($0);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+Input schema: & \emph{long\_array\_NxM} & \texttt{bytearray} & counter values encoded as bytes (N=5 and M is equal to READLENGTH)\\\hline
+\multirow{2}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{pos} & \texttt{integer} & position (ranging from 0 to READLENGTH-1)\\
+& \emph{count1}$\ldots$\emph{countN} & \texttt{double} & fraction of reads having this base at the given position
+\end{tabular}
+
+\subsubsection{\texttt{FormatGCCounts}}
+
+FormatGCCounts operates similarly to FormatBaseCounts in the sense
+that it takes the output of BaseCounts and extracts its counter
+values. Instead of considering all possible bases (including 'N'), it
+instead only considers the GC content at each position of the reads.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  reads = LOAD 'input.fq' USING FastqLoader();
+  read_seqs = FOREACH reads GENERATE sequence;
+  base_counts = FOREACH (GROUP read_seqs ALL) GENERATE BaseCounts($1);
+  formatted_gc_counts = FOREACH base_counts GENERATE FormatGCCounts($0);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+Input schema: & \emph{long\_array\_NxM} & \texttt{bytearray} & counter values encoded as bytes (N=5 and M is equal to READLENGTH)\\\hline
+\multirow{2}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{pos} & \texttt{integer} & position (ranging from 0 to READLENGTH-1)\\
+& \emph{GC} & \texttt{double} & fraction of reads having 'G' or 'C' at this position
+\end{tabular}
+
+\subsubsection{\texttt{AvgBaseQualCounts}}
+
+The AvgBaseQualCounts UDF relies on the aforementioned counter class
+to provide a histogram of the average base quality (rounded to next
+integer) over the given set of reads (average taken over the positions
+within the read). Note that the output consists of an array of Java
+long values that are encoded inside a byte array. For convenience one
+should call the UDF FormatAvgBaseQualCounts to unpack the byte arrays
+and obtain the original counter values.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  reads = LOAD 'input.fq' USING FastqLoader();
+  read_seq_qual = FOREACH reads GENERATE quality;
+  avgbase_qual_counts = FOREACH (GROUP read_seq_qual ALL) GENERATE AvgBaseQualCounts($1.$0);
+  formatted_avgbase_qual_counts = FOREACH avgbase_qual_counts GENERATE FormatAvgBaseQualCounts($0);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+Input schema: & \emph{arbitrary} & \texttt{chararray} & base qualities\\
+Output schema: & \emph{long\_array\_NxM} & \texttt{bytearray} & counter values encoded as bytes (N is the number of different
+quality values and M is 1 in this case)
+\end{tabular}
+
+\subsubsection{\texttt{FormatAvgBaseQualCounts}}
+
+FormatAvgBaseQualCounts takes the output of AvgBaseQualCounts and
+extracts its counter values. For a complete example see above or script
+\texttt{scripts/fast\_fastqc.pig}.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  avgbase_qual_counts = FOREACH (GROUP read_seq_qual ALL) GENERATE AvgBaseQualCounts($1.$0);
+  formatted_avgbase_qual_counts = FOREACH avgbase_qual_counts GENERATE FormatAvgBaseQualCounts($0);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+Input schema: & \emph{long\_array\_NxM} & \texttt{bytearray} & counter values encoded as bytes (N is the number of different
+quality values and M is 1 in this case)\\\hline
+\multirow{4}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{pos} & \texttt{integer} & position (always 0 in this case)\\
+& \emph{mean} & \texttt{double} & avg.~base quality, averaged over the set of reads\\
+& \emph{stdev} & \texttt{double} & standard deviation of average base quality over the set of reads\\
+& \emph{qual1}$\ldots$\emph{qualN} & \texttt{double} & number of occurrences of each (average) quality
+\end{tabular}
+
+\subsubsection{\texttt{BaseQualCounts}}
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  reads = LOAD 'input.fq' USING FastqLoader();
+  qualities = FOREACH reads GENERATE quality;
+  base_qual_counts = FOREACH (GROUP qualities ALL) GENERATE BaseQualCounts($1);
+  formatted_base_qual_counts = FOREACH base_qual_counts GENERATE FormatBaseQualCounts($0);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+Input schema: & \emph{arbitrary} & \texttt{chararray} & base qualities\\
+Output schema: & \emph{long\_array\_NxM} & \texttt{bytearray} & counter values encoded as bytes (N is the number of different
+quality values and M is the READLENGTH)
+\end{tabular}
+
+\subsubsection{\texttt{FormatBaseQualCounts}}
+
+FormatBaseQualCounts takes the output of BaseQualCounts and extracts
+its counter values. For a complete example see above or script
+\texttt{scripts/fast\_fastqc.pig}.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.85\textwidth}
+  \begin{lstlisting}
+  base_qual_counts = FOREACH (GROUP qualities ALL) GENERATE BaseQualCounts($1);
+  formatted_base_qual_counts = FOREACH base_qual_counts GENERATE FormatBaseQualCounts($0);
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+Input schema: & \emph{long\_array\_NxM} & \texttt{bytearray} & counter values encoded as bytes (N is the number of different
+quality values and M is the READLENGTH)\\\hline
+\multirow{4}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{pos} & \texttt{integer} & position (ranging from 0 to READLENGTH-1)\\
+& \emph{mean} & \texttt{double} & avg.~base quality at this position, averaged over the set of reads\\
+& \emph{stdev} & \texttt{double} & standard deviation of base quality at this position\\
+& \emph{qual1}$\ldots$\emph{qualN} & \texttt{double} & number of occurrences of each read quality at this position
+\end{tabular}
+
+\subsection{\texttt{seqpig.pileup}}
+
+The pileup operation implemented in SeqPig basically consists of two
+stages.  First, each read is inspected and pileup relevant output is
+produced for each of the positions of the reference that it
+``spans''. Note that this may be also more or less than the
+readlength, depending if there were insertions or deletions. Then the
+output of this first stage is grouped by (chromosome, position) and
+pileup output from different reads affecting the same reference
+position is merged. The output should be the same that can be obtained
+by an operation of Samtools mpileup.
+
+The last UDF in this section (BinReadPileup) increases parallelism by
+adding a pre-processing step that first partition reads into bins by
+their alignment position and then calls the two other UDF's in each of
+the bins. Fore more details see Section~\ref{subsubsect:pileup}
+and for a complete example see script \texttt{scripts/pileup2.pig}.
+
+\subsubsection{\texttt{ReadPileup}}
+
+The ReadPileup UDF performs the steps of the first stage described
+above and operates on single reads that are passed with a subset of
+their fields. It produces a bag of tuples as output.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.52\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.9\textwidth}
+  \begin{lstlisting}
+  reads = load 'input.bam' using BamLoader('yes');
+  read_pileup = FOREACH reads GENERATE ReadPileup(read, flags, refname, start,
+      cigar, basequal, attributes#'MD', mapqual), start, flags, name;
+  read_pileup = FILTER read_pileup BY $0 is not null;
+  pileup = FOREACH read_pileup GENERATE flatten($0), start, flags, name;
+  grouped = GROUP pileup BY (chr, pos);
+  result = FOREACH grouped {
+      tmp = FOREACH pileup GENERATE refbase, pileup, qual, start, (flags/16)%2, name;
+      tmp = ORDER tmp BY start, $4, name;
+      GENERATE group.chr, group.pos, PileupOutputFormatting(tmp, group.pos);
+  }
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+\multirow{8}{*}{Input schema:} & \emph{sequence} & \texttt{chararray} & read bases\\
+& \emph{flag} & \texttt{integer} & SAM flags\\
+& \emph{chr} & \texttt{chararray} & chromosome / reference name\\
+& \emph{position} & \texttt{integer} & position of read\\
+& \emph{cigar} & \texttt{chararray} & CIGAR string\\
+& \emph{basequal} & \texttt{chararray} & base qualities\\
+& \emph{md} & \texttt{chararray} & MD tag\\
+& \emph{mapqual} & \texttt{integer} & mapping quality\\\hline
+\multirow{5}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{chr} & \texttt{chararray} & chromosome / reference name\\
+& \emph{position} & \texttt{integer} & position (on reference)\\
+& \emph{refbase} & \texttt{chararray} & base on reference (if known, else null)\\
+& \emph{pileup} & \texttt{chararray} & pileup string for this read\\
+& \emph{qual} & \texttt{chararray} & base quality/ies for this read (if applicable, else null)
+\end{tabular}
+
+\subsubsection{\texttt{PileupOutputFormatting}}
+
+The PileupOutputFormatting UDF performs the second stage of the
+pileup, which is the merging of the output coming from different reads
+for the same reference position. Note that the UDF assumes that input
+is passed in the order of reference position. For usage see the
+example code above.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+& Field & Type & Description\\[0.1cm]
+\multirow{2}{*}{Input schema:} & \emph{pileup} & \texttt{bag} & bag of tuples produced by ReadPileup, grouped by position\\
+& \emph{position} & \texttt{integer} & reference position this pileup data originates from\\\hline
+\multirow{4}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{refbase} & \texttt{chararray} & reference base\\
+& \emph{count} & \texttt{integer} & number of reads (depth)\\
+& \emph{pileup} & \texttt{chararray} & pileup string\\
+& \emph{qual} & \texttt{chararray} & base qualities
+\end{tabular}
+
+\subsubsection{\texttt{BinReadPileup}}
+
+This UDF aims to increase parallelism during the pileup computation by
+partitioning reads into bins by their alignment position and then
+calling the two previous UDF's in each of the bins. Note that each bin
+corresponds to a half-interval over the reference position of some
+reference segment (chromosome). The bin size (500 bases in the example
+code below) is essentially arbitrary but should be larger than the
+read length (plus maximum insertion size). For a complete example see
+script \texttt{scripts/pileup2.pig}.
+
+\begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.5\textwidth}}
+Usage: & \multicolumn{3}{l}{}
+\hspace*{-0.55cm}\begin{minipage}{0.9\textwidth}
+  \begin{lstlisting}
+  reads = load 'input.bam' using BamLoader('yes');
+  crossing_Reads = FILTER reads BY start/500!=end/500;
+  crossing_reads = FOREACH crossing_Reads GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, name, end/500;
+  all_reads = FOREACH reads GENERATE read, flags, refname, start, cigar, basequal, attributes#'MD', mapqual, name, start/500;
+  input_reads = UNION crossing_reads, all_reads;
+  grouped_reads = GROUP input_reads BY (refname, $9);
+  pileup = FOREACH grouped_reads GENERATE BinReadPileup(input_reads,group.$1*500,(group.$1+1)*500);
+  pileup = FILTER pileup BY $0 is not null;
+  result = FOREACH pileup GENERATE flatten($0);
+  result = ORDER result BY chr, pos;
+  \end{lstlisting}
+  \end{minipage}\hfill\kern-\arrayrulewidth
+ \\[0.25cm]
+& Field & Type & Description\\[0.1cm]
+\multirow{3}{*}{Input schema:} & \emph{reads} & \texttt{bag} & bag of read tuples (each adhering to the input schema of ReadPileup)\\
+& \emph{left\_pos} & \texttt{integer} & left border position of bin (inclusive)\\
+& \emph{right\_pos} & \texttt{integer} & right border position of bin (exclusive)\\\hline
+\multirow{6}{*}{\parbox{2.2cm}{Output schema: (bag)}} & \emph{chr} & \texttt{chararray} & chromosome / reference name\\
+& \emph{pos} & \texttt{integer} & position (on reference)\\
+& \emph{refbase} & \texttt{chararray} & base on reference\\
+& \emph{count} & \texttt{integer} & number of reads (coverage)\\
+& \emph{pileup} & \texttt{chararray} & pileup string for this position\\
+& \emph{qual} & \texttt{chararray} & base quality/ies for this read
+\end{tabular}
