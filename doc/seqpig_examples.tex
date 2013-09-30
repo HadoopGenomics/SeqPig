@@ -12,6 +12,8 @@ from Fastq, e.g., alignment start positions.
 
 \subsection{Operations on BAM files}
 
+\label{sect:examples:bam}
+
 To access sequencing data in BAM files, SeqPig uses Hadoop-BAM, which
 provides access to all fields and optional attributes in the data
 records. All the examples below assume that an input BAM file is
@@ -86,6 +88,7 @@ B = SAMPLE A 0.01;
 will sample from A with sampling probability 0.01.
 
 \subsubsection{Filtering out unmapped reads and PCR or optical duplicates}
+\label{subsubsect:flagsfiltering}
 Since the {\tt flags} field of a SAM record is exposed to Pig, one can simply
 use it to filter out all tuples (i.e., SAM records) that do not have the
 corresponding bit set.
@@ -112,6 +115,8 @@ A = FILTER A BY mapqual > 19;
 \end{lstlisting}
 
 \subsubsection{Filtering by regions (samtools syntax)}
+
+\label{subsubsect:regionfiltering}
 
 SeqPig also supports filtering by samtools \emph{region} syntax.
 The following examples selects base positions 1 to 44350673
@@ -189,9 +194,11 @@ C = FOREACH B GENERATE ReadPileup(read, flags, refname, start, cigar,
 C = FILTER C BY $0 is not null;
 D = FOREACH C GENERATE flatten($0), start, flags, name;
 E = GROUP D BY (chr, pos);
-F = FOREACH E { G = FOREACH D GENERATE refbase, pileup, qual, start,
-      (flags/16)%2, name; G = ORDER G BY start, $4, name; GENERATE group.chr,
-      group.pos, PileupOutputFormatting(G, group.pos); }
+F = FOREACH E {
+  G = FOREACH D GENERATE refbase, pileup, qual, start, (flags/16)%2, name;
+  G = ORDER G BY start, $4, name;
+  GENERATE group.chr, group.pos, PileupOutputFormatting(G, group.pos);
+}
 G = ORDER F BY chr, pos;
 H = FOREACH G GENERATE chr, pos, flatten($2);
 store H into 'input.pileup' using PigStorage('\t');
