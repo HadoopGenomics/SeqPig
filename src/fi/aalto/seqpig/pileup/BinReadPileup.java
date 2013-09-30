@@ -62,8 +62,8 @@ public class BinReadPileup extends EvalFunc<DataBag>
 
     private int qual_threshold = 0; // base quality threshold:
     // in any base has base quality smaller this value the
-    //     // read is discarded for the purpose of pileup (as samtools
-    //         // does it)
+    // read is discarded for the purpose of pileup (as samtools
+    // does it)
   
 
     private int reads_cutoff = -1; // max number of read coverage to be taken into account

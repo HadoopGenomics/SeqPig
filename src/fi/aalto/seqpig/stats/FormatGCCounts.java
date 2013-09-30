@@ -38,8 +38,7 @@ import org.apache.pig.backend.executionengine.ExecException;
 import java.io.IOException;
 import java.util.Iterator;
 
-/* Formats the output of BaseCounts
-*/
+/* Formats the output of BaseCounts */
 
 public class FormatGCCounts extends EvalFunc<DataBag>
 {

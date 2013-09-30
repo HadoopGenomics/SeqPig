@@ -39,18 +39,15 @@ import org.apache.pig.impl.util.WrappedIOException;
 
 public class PileupOutputFormatting extends EvalFunc<Tuple> implements Accumulator<Tuple>
 {
-    // tuple format:
-    //   refbase
+    // tuple input format:
+    //   pileup (bag of tuples produces by ReadPileup)
+    //   position (on reference)
+    
+    // tuple output format:
+    //   reference base
+    //   number of reads
     //   pileup string
     //   base qualities
-    // for debugging additionally
-    //   read
-    //   start
-    //   cigar
-    //   MD tag
-    //   pos  
-    //
-
 
     // WARNINGS:
     //   we use the folling Pig UDF warnings:

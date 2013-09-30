@@ -23,16 +23,10 @@ package fi.aalto.seqpig;
 import org.apache.hadoop.conf.Configuration;
 
 import org.apache.pig.data.NonSpillableDataBag;
-//import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-/*import org.apache.pig.data.SchemaTuple;
-import org.apache.pig.data.SchemaTupleFactory;
-import org.apache.pig.data.SchemaTupleBackend;
-import org.apache.pig.data.SchemaTupleFrontend;
-import org.apache.pig.data.SchemaTupleClassGenerator.GenContext;*/
 import org.apache.pig.EvalFunc;
 import org.apache.pig.PigWarning;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
@@ -56,7 +50,7 @@ import java.util.List;
    
  * takes an (unaligned) single read, for example from a Fastq or Qseq input source,
  * and produces a set of (name, position, base, base_quality) values for each position in the read
-*/
+ */
 
 public class UnalignedReadSplit extends EvalFunc<DataBag>
 {
@@ -64,29 +58,9 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
     private String sequence;
     private String basequal;
 
-    //private SchemaTupleFactory mSchemaTupleFactory;
     private TupleFactory mTupleFactory = TupleFactory.getInstance();
-    //private BagFactory mBagFactory = BagFactory.getInstance();
 
-    public UnalignedReadSplit() throws org.apache.pig.parser.ParserException, java.io.IOException {
-        //Configuration conf = UDFContext.getUDFContext().getJobConf();
-
-        //Schema udfSchema = Utils.getSchemaFromString("(pos:int, readbase:int, basequal:int)");
-        /*Schema bagSchema = new Schema();
-            bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
-            bagSchema.add(new Schema.FieldSchema("readbase", DataType.INTEGER));
-            bagSchema.add(new Schema.FieldSchema("basequal", DataType.INTEGER));
-
-            Schema udfSchema = bagSchema; //new Schema(new Schema.FieldSchema("UnalignedReadSplit", bagSchema, DataType.BAG));
-
-        if(conf != null) {
-            SchemaTupleBackend.initialize(conf, new PigContext()); 
-            mSchemaTupleFactory = SchemaTupleFactory.getInstance(udfSchema, false);
-        } else {
-           GenContext context = GenContext.UDF;
-           SchemaTupleFrontend.registerToGenerateIfPossible(udfSchema, false, context);
-        }*/
-    }
+    public UnalignedReadSplit() throws org.apache.pig.parser.ParserException, java.io.IOException {}
 
     // tuple input format: (subset of FastqLoader output format + MD tag)
     //   sequence
@@ -95,7 +69,7 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
     // tuple output format:
     //   base position (inside read)
     //   base
-    //   base quality (if applicable else null)    
+    //   base quality    
 
     private int getBaseQuality(int baseindex) {
     	return (int)(basequal.substring(baseindex, baseindex+1).charAt(0))-33;
@@ -113,29 +87,27 @@ public class UnalignedReadSplit extends EvalFunc<DataBag>
             throw new IOException("Sequence and base quality strings have different length!! sequence: " + sequence + " qualitis: " + basequal);
 	}
 
-	// DataBag output = mBagFactory.newDefaultBag();
 	NonSpillableDataBag output = new NonSpillableDataBag(sequence.length());
 	String readbase = "";
 
         for(int i=0;i<sequence.length();i++) {
-		readbase = sequence.substring(i,i+1);
-                //int readbase_int = (int)readbase.charAt(0);
-		int cur_basequal = getBaseQuality(i);
+	    int cur_basequal = getBaseQuality(i);
+	    Tuple tpl = mTupleFactory.newTuple(3);
 
-		Tuple tpl = mTupleFactory.newTuple(3);
+	    readbase = sequence.substring(i,i+1);
 
-		tpl.set(0, i);
-		tpl.set(1, readbase);
-		tpl.set(2, cur_basequal);
+	    tpl.set(0, i);
+	    tpl.set(1, readbase);
+	    tpl.set(2, cur_basequal);
 
-		output.add(tpl);
+	    output.add(tpl);
 	}
 
 	return output;
     }
 
     @Override
-	public Schema outputSchema(Schema input) {
+    public Schema outputSchema(Schema input) {
 	try{
 	    Schema bagSchema = new Schema();
 	    bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));

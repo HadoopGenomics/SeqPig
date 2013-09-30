@@ -38,16 +38,11 @@ import org.apache.pig.backend.executionengine.ExecException;
 import java.io.IOException;
 import java.util.Iterator;
 
-/* formats the output of BaseQualCounts
-*/
+/* formats the output of BaseQualCounts */
 
 public class FormatAvgBaseQualCounts extends FormatBaseQualCounts
 {
-
     public FormatAvgBaseQualCounts() {
 	super(1, false);
     }
-
-    // bag output format showing the quality distribution per position:
-    //   { ( position, <mean quality> <quality stddev> <basequal 0 fraction>, <basequal 1 fraction>, ..., <basequal N fraction>) }
 }

@@ -23,13 +23,19 @@ public class ReadRefPositions extends EvalFunc<DataBag>
 	private TupleFactory mTupleFactory = TupleFactory.getInstance();
 	private BagFactory mBagFactory = BagFactory.getInstance();
 
-	// tuple format:
+	// tuple input format:
 	//   sequence
 	//   flag
 	//   chr
 	//   position
 	//   cigar
 	//   base qualities
+
+	// tuple output format:
+	//   chr
+	//   position
+        //   base
+        //   base quality
 	private void loadTuple(Tuple tpl) throws org.apache.pig.backend.executionengine.ExecException
 	{
 		mapping.clear();

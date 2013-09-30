@@ -114,9 +114,7 @@ public class MappabilityFilter extends FilterFunc {
     protected int region_size = -1;
 
     public MappabilityFilter(String mappability_threshold_s) throws  Exception {
-
         double mappability_threshold = Double.parseDouble(mappability_threshold_s);
-
 	Configuration conf = UDFContext.getUDFContext().getJobConf();
 	   
         // see https://issues.apache.org/jira/browse/PIG-2576
@@ -127,73 +125,52 @@ public class MappabilityFilter extends FilterFunc {
         }
  
 	if(samfileheader == null) {
-
 	    this.samfileheader = "";
-
 	    try {
-
 	        FileSystem fs = FileSystem.getLocal(conf);
-		
 		BufferedReader headerin = new BufferedReader(new InputStreamReader(fs.open( new Path("input_asciiheader"))));
 			
 		while(true) {
 		    String str = headerin.readLine();
-
 		    if(str == null) break;
 		    else
 			this.samfileheader += str + "\n";
 		}
-			
 		headerin.close(); 
 
 		if(this.samfileheader.equals("")) {
 		    int errCode = 0;
 		    String errMsg = "MappabilityFilter: unable to read samfileheader from distributed cache!";
-
 		    throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT);
 		} else {
 		    String msg = "successfully read samfileheader";
 		    warn(msg, PigWarning.UDF_WARNING_1);
-
 		    this.samfileheader_decoded = getSAMFileHeader();
 		}
-
 	    } catch (Exception e) {
 		String errMsg = "MappabilityFilter: ERROR: could not read BAM header: "+e.toString();
 		int errCode = 0;
-
 		throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT);
 	    }
 	}
 
 	if(regions == null) {
-
 	    regions = new TreeMap<RegionEntry,Boolean>();
-
 	    try {
-
 		FileSystem fs = FileSystem.getLocal(conf);
-
+		// this was required before creating symlinks to files in the distributed cache
                 /*Path[] cacheFiles = DistributedCache.getLocalCacheFiles(conf);
-
 		  for (Path cachePath : cacheFiles) {
 		  String msg = "found cache file: "+cachePath.getName();
 		  warn(msg, PigWarning.UDF_WARNING_1);
-
 		  if (cachePath.getName().equals("input_regionfile")) {
-		  BufferedReader regionin = new BufferedReader(new InputStreamReader(fs.open( cachePath )));*/
-
-
-		//BufferedReader regionin = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(regionfilename)))));'
-
-
-		BufferedReader regionin = new BufferedReader(new InputStreamReader(fs.open( new Path("./input_regionfile"))));
-		
+		  BufferedReader regionin = new BufferedReader(new InputStreamReader(fs.open( cachePath )));
+		  BufferedReader regionin = new BufferedReader(new InputStreamReader(fs.open(new Path(fs.getHomeDirectory(), new Path(regionfilename)))));'*/
+		BufferedReader regionin = new BufferedReader(new InputStreamReader(fs.open( new Path("./input_regionfile"))));	
 		regionin.readLine(); // throw away first line that describes colums 
 
 		while(true) {
 		    String str = regionin.readLine();
-		    //System.out.println("read: "+str);
 		    
 		    if(str == null) break;
 		    else {
@@ -207,14 +184,12 @@ public class MappabilityFilter extends FilterFunc {
 			}
 			
 			if(Double.parseDouble(region_data[3]) >= mappability_threshold) {
-			    
 			    int start = parseCoordinate(region_data[1]);
 			    int end = parseCoordinate(region_data[2]);
 
 			    if(end < start) {
 				int errCode = 0;
 				String errMsg = "MappabilityFilter: Error while reading region file input";
-
 				throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT);
 			    }
 
@@ -224,34 +199,27 @@ public class MappabilityFilter extends FilterFunc {
 			    }
 
 			    SAMSequenceRecord ref = samfileheader_decoded.getSequence(region_data[0]);
-			    
 			    if (ref == null)
 				try {
 				    ref = samfileheader_decoded.getSequence(Integer.parseInt(region_data[0]));
 				} catch (NumberFormatException e) {
 				    warn(new String("unable to parse region entry!"), PigWarning.UDF_WARNING_1);
 				}
-			    
 			    if (ref == null) {
 				int errCode = 0;
 				String errMsg = "MappabilityFilter: Unable find sequence record for region: "+str;
 				
 				throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT);
 			    }
-			    
 			    RegionEntry e = new RegionEntry(ref.getSequenceIndex(), start, end);
 			    regions.put(e, new Boolean(true));
 			}
 		    }
 		}
-		
 		regionin.close();
 
 		String msg = "successfully read region file with "+regions.size()+" regions";
 		warn(msg, PigWarning.UDF_WARNING_1);
-		//}
-		
-		//}
 	    } catch (Exception e) {
 		String errMsg = "MappabilityFilter: ERROR: could not region file: "+e.toString();
                 int errCode = 0;
@@ -259,63 +227,7 @@ public class MappabilityFilter extends FilterFunc {
                 throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT);
 	    }
 	}
-	    
-	/*try {
-	  Base64 codec = new Base64();
-	  Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-	    
-	  ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-	  ObjectOutputStream ostream = new ObjectOutputStream(bstream);
-	  ostream.writeObject(this.samfileheader);
-	  ostream.close();
-	  String datastr = codec.encodeBase64String(bstream.toByteArray());
-	  p.setProperty("samfileheader", datastr);
-
-	  bstream = new ByteArrayOutputStream();
-	  ostream = new ObjectOutputStream(bstream);
-	  ostream.writeObject(this.regions);
-	  ostream.close();
-	  datastr = codec.encodeBase64String(bstream.toByteArray());
-	  p.setProperty("regiontree", datastr);
-	  } catch (Exception e) {
-	  System.out.println("ERROR: Unable to store SAMFileHeader or RegionTree in MappabilityFilter!");
-	  }
-	
-	  this.samfileheader_decoded = getSAMFileHeader();*/
     }
-
-    /*protected void decodeSAMFileHeader() throws Exception {
-      Base64 codec = new Base64();
-      Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-      String datastr;
-	
-      datastr = p.getProperty("samfileheader");
-      byte[] buffer = codec.decodeBase64(datastr);
-      ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
-      ObjectInputStream ostream = new ObjectInputStream(bstream);
-	
-      this.samfileheader = (String)ostream.readObject();
-
-      this.samfileheader_decoded = getSAMFileHeader();
-      }
-
-      protected void decodeRegions() throws Exception {
-      Base64 codec = new Base64();
-      Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-      String datastr;
-	
-      datastr = p.getProperty("regiontree");
-      byte[] buffer = codec.decodeBase64(datastr);
-      ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
-      ObjectInputStream ostream = new ObjectInputStream(bstream);
-	
-      this.regions = (TreeMap)ostream.readObject();
-
-      RegionEntry firstk = regions.firstKey();
-
-      if(region_size < 0)
-      region_size = firstk.end - firstk.start;
-      }*/
 
     private SAMFileHeader getSAMFileHeader() {
 	final SAMTextHeaderCodec codec = new SAMTextHeaderCodec();
@@ -341,7 +253,7 @@ public class MappabilityFilter extends FilterFunc {
     //   end postition
 
     @Override
-	public Boolean exec(Tuple input) throws IOException {
+    public Boolean exec(Tuple input) throws IOException {
         try {
 	    int chrom = ((Integer)input.get(0)).intValue();
 	    int start_pos = ((Integer)input.get(1)).intValue();
@@ -359,7 +271,6 @@ public class MappabilityFilter extends FilterFunc {
 		return (regions.get(entry) != null);
 	    } else {
 		// now start and end fall into different regions
-
 		RegionEntry start_entry = new RegionEntry(chrom, (start_region_index*region_size)+1, (start_region_index+1)*region_size);
 		RegionEntry end_entry = new RegionEntry(chrom, (end_region_index*region_size)+1, (end_region_index+1)*region_size);
 

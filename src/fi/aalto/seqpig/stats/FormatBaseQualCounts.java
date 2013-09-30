@@ -121,7 +121,7 @@ public class FormatBaseQualCounts extends EvalFunc<DataBag>
     public Schema outputSchema(Schema input) {
 	try{
 	    Schema bagSchema = new Schema();
-	    bagSchema.add(new Schema.FieldSchema("pos", DataType.LONG));
+	    bagSchema.add(new Schema.FieldSchema("pos", DataType.INTEGER));
             bagSchema.add(new Schema.FieldSchema("mean", DataType.DOUBLE));
 	    bagSchema.add(new Schema.FieldSchema("stdev", DataType.DOUBLE));
 

@@ -94,6 +94,7 @@ public class ReadSplit extends EvalFunc<DataBag>
     //   mapping quality
     //   flags
     //   base position (inside read)
+    //   read base
     //   base quality (if applicable else null)
    
     // WARNINGS:

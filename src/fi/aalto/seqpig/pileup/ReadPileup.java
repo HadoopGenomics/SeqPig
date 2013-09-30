@@ -123,7 +123,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 		else if(alignOp.getType() == AlignOp.Type.SoftClip) {
 		    if(!alignOpIt.hasNext()) // this is the final clipping!
 			last_unclipped_base = match_length + insert_length + clip_length;
-
 		    clip_length += alignOp.getLen();
 		}
 	    }
@@ -133,7 +132,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 	    if (mdOp.getType() == MdOp.Type.Match || mdOp.getType() == MdOp.Type.Mismatch) {
 		md_length += mdOp.getLen();
 	    }
-
 	}
 
 	if(last_unclipped_base == 0)
@@ -143,11 +141,9 @@ public class ReadPileup extends EvalFunc<DataBag>
     }
 
     @Override 
-	public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
+    public DataBag exec(Tuple input) throws IOException, org.apache.pig.backend.executionengine.ExecException {
 	if (input == null || input.size() == 0)
 	    return null;
-	//try {
-	// first load the mapping and do some error checks
 	    
 	String basequal = (String)input.get(5);
 
@@ -193,7 +189,6 @@ public class ReadPileup extends EvalFunc<DataBag>
 	// NOTE: code based on copy&paste from Seal AbstractTaggedMapping::calculateReferenceMatches
 
 	if (mdOps.isEmpty()) {
-	    //throw new IOException("no MD operators extracted from tag! (tag: " + (String)input.get(6) + ")");
 	    warn("no MD operators extracted from tag! (tag: " + (String)input.get(6) + "), silently IGNORING read", PigWarning.UDF_WARNING_3);
 	    return null;
 	}
@@ -415,29 +410,15 @@ public class ReadPileup extends EvalFunc<DataBag>
 		    prev_tpl = null;
 		}
 
-		//tpl.set(1, refpos);
-
-		//tpl.set(0, (String)input.get(2));
-		//tpl.set(2, null); // here should be the last reference base of the "previous" AlignOp
-		//tpl.set(3, "$");
-		//tpl.set(4, null);
-
-		//output.add(tpl);
-
 		seqpos += alignOp.getLen();
 		pileuppref = ("^" + mapping_quality);
 	    }
 	}
 
-
 	if(prev_tpl != null)
 	    output.add(prev_tpl);
 
 	return output;
-
-	/*} catch(Exception e) {
-	  throw new IOException("Caught exception processing input row " + e.toString());
-	  }*/
     }
 
     @Override
