@@ -21,8 +21,11 @@
 package fi.aalto.seqpig;
 
 import java.io.IOException;
+
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.Tuple;
+import org.apache.pig.data.DataType;
+import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.WrappedIOException;
 
 // computes the reverse complement of the given base sequence
@@ -61,5 +64,17 @@ public class ReverseComplement extends EvalFunc<String>
         } catch(Exception e){
             throw WrappedIOException.wrap("Caught exception processing input row ", e);
         }
+    }
+
+    @Override
+    public Schema outputSchema(Schema input) {
+	try{
+	    Schema tupleSchema = new Schema();
+	    tupleSchema.add(new Schema.FieldSchema("reversed_read", DataType.CHARARRAY));
+	    
+	    return new Schema(new Schema.FieldSchema(getSchemaName(this.getClass().getName().toLowerCase(), input), tupleSchema, DataType.TUPLE));
+	} catch (Exception e){
+	    return null;
+	}
     }
 }
