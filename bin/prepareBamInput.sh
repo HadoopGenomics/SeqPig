@@ -21,7 +21,7 @@ then
 
 	${HADOOP} fs -put $1 ${bamfilename}
 
-	$JAVA_HOME/bin/java -classpath ${SEQPIG_JARS}:${CLASSPATH} fi.aalto.seqpig.io.SAMFileHeaderReader $1
+	$JAVA_HOME/bin/java -classpath ${SEQPIG_JARS}:${CLASSPATH} -Dhadoopbam.samheaderreader.validation-stringency=STRICT fi.aalto.seqpig.io.SAMFileHeaderReader $1
 
 	${HADOOP} fs -put ${1}.asciiheader ${bamfilename}.asciiheader
 else

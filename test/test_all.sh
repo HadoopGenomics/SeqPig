@@ -116,8 +116,8 @@ function test_sorting_local() {
 	echo TEST: starting sorting
 	echo ${SEQPIG_HOME}/bin/seqpig -x local -param inputfile=${SEQPIG_HOME}/data/input.bam -param outputfile=input_sorted.bam ${SEQPIG_HOME}/scripts/sort_bam.pig
 	${SEQPIG_HOME}/bin/seqpig -x local -param inputfile=${SEQPIG_HOME}/data/input.bam -param outputfile=input_sorted ${SEQPIG_HOME}/scripts/sort_bam.pig
-	echo ${HADOOP} jar ${SEQPIG_HOME}/lib/hadoop-bam-${HADOOP_BAM_VERSION}.jar -libjars ${SEQPIG_HOME}/lib/picard-${SAM_VERSION}.jar,${SEQPIG_HOME}/lib/sam-${SAM_VERSION}.jar cat "file://$(pwd)/input_sorted.bam" "file://$(pwd)/input_sorted/part-r-*"
-	${HADOOP} jar ${SEQPIG_HOME}/lib/hadoop-bam-${HADOOP_BAM_VERSION}.jar -libjars ${SEQPIG_HOME}/lib/picard-${SAM_VERSION}.jar,${SEQPIG_HOME}/lib/sam-${SAM_VERSION}.jar cat "file://$(pwd)/input_sorted.bam" "file://$(pwd)/input_sorted/part-r-*"
+	echo ${HADOOP} jar ${SEQPIG_HOME}/lib/hadoop-bam-${HADOOP_BAM_VERSION}.jar -libjars ${SEQPIG_LIBJARS} cat --validation-stringency=STRICT "file://$(pwd)/input_sorted.bam" "file://$(pwd)/input_sorted/part-r-*"
+	${HADOOP} jar ${SEQPIG_HOME}/lib/hadoop-bam-${HADOOP_BAM_VERSION}.jar -libjars ${SEQPIG_LIBJARS} cat --validation-stringency=STRICT "file://$(pwd)/input_sorted.bam" "file://$(pwd)/input_sorted/part-r-*"
 	if [ ! -f input_sorted.bam ]; then
     		echo TEST: sorting BAM test failed, could not find output file
 		cleanup_local

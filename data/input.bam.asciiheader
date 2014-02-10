@@ -1,4 +1,4 @@
-@HD	VN:1.0	GO:none	SO:coordinate
+@HD	VN:1.4	GO:none	SO:coordinate
 @SQ	SN:1	LN:249250621	AS:NCBI37	UR:ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz	M5:1b22b98cdeb4a9304cb5d48026a85128	SP:Human
 @SQ	SN:2	LN:243199373	AS:NCBI37	UR:ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz	M5:a0d9851da00400dec1098a9255ac712e	SP:Human
 @SQ	SN:3	LN:198022430	AS:NCBI37	UR:ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz	M5:fdfd811849cc2fadebc929bb925902e5	SP:Human
