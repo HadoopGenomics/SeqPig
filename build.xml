@@ -65,6 +65,11 @@
 			</manifest>
 
 			<zipfileset src="${lib.dir}/hadoop-bam*.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="${lib.dir}/seal.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="${lib.dir}/picard-*.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="${lib.dir}/samtools*.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="${lib.dir}/tribble*.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="${lib.dir}/variant*.jar" includes="**/*.java **/*.class"/>
 		</jar>
 	</target>
 
