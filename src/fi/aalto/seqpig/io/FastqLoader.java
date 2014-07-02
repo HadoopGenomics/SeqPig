@@ -22,7 +22,7 @@ package fi.aalto.seqpig.io;
 
 import org.apache.pig.LoadFunc;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.data.Tuple; 
+import org.apache.pig.data.Tuple;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.PigException;
@@ -40,7 +40,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.RecordReader; 
+import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.io.Text;
 
@@ -77,40 +77,39 @@ public class FastqLoader extends LoadFunc implements LoadMetadata {
     //   index_sequence: string
     //   sequence: string
     //   quality: string (note: we assume that encoding chosen on command line!!!)
-    
+
     public FastqLoader() {}
 
     @Override
     public Tuple getNext() throws IOException {
         try {
-	    
-	    if (mProtoTuple == null) {
-		mProtoTuple = new ArrayList<Object>();
-	    }
-	    
+            if (mProtoTuple == null) {
+                mProtoTuple = new ArrayList<Object>();
+            }
+
             boolean notDone = in.nextKeyValue();
             if (!notDone) {
                 return null;
             }
 
-	    Text fastqrec_name = ((FastqRecordReader)in).getCurrentKey();
+            Text fastqrec_name = ((FastqRecordReader)in).getCurrentKey();
             SequencedFragment fastqrec = ((FastqRecordReader)in).getCurrentValue();
-	   
-	    //mProtoTuple.add(new String(fastqrec_name.toString()));
-	    
-	    mProtoTuple.add(fastqrec.getInstrument());
-	    mProtoTuple.add(fastqrec.getRunNumber());
-	    mProtoTuple.add(fastqrec.getFlowcellId());
-	    mProtoTuple.add(fastqrec.getLane());
-	    mProtoTuple.add(fastqrec.getTile());
-	    mProtoTuple.add(fastqrec.getXpos());
-	    mProtoTuple.add(fastqrec.getYpos());
-	    mProtoTuple.add(fastqrec.getRead());
-	    mProtoTuple.add(fastqrec.getFilterPassed());
-	    mProtoTuple.add(fastqrec.getControlNumber());
-	    mProtoTuple.add(fastqrec.getIndexSequence());
-	    mProtoTuple.add(fastqrec.getSequence().toString());
-  	    mProtoTuple.add(fastqrec.getQuality().toString());
+
+            //mProtoTuple.add(new String(fastqrec_name.toString()));
+
+            mProtoTuple.add(fastqrec.getInstrument());
+            mProtoTuple.add(fastqrec.getRunNumber());
+            mProtoTuple.add(fastqrec.getFlowcellId());
+            mProtoTuple.add(fastqrec.getLane());
+            mProtoTuple.add(fastqrec.getTile());
+            mProtoTuple.add(fastqrec.getXpos());
+            mProtoTuple.add(fastqrec.getYpos());
+            mProtoTuple.add(fastqrec.getRead());
+            mProtoTuple.add(fastqrec.getFilterPassed());
+            mProtoTuple.add(fastqrec.getControlNumber());
+            mProtoTuple.add(fastqrec.getIndexSequence());
+            mProtoTuple.add(fastqrec.getSequence().toString());
+            mProtoTuple.add(fastqrec.getQuality().toString());
 
             Tuple t =  mTupleFactory.newTupleNoCopy(mProtoTuple);
             mProtoTuple = null;
@@ -118,10 +117,8 @@ public class FastqLoader extends LoadFunc implements LoadMetadata {
         } catch (InterruptedException e) {
             int errCode = 6018;
             String errMsg = "Error while reading Fastq input: check data format! (Casava 1.8?)";
-            throw new ExecException(errMsg, errCode,
-				    PigException.REMOTE_ENVIRONMENT, e);
+            throw new ExecException(errMsg, errCode, PigException.REMOTE_ENVIRONMENT, e);
         }
-
     }
 
     @Override
@@ -135,28 +132,26 @@ public class FastqLoader extends LoadFunc implements LoadMetadata {
     }
 
     @Override
-    public void setLocation(String location, Job job)
-	throws IOException {
+    public void setLocation(String location, Job job) throws IOException {
         FileInputFormat.setInputPaths(job, location);
     }
 
     @Override
     public ResourceSchema getSchema(String location, Job job) throws IOException {
-       
-	Schema s = new Schema();
-	s.add(new Schema.FieldSchema("instrument", DataType.CHARARRAY));
-	s.add(new Schema.FieldSchema("run_number", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("flow_cell_id", DataType.CHARARRAY));
-	s.add(new Schema.FieldSchema("lane", DataType.INTEGER));	
-	s.add(new Schema.FieldSchema("tile", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("xpos", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("ypos", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("read", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("qc_passed", DataType.BOOLEAN));
-	s.add(new Schema.FieldSchema("control_number", DataType.INTEGER));
-	s.add(new Schema.FieldSchema("index_sequence", DataType.CHARARRAY));
-	s.add(new Schema.FieldSchema("sequence", DataType.CHARARRAY));
-	s.add(new Schema.FieldSchema("quality", DataType.CHARARRAY));
+        Schema s = new Schema();
+        s.add(new Schema.FieldSchema("instrument", DataType.CHARARRAY));
+        s.add(new Schema.FieldSchema("run_number", DataType.INTEGER));
+        s.add(new Schema.FieldSchema("flow_cell_id", DataType.CHARARRAY));
+        s.add(new Schema.FieldSchema("lane", DataType.INTEGER));
+        s.add(new Schema.FieldSchema("tile", DataType.INTEGER));
+        s.add(new Schema.FieldSchema("xpos", DataType.INTEGER));
+        s.add(new Schema.FieldSchema("ypos", DataType.INTEGER));
+        s.add(new Schema.FieldSchema("read", DataType.INTEGER));
+        s.add(new Schema.FieldSchema("qc_passed", DataType.BOOLEAN));
+        s.add(new Schema.FieldSchema("control_number", DataType.INTEGER));
+        s.add(new Schema.FieldSchema("index_sequence", DataType.CHARARRAY));
+        s.add(new Schema.FieldSchema("sequence", DataType.CHARARRAY));
+        s.add(new Schema.FieldSchema("quality", DataType.CHARARRAY));
 
         return new ResourceSchema(s);
     }

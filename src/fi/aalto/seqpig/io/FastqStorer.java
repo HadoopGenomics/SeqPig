@@ -22,7 +22,7 @@ package fi.aalto.seqpig.io;
 
 import org.apache.pig.StoreFunc;
 import org.apache.pig.data.TupleFactory;
-import org.apache.pig.data.Tuple; 
+import org.apache.pig.data.Tuple;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
 import org.apache.pig.backend.executionengine.ExecException;
@@ -36,7 +36,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.RecordWriter; 
+import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.io.Text;
 
@@ -86,94 +86,92 @@ public class FastqStorer extends StoreFunc {
 
     @Override
     public void putNext(Tuple f) throws IOException {
+        if(allFastqFieldNames == null) {
+            try {
+                //BASE64Decoder decode = new BASE64Decoder();
+                Base64 codec = new Base64();
+                Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
+                String datastr = p.getProperty("allFastqFieldNames");
+                //byte[] buffer = decode.decodeBuffer(datastr);
+                byte[] buffer = codec.decodeBase64(datastr);
+                ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
+                ObjectInputStream ostream = new ObjectInputStream(bstream);
 
-	if(allFastqFieldNames == null) {
-	    try {
-		//BASE64Decoder decode = new BASE64Decoder();
-		Base64 codec = new Base64();
-		Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-		String datastr = p.getProperty("allFastqFieldNames");
-		//byte[] buffer = decode.decodeBuffer(datastr);
-		byte[] buffer = codec.decodeBase64(datastr);
-		ByteArrayInputStream bstream = new ByteArrayInputStream(buffer);
-		ObjectInputStream ostream = new ObjectInputStream(bstream);
-		
-		allFastqFieldNames =
-		    (HashMap<String,Integer>)ostream.readObject();
-	    } catch (ClassNotFoundException e) {
-		throw new IOException(e);
-	    }
-	}
+                allFastqFieldNames = (HashMap<String,Integer>)ostream.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException(e);
+            }
+        }
 
-	SequencedFragment fastqrec = new SequencedFragment();
-	int index;
+        SequencedFragment fastqrec = new SequencedFragment();
+        int index;
 
-	index = getFieldIndex("instrument", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
-	    fastqrec.setInstrument((String)f.get(index));
-	}
+        index = getFieldIndex("instrument", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
+            fastqrec.setInstrument((String)f.get(index));
+        }
 
-	index = getFieldIndex("run_number", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setRunNumber(((Integer)f.get(index)));
-	}
+        index = getFieldIndex("run_number", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
+            fastqrec.setRunNumber(((Integer)f.get(index)));
+        }
 
-	index = getFieldIndex("flow_cell_id", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
-	    fastqrec.setFlowcellId((String)f.get(index));
-	}
+        index = getFieldIndex("flow_cell_id", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
+            fastqrec.setFlowcellId((String)f.get(index));
+        }
 
-	index = getFieldIndex("lane", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setLane(((Integer)f.get(index)));
-	}
+        index = getFieldIndex("lane", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
+            fastqrec.setLane(((Integer)f.get(index)));
+        }
 
-	index = getFieldIndex("tile", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setTile(((Integer)f.get(index)));
-	}
+        index = getFieldIndex("tile", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
+            fastqrec.setTile(((Integer)f.get(index)));
+        }
 
-	index = getFieldIndex("xpos", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setXpos(((Integer)f.get(index)));
-	}
-	
-	index = getFieldIndex("ypos", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setYpos(((Integer)f.get(index)));
-	}
-	
-	index = getFieldIndex("read", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setRead(((Integer)f.get(index)));
-	}
+        index = getFieldIndex("xpos", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
+            fastqrec.setXpos(((Integer)f.get(index)));
+        }
 
-	index = getFieldIndex("qc_passed", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.BOOLEAN) {
-	    fastqrec.setFilterPassed(((Boolean)f.get(index)));
-	}
+        index = getFieldIndex("ypos", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
+            fastqrec.setYpos(((Integer)f.get(index)));
+        }
 
-	index = getFieldIndex("control_number", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
-	    fastqrec.setControlNumber(((Integer)f.get(index)));
-	}
+        index = getFieldIndex("read", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
+            fastqrec.setRead(((Integer)f.get(index)));
+        }
 
-	index = getFieldIndex("index_sequence", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
-	    fastqrec.setIndexSequence((String)f.get(index));
-	}
+        index = getFieldIndex("qc_passed", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.BOOLEAN) {
+            fastqrec.setFilterPassed(((Boolean)f.get(index)));
+        }
 
-	index = getFieldIndex("sequence", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
-	    fastqrec.setSequence(new Text((String)f.get(index)));
-	}
+        index = getFieldIndex("control_number", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.INTEGER) {
+            fastqrec.setControlNumber(((Integer)f.get(index)));
+        }
 
-	index = getFieldIndex("quality", allFastqFieldNames);
-	if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
-	    fastqrec.setQuality(new Text((String)f.get(index)));
-	}
+        index = getFieldIndex("index_sequence", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
+            fastqrec.setIndexSequence((String)f.get(index));
+        }
 
-	try {
+        index = getFieldIndex("sequence", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
+            fastqrec.setSequence(new Text((String)f.get(index)));
+        }
+
+        index = getFieldIndex("quality", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
+            fastqrec.setQuality(new Text((String)f.get(index)));
+        }
+
+        try {
             writer.write(null, fastqrec);
         } catch (InterruptedException e) {
             throw new IOException(e);
@@ -181,58 +179,58 @@ public class FastqStorer extends StoreFunc {
     }
 
     private int getFieldIndex(String field, HashMap<String,Integer> fieldNames) {
-	if(!fieldNames.containsKey(field)) {
-	    System.err.println("Warning: field missing: "+field);
-	    return -1;
-	}
+        if(!fieldNames.containsKey(field)) {
+            System.err.println("Warning: field missing: " + field);
+            return -1;
+        }
 
-	return ((Integer)fieldNames.get(field)).intValue();
+        return ((Integer)fieldNames.get(field)).intValue();
     }
 
     @Override
     public void checkSchema(ResourceSchema s) throws IOException {
 
-	allFastqFieldNames = new HashMap<String,Integer>();
-	String[] fieldNames = s.fieldNames();
+        allFastqFieldNames = new HashMap<String,Integer>();
+        String[] fieldNames = s.fieldNames();
 
-	for(int i=0;i<fieldNames.length;i++) {
-	    //System.out.println("field: "+fieldNames[i]);
-	    allFastqFieldNames.put(fieldNames[i], new Integer(i));
-	}
+        for(int i=0;i<fieldNames.length;i++) {
+            //System.out.println("field: "+fieldNames[i]);
+            allFastqFieldNames.put(fieldNames[i], new Integer(i));
+        }
 
-	if(!( /*allFastqFieldNames.containsKey("instrument")
-	      && allFastqFieldNames.containsKey("run_number")
-	      && allFastqFieldNames.containsKey("flow_cell_id")
-	      && allFastqFieldNames.containsKey("lane")
-	      && allFastqFieldNames.containsKey("tile")
-	      && allFastqFieldNames.containsKey("xpos")
-	      && allFastqFieldNames.containsKey("ypos")
-	      && allFastqFieldNames.containsKey("read")
-	      && allFastqFieldNames.containsKey("filter")
-	      && allFastqFieldNames.containsKey("control_number")
-	      && allFastqFieldNames.containsKey("index_sequence")*/
-	      allFastqFieldNames.containsKey("sequence")
-	      && allFastqFieldNames.containsKey("quality")))
-	    throw new IOException("Error: Incorrect Fastq tuple-field name or compulsory field missing");
+        if(!( /*allFastqFieldNames.containsKey("instrument")
+              && allFastqFieldNames.containsKey("run_number")
+              && allFastqFieldNames.containsKey("flow_cell_id")
+              && allFastqFieldNames.containsKey("lane")
+              && allFastqFieldNames.containsKey("tile")
+              && allFastqFieldNames.containsKey("xpos")
+              && allFastqFieldNames.containsKey("ypos")
+              && allFastqFieldNames.containsKey("read")
+              && allFastqFieldNames.containsKey("filter")
+              && allFastqFieldNames.containsKey("control_number")
+              && allFastqFieldNames.containsKey("index_sequence")*/
+              allFastqFieldNames.containsKey("sequence")
+              && allFastqFieldNames.containsKey("quality")))
+            throw new IOException("Error: Incorrect Fastq tuple-field name or compulsory field missing");
 
-	//BASE64Encoder encode = new BASE64Encoder();
-	Base64 codec = new Base64();
-	Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
-	String datastr;
-	//p.setProperty("someproperty", "value");
+        //BASE64Encoder encode = new BASE64Encoder();
+        Base64 codec = new Base64();
+        Properties p = UDFContext.getUDFContext().getUDFProperties(this.getClass());
+        String datastr;
+        //p.setProperty("someproperty", "value");
 
-	ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-	ObjectOutputStream ostream = new ObjectOutputStream(bstream);
-	ostream.writeObject(allFastqFieldNames);
-	ostream.close();
-	//datastr = encode.encode(bstream.toByteArray());
-	datastr = codec.encodeBase64String(bstream.toByteArray());
-	p.setProperty("allFastqFieldNames", datastr); //new String(bstream.toByteArray(), "UTF8"));
+        ByteArrayOutputStream bstream = new ByteArrayOutputStream();
+        ObjectOutputStream ostream = new ObjectOutputStream(bstream);
+        ostream.writeObject(allFastqFieldNames);
+        ostream.close();
+        //datastr = encode.encode(bstream.toByteArray());
+        datastr = codec.encodeBase64String(bstream.toByteArray());
+        p.setProperty("allFastqFieldNames", datastr); //new String(bstream.toByteArray(), "UTF8"));
     }
 
     @Override
     public OutputFormat getOutputFormat() {
-	return new FastqOutputFormat();
+        return new FastqOutputFormat();
     }
 
     @Override
