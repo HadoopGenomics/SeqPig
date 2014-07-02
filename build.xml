@@ -15,12 +15,8 @@
 
 	<property name="main-class"  value="fi.aalto.seqpig.BamUDFTest"/>
 
-	<path id="classpath">
+	<path id="other.classpaths">
 		<fileset dir="${lib.dir}" includes="**/*.jar"/>
-		<fileset id="hadoop_jars" dir="${env.HADOOP_HOME}/share/hadoop/common">
-			<include name="hadoop-*.jar"/>
-			<include name="lib/*.jar"/>
-		</fileset>
 		<fileset id="pig_jars" dir="${env.PIG_HOME}">
 			<include name="pig*.jar"/>
 		</fileset>
@@ -30,10 +26,19 @@
 		<delete dir="${build.dir}"/>
 	</target>
 	
+	<target name="get_hadoop_classpath">
+		<!-- run "hadoop classpath" to define the 'hadoop.classpath' property -->
+		<exec executable="hadoop" outputproperty="hadoop.classpath" logError="true" failonerror="true">
+			<arg value="classpath" />
+		</exec>
+	</target>
+
 	
-	<target name="compile">
+	<target name="compile" depends="get_hadoop_classpath">
 		<mkdir dir="${classes.dir}"/>
-		<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" debug="on" includeAntRuntime="false" />
+		<javac srcdir="${src.dir}" destdir="${classes.dir}"
+		       classpathref="other.classpaths" classpath="${hadoop.classpath}"
+		       debug="on" includeAntRuntime="false" />
 	</target>
 
 	<target name="jar" depends="compile">
@@ -48,7 +53,7 @@
 	<target name="run" depends="jar">
 		<java fork="true" classname="${main-class}">
 			<classpath>
-				<path refid="classpath"/>
+				<path refid="other.classpaths"/>
 				<path location="${jar.dir}/${ant.project.name}.jar"/>
 			</classpath>
 		</java>
