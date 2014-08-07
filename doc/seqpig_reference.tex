@@ -199,12 +199,10 @@ Usage: & \multicolumn{3}{l}{}
 & \emph{attributes} & \texttt{map} & SAMRecord attributes
 \end{tabular}
 
-\subsubsection{\texttt{FastqLoader} and \texttt{QseqLoader}}
+\subsubsection{\texttt{FastqLoader}}
 
-Both loaders for unaligned read file formats Fastq and Qseq
-essentially provide the same output schema for the tuple field names
-they produce.  Note that some fields that are not present in the input
-data may remain empty.
+The loader for Fastq files provides the following output schema.  Note that
+fields that are not present in the input data remain empty.
 
 \begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
 Usage: & \multicolumn{3}{l}{}
@@ -227,16 +225,22 @@ Usage: & \multicolumn{3}{l}{}
 & \emph{control\_number} & \texttt{integer} & control number\\
 & \emph{index\_sequence} & \texttt{chararray} & index sequence\\
 & \emph{sequence} & \texttt{chararray} & read bases\\
-& \emph{quality} & \texttt{chararray} & base qualities
+& \emph{quality} & \texttt{chararray} & base qualities (ASCII-encoded Sanger
+format)\\
+& \emph{id} & \texttt{chararray} & entire read id (as found in input)
 \end{tabular}
 
-\subsubsection{\texttt{FastqStorer} and \texttt{QseqStorer}}
+\subsubsection{\texttt{FastqStorer}}
 
-The Fastq and Qseq storer input schemas are identical and both are
-essentially equal to the output schema of the corresponding loader
-functions. Note that the order of the fields inside tuples does not
-matter, only their field names need to be present. All fields except
+The \texttt{FastqStorer}'s input schema is identical to the corresponding loader
+function's output schema. Note that the order of the fields inside tuples does
+not matter -- only their field names need to be present. All fields except
 \emph{sequence} and \emph{quality} are optional.
+
+The ``id'' field is optional and should be used only to override the default
+read id format (which follows the standard used by Illumina's Fastq format) with
+a custom one; if ``id'' is set the provided string will be used as the read id
+and the other metadata fields will be ignored.
 
 \begin{tabular}{lp{0.15\textwidth}p{0.15\textwidth}p{0.4\textwidth}}
 Usage: & \multicolumn{3}{l}{}
@@ -259,8 +263,28 @@ Usage: & \multicolumn{3}{l}{}
 & \emph{control\_number} & \texttt{integer} & control number\\
 & \emph{index\_sequence} & \texttt{chararray} & index sequence\\
 & \emph{sequence} & \texttt{chararray} & read bases\\
-& \emph{quality} & \texttt{chararray} & base qualities
+& \emph{quality} & \texttt{chararray} & base qualities\\
+& \emph{id} & \texttt{chararray} & id of the read (overrides meta data fields)
 \end{tabular}
+
+\subsubsection{\texttt{QseqLoader}}
+
+The \texttt{QseqLoader} essentially produces the same output schema as the
+\texttt{FastqLoader}, with two differences:  it does not produce the
+``control\_number'' and ``id'' fields, since these fields are not present in
+Qseq files.
+
+Note that the base qualities coming from the Qseq format are transformed into
+Sanger $q + 33$ format.
+
+\subsubsection{\texttt{QseqStorer}}
+
+Analogously to the \texttt{FastqStorer}, the \texttt{QseqStorer}'s 
+input schema is identical to the output for the corresponding loader function.
+Note that the order of the fields inside tuples does not
+matter; only their field names need to be present. All fields except
+\emph{sequence} and \emph{quality} are optional.
+
 
 \subsubsection{\texttt{FastaLoader}}
 

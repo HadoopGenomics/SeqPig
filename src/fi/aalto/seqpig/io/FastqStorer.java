@@ -171,8 +171,14 @@ public class FastqStorer extends StoreFunc {
             fastqrec.setQuality(new Text((String)f.get(index)));
         }
 
+        Text key = null;
+        index = getFieldIndex("id", allFastqFieldNames);
+        if(index > -1 && DataType.findType(f.get(index)) == DataType.CHARARRAY) {
+            key = new Text((String)f.get(index));
+        }
+
         try {
-            writer.write(null, fastqrec);
+            writer.write(key, fastqrec);
         } catch (InterruptedException e) {
             throw new IOException(e);
         }
