@@ -19,7 +19,7 @@ baminputfilename=$(basename $1);
 
 rm -f $bamoutputfilename
 
-${HADOOP} jar ${SEQPIG_HOME}/lib/hadoop-bam-${HADOOP_BAM_VERSION}.jar -libjars ${SEQPIG_LIBJARS} cat --validation-stringency=STRICT "file://${bamoutputfilename}" "hdfs:///user/${USER}/$baminputfilename/part-r-*"
+${HADOOP} jar ${SEQPIG_HOME}/target/seqpig-${SEQPIG_VERSION}-jar-with-dependencies.jar -libjars ${SEQPIG_LIBJARS} cat --validation-stringency=STRICT "file://${bamoutputfilename}" "hdfs:///user/${USER}/$baminputfilename/part-r-*"
 
 if [ -e "$bamoutputfilename" ]
 then
