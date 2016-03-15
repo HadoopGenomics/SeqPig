@@ -1,3 +1,9 @@
+** V0.6 **
+    - AIM: Changed to Hadoop 2
+    - AIM: using Maven build management and Java 1.7
+    - AIM: upgraded to Pig 0.15.0 and Hadoop-BAM 7.3.1
+    - AIM: Seal built with Hadoop 2 and Hadoop-BAM 7.3.1
+
 ** V0.5 **
 
    - AS: breaking up UDF's into modules (io, filter, etc.)
