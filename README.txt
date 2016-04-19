@@ -18,3 +18,8 @@ at the Center for Advanced Studies, Research and Development in Sardinia. See
 http://samtools.sourceforge.net/
 http://biodoop-seal.sourceforge.net/
 
+Installation with precompiled Seal library
+  > mvn install:install-file -Dfile=lib/seal-0.4.0-with-hadoop-bam-7.4.0.jar -DgroupId=it.crs4 -DartifactId=seal -Dversion=0.4.0-with-hadoop-bam-7.4.0 -Dpackaging=jar -DgeneratePom=true
+  > mvn package -DskipTests
+
+

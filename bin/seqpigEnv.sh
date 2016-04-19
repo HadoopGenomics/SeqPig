@@ -31,15 +31,9 @@ type -P "${HADOOP}" &>/dev/null || {
 }
 
 SEQPIG_VERSION=0.6-SNAPSHOT
-SAM_VERSION=1.141
-HADOOP_BAM_VERSION=7.3.1
 
-#SEQPIG_JARS=$(find ${PIG_HOME} -name '*.jar' -print | tr '\n' :)${SEQPIG_HOME}/target/seqpig-${SEQPIG_VERSION}-jar-with-dependencies.jar
-#SEQPIG_LIBJARS=$(find ${SEQPIG_HOME}/lib -name '*.jar' -print | tr '\n' ,)
 SEQPIG_LIBJARS=$(find ${SEQPIG_HOME}/target -name '*.jar' -print | tr '\n' ,)
-SEQPIG_JARS=SEQPIG_LIBJARS
 
-echo "SEQPIG_JARS: $SEQPIG_JARS"
 echo "SEQPIG_LIBJARS: $SEQPIG_LIBJARS"
 
 

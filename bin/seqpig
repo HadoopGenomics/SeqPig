@@ -11,8 +11,8 @@ source "${SEQPIG_HOME}/bin/seqpigEnv.sh"
 
 import_list=fi.aalto.seqpig:fi.aalto.seqpig.io:fi.aalto.seqpig.filter:fi.aalto.seqpig.pileup:fi.aalto.seqpig.stats
 
-echo "pig.additional.jars: ${SEQPIG_JARS}"
+echo "pig.additional.jars: ${SEQPIG_LIBJARS}"
 echo "udf.import.list: ${import_list}"
 
-echo "${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_JARS} -Dudf.import.list=${import_list} ${@}"
-exec "${PIG_HOME}/bin/pig" -Dpig.additional.jars=${SEQPIG_JARS} -Dudf.import.list=${import_list} "${@}"
+echo "${PIG_HOME}/bin/pig -Dpig.additional.jars=${SEQPIG_LIBJARS} -Dudf.import.list=${import_list} ${@}"
+exec "${PIG_HOME}/bin/pig" -Dpig.additional.jars=${SEQPIG_LIBJARS} -Dudf.import.list=${import_list} "${@}"

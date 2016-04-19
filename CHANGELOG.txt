@@ -1,8 +1,7 @@
 ** V0.6 **
-    - AIM: Changed to Hadoop 2
-    - AIM: using Maven build management and Java 1.7
-    - AIM: upgraded to Pig 0.15.0-h2 and Hadoop-BAM 7.3.1
-    - AIM: Seal built with Hadoop 2 and Hadoop-BAM 7.3.1
+    - AIM: Changed to Hadoop 2, Hadoop-BAM 7.4.0 and Htsjdk 2.1.0
+    - AIM: Migrated to Maven build management and Java 1.8
+    - AIM: External library Seal built with Hadoop 2 and Hadoop-BAM 7.4.0
     - AIM: all needed libraries packed in seqpig-0.6-SNAPSHOT-jar-with-dependencies.jar
 
 ** V0.5 **
