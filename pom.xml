@@ -73,18 +73,6 @@
               <version>${hadoop.version}</version>
           </dependency>
 
-          <!--dependency>
-              <groupId>com.github.samtools</groupId>
-              <artifactId>htsjdk</artifactId>
-              <version>${htsjdk.version}</version>
-              <exclusions>
-                  <exclusion>
-                      <groupId>org.testng</groupId>
-                      <artifactId>testng</artifactId>
-                  </exclusion>
-              </exclusions>
-          </dependency-->
-
     </dependencies>
 
     <build>
